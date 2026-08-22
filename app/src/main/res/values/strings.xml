@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Detachment</string>
+    <string name="accessibility_service_desc">Detachment uses Accessibility Service to detect when blocked or time-limited applications are opened on your device, enforcing your daily limits, focus schedules, and distraction shield.</string>
+</resources>

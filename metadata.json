@@ -1,0 +1,8 @@
+{
+  "name": "Detachment",
+  "description": "Detachment - Digital mindfulness and screen time control with app limits, focus schedule locking, Pomodoro blackout mode, friction delay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
