@@ -212,7 +212,8 @@ class MainActivity : ComponentActivity() {
                                     onUpdateMasterPin = { pin -> viewModel.updateMasterPin(pin) },
                                     onLaunchApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
                                     onRefreshApps = { viewModel.scanInstalledApps() },
-                                    onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) }
+                                    onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
+                                    onUpdateCategory = { pkg, cat -> viewModel.updateAppCategory(pkg, cat) }
                                 )
                             }
                             NavigationTab.SCHEDULES.name -> {

@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
@@ -105,6 +106,7 @@ fun AppLimitsScreen(
     onLaunchApp: (AppLimitEntity) -> Unit,
     onRefreshApps: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
+    onUpdateCategory: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -112,6 +114,7 @@ fun AppLimitsScreen(
     var editingApp by remember { mutableStateOf<AppLimitEntity?>(null) }
     var unlockingApp by remember { mutableStateOf<AppLimitEntity?>(null) }
     var showChangePinDialog by remember { mutableStateOf(false) }
+    var showEditCategoriesDialog by remember { mutableStateOf(false) }
 
     val categories = remember {
         listOf("All", "Social", "Video", "Entertainment", "Games", "Communication", "Productivity", "Utilities")
@@ -449,6 +452,39 @@ fun AppLimitsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
+                    item(key = "edit_categories_chip") {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = EmeraldAccent.copy(alpha = 0.18f),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp,
+                                EmeraldAccent.copy(alpha = 0.55f)
+                            ),
+                            modifier = Modifier
+                                .clickable { showEditCategoriesDialog = true }
+                                .testTag("edit_categories_chip")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Category,
+                                    contentDescription = "Edit Categories",
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Text(
+                                    text = "Edit Categories",
+                                    color = EmeraldAccent,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
                     items(categories, key = { it }) { cat ->
                         val isSelected = selectedCategory == cat
                         Surface(
@@ -942,6 +978,248 @@ fun AppLimitsScreen(
                 }
             )
         }
+
+        if (showEditCategoriesDialog) {
+            EditCategoriesDialog(
+                apps = uiState.allApps,
+                onUpdateCategory = onUpdateCategory,
+                onDismiss = { showEditCategoriesDialog = false }
+            )
+        }
     }
+}
+
+@Composable
+fun EditCategoriesDialog(
+    apps: List<AppLimitEntity>,
+    onUpdateCategory: (String, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchCategoryQuery by remember { mutableStateOf("") }
+    
+    val allCategoryOptions = listOf(
+        "Social", "Video", "Entertainment", "Games", "Communication",
+        "Productivity", "Utilities", "Navigation", "Education", "News", "Photos", "Audio"
+    )
+
+    val filteredList = remember(apps, searchCategoryQuery) {
+        if (searchCategoryQuery.isBlank()) apps
+        else apps.filter {
+            it.appName.contains(searchCategoryQuery, ignoreCase = true) ||
+            it.category.contains(searchCategoryQuery, ignoreCase = true) ||
+            it.packageName.contains(searchCategoryQuery, ignoreCase = true)
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        containerColor = FrostedBackgroundDarker,
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(CircleShape)
+                            .background(EmeraldAccent.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Category,
+                            contentDescription = null,
+                            tint = EmeraldAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = "Edit App Categories",
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
+                        Text(
+                            text = "Reassign category for any app",
+                            color = EmeraldAccent,
+                            fontSize = 11.5.sp
+                        )
+                    }
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchCategoryQuery,
+                    onValueChange = { searchCategoryQuery = it },
+                    placeholder = { Text("Filter apps to change category...", color = TextSecondary, fontSize = 12.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EmeraldAccent, modifier = Modifier.size(16.dp)) },
+                    trailingIcon = {
+                        if (searchCategoryQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchCategoryQuery = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = GlassSurfaceMedium,
+                        unfocusedContainerColor = GlassSurfaceMedium,
+                        focusedBorderColor = EmeraldAccent,
+                        unfocusedBorderColor = GlassBorderMedium,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary
+                    ),
+                    singleLine = true
+                )
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredList, key = { it.packageName }) { app ->
+                        var showDropdown by remember { mutableStateOf(false) }
+
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = GlassSurfaceLow,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderLow),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        AppIconView(
+                                            packageName = app.packageName,
+                                            appName = app.appName,
+                                            size = 32.dp,
+                                            cornerRadius = 8.dp
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = app.appName,
+                                                color = TextPrimary,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                maxLines = 1
+                                            )
+                                            Text(
+                                                text = "Current: ${app.category}",
+                                                color = TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = EmeraldAccent.copy(alpha = 0.18f),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldAccent.copy(alpha = 0.5f)),
+                                        modifier = Modifier.clickable { showDropdown = true }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = app.category,
+                                                color = EmeraldAccent,
+                                                fontSize = 11.5.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Spacer(modifier = Modifier.width(2.dp))
+                                            Icon(
+                                                imageVector = Icons.Default.ArrowDropDown,
+                                                contentDescription = null,
+                                                tint = EmeraldAccent,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+
+                                        DropdownMenu(
+                                            expanded = showDropdown,
+                                            onDismissRequest = { showDropdown = false },
+                                            modifier = Modifier
+                                                .background(FrostedBackgroundDarker)
+                                                .border(1.dp, GlassBorderHigh, RoundedCornerShape(12.dp))
+                                        ) {
+                                            allCategoryOptions.forEach { opt ->
+                                                val isCurrent = app.category.equals(opt, ignoreCase = true)
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = opt,
+                                                                color = if (isCurrent) EmeraldAccent else TextPrimary,
+                                                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                                                fontSize = 12.5.sp
+                                                            )
+                                                            if (isCurrent) {
+                                                                Spacer(modifier = Modifier.width(6.dp))
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Check,
+                                                                    contentDescription = null,
+                                                                    tint = EmeraldAccent,
+                                                                    modifier = Modifier.size(14.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    onClick = {
+                                                        onUpdateCategory(app.packageName, opt)
+                                                        showDropdown = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Done", color = EmeraldAccent, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
 }
 

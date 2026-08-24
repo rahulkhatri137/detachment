@@ -59,6 +59,17 @@ data class DetachmentUiState(
     val lockedAppsCount: Int
         get() = allApps.count { it.isCurrentlyLocked() }
 
+    val combinedFocusMinutes: Int
+        get() {
+            val pomodoroMins = pomodoroSessions.sumOf { it.durationMinutes }
+            val productiveAppsMins = allApps.filter {
+                val cat = it.category.lowercase()
+                cat == "productivity" || cat == "utilities" || cat == "education" || cat == "reading" || cat == "work" || (it.isEssential && !it.isDistracting)
+            }.sumOf { it.usedTodayMinutes }
+            val phoneFreeMins = consciousnessComparison.today.longestPhoneFreeMinutes
+            return (pomodoroMins + phoneFreeMins + productiveAppsMins).coerceAtLeast(totalFocusMinutes)
+        }
+
     val activeSchedules: List<ScheduleRuleEntity>
         get() = scheduleRules.filter { it.isCurrentlyActive() }
 
@@ -199,7 +210,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             val app = getApplication<Application>()
             val currentApps = _uiState.value.allApps
             val resisted = _uiState.value.distractionsResistedCount
-            val focusMins = _uiState.value.totalFocusMinutes
+            val focusMins = _uiState.value.combinedFocusMinutes
             val result = AppManagerHelper.calculateConsciousnessData(app, currentApps, resisted, focusMins)
             _uiState.value = _uiState.value.copy(consciousnessComparison = result)
         }
@@ -252,6 +263,14 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.updateAppLimit(packageName, limitMinutes)
             showMessage("Updated limit to ${limitMinutes}m")
+        }
+    }
+
+    fun updateAppCategory(packageName: String, category: String) {
+        viewModelScope.launch {
+            repository.updateAppCategory(packageName, category)
+            showMessage("Updated category to $category")
+            updateConsciousnessData()
         }
     }
 
@@ -352,13 +371,11 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             repository.incrementAppOpens(app.packageName)
         }
 
-        // Check 1: Is Pomodoro Blackout Active and App is NOT Essential?
         if (uiState.value.isBlackoutActive && !app.isEssential) {
             showMessage("${app.appName} is blocked by active Detachment Blackout.")
             return
         }
 
-        // Check 2: Is active schedule rule blocking this app?
         val activeSchedules = uiState.value.activeSchedules
         val isBlockedBySchedule = activeSchedules.any { rule ->
             when (rule.blockedTarget) {
@@ -374,7 +391,6 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             return
         }
 
-        // Check 3: Is App Limit Exceeded or Manually Locked?
         if (app.isCurrentlyLocked()) {
             val reason = if (app.isLockedManually) {
                 "${app.appName} is manually locked by Detachment."

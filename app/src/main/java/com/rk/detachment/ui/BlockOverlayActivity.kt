@@ -129,6 +129,7 @@ class BlockOverlayActivity : ComponentActivity() {
         setContent {
             DetachmentTheme {
                 BackHandler {
+                    recordDistractionResisted()
                     returnToHome()
                 }
 
@@ -170,6 +171,7 @@ class BlockOverlayActivity : ComponentActivity() {
                                 grantTemporaryUnlockAndLaunch(packageName, defaultUnlockMinutes)
                             },
                             onClose = {
+                                recordDistractionResisted()
                                 returnToHome()
                             }
                         )

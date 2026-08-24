@@ -431,6 +431,7 @@ fun RhythmicConsciousnessWebCard(
                         }
 
                         val baseDotSize = 2.2.dp.toPx() + (4.0.dp.toPx() * Math.pow(fraction.toDouble(), 0.7).toFloat())
+                        
                         val waveDist = (fraction - wavePhase + 1f) % 1f
                         val waveGlow = if (waveDist < 0.25f) (1f - (waveDist / 0.25f)) * 0.35f else 0f
                         
@@ -549,14 +550,57 @@ fun RhythmicConsciousnessWebCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                RadarPill(label = "Resist", value = "${(metrics.resistanceScore * 100).toInt()}%", color = CyanAccent)
-                RadarPill(label = "Intentional", value = "${(metrics.intentionalityScore * 100).toInt()}%", color = IndigoLight)
-                RadarPill(label = "Unplugged", value = "${(metrics.unpluggedScore * 100).toInt()}%", color = EmeraldAccent)
-                RadarPill(label = "Discipline", value = "${(metrics.disciplineScore * 100).toInt()}%", color = AmberAccent)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RadarPill(
+                        label = "Resistance",
+                        value = "${(metrics.resistanceScore * 100).toInt()}%",
+                        color = CyanAccent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    RadarPill(
+                        label = "Intentional",
+                        value = "${(metrics.intentionalityScore * 100).toInt()}%",
+                        color = IndigoLight,
+                        modifier = Modifier.weight(1f)
+                    )
+                    RadarPill(
+                        label = "Unplugged",
+                        value = "${(metrics.unpluggedScore * 100).toInt()}%",
+                        color = EmeraldAccent,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RadarPill(
+                        label = "Discipline",
+                        value = "${(metrics.disciplineScore * 100).toInt()}%",
+                        color = AmberAccent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    RadarPill(
+                        label = "Deep Focus",
+                        value = "${(metrics.focusScore * 100).toInt()}%",
+                        color = CyanAccent,
+                        modifier = Modifier.weight(1f)
+                    )
+                    RadarPill(
+                        label = "Mindful Lock",
+                        value = "${(metrics.unlockMindfulnessScore * 100).toInt()}%",
+                        color = EmeraldLight,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
@@ -566,21 +610,32 @@ fun RhythmicConsciousnessWebCard(
 private fun RadarPill(
     label: String,
     value: String,
-    color: Color
+    color: Color,
+    modifier: Modifier = Modifier
 ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            color = color,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = label,
-            color = TextMuted,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Medium
-        )
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(GlassSurfaceLow)
+            .border(0.5.dp, color.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = value,
+                color = color,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black
+            )
+            Text(
+                text = label,
+                color = TextMuted,
+                fontSize = 9.5.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
+            )
+        }
     }
 }
 

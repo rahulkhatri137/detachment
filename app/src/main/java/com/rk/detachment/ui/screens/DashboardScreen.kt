@@ -362,7 +362,7 @@ fun DashboardScreen(
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${uiState.totalFocusMinutes}m",
+                                    text = "${uiState.combinedFocusMinutes}m",
                                     color = IndigoLight,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold

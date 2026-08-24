@@ -97,6 +97,10 @@ class DetachmentRepository(
         appLimitDao.incrementOpens(packageName)
     }
 
+    suspend fun updateAppCategory(packageName: String, category: String) {
+        appLimitDao.updateCategory(packageName, category)
+    }
+
     suspend fun insertOrUpdateRule(rule: ScheduleRuleEntity) {
         if (rule.id == 0) {
             scheduleRuleDao.insertRule(rule)

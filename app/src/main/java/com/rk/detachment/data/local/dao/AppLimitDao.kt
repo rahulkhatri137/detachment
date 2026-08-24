@@ -60,4 +60,7 @@ interface AppLimitDao {
 
     @Query("UPDATE app_limits SET todayOpens = todayOpens + 1 WHERE packageName = :packageName")
     suspend fun incrementOpens(packageName: String)
+
+    @Query("UPDATE app_limits SET category = :category WHERE packageName = :packageName")
+    suspend fun updateCategory(packageName: String, category: String)
 }

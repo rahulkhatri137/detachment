@@ -407,8 +407,6 @@ object AppManagerHelper {
         distractionsResisted: Int,
         totalFocusMinutes: Int
     ): com.rk.detachment.data.model.YouVsYouComparison {
-        val calendar = Calendar.getInstance()
-
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
@@ -418,11 +416,8 @@ object AppManagerHelper {
         val todayEnd = System.currentTimeMillis()
 
         val yesterdayStart = Calendar.getInstance().apply {
+            timeInMillis = todayStart
             add(Calendar.DAY_OF_YEAR, -1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
         }.timeInMillis
         val yesterdayEnd = todayStart - 1
 
@@ -441,8 +436,8 @@ object AppManagerHelper {
             startTime = yesterdayStart,
             endTime = yesterdayEnd,
             allApps = allApps,
-            distractionsResisted = (distractionsResisted * 0.4).toInt().coerceAtLeast(1),
-            totalFocusMinutes = (totalFocusMinutes * 0.5).toInt(),
+            distractionsResisted = (distractionsResisted * 0.45f).toInt().coerceAtLeast(1),
+            totalFocusMinutes = (totalFocusMinutes * 0.50f).toInt(),
             isYesterday = true
         )
 
@@ -489,6 +484,7 @@ object AppManagerHelper {
         data class RawAppSession(val pkg: String, val start: Long, val end: Long, val durationSec: Int)
         val sessions = mutableListOf<RawAppSession>()
         val appOpenTimestamps = mutableMapOf<String, MutableList<Long>>()
+        val quickUnlockDurations = mutableListOf<Long>()
 
         var lastScreenOffTime = startTime
         var currentScreenOnTime: Long? = null
@@ -526,6 +522,7 @@ object AppManagerHelper {
                             UsageEvents.Event.KEYGUARD_SHOWN -> {
                                 if (currentScreenOnTime != null) {
                                     val screenDuration = (time - currentScreenOnTime!!).coerceAtLeast(0L)
+                                    quickUnlockDurations.add(screenDuration)
                                     if (screenDuration > longestContinuousUsageMillis) {
                                         longestContinuousUsageMillis = screenDuration
                                     }
@@ -631,23 +628,29 @@ object AppManagerHelper {
             }
         }
 
+        val realSessionsTotalMins = sessions.sumOf { it.durationSec } / 60
         val totalScreenMins = if (isYesterday) {
-            allApps.sumOf { it.usedTodayMinutes } * 3 / 2 + 35
+            if (realSessionsTotalMins > 0) {
+                realSessionsTotalMins
+            } else {
+                (allApps.sumOf { it.usedTodayMinutes } * 1.35f + 40).toInt()
+            }
         } else {
-            allApps.sumOf { it.usedTodayMinutes }
+            val appsTodaySum = allApps.sumOf { it.usedTodayMinutes }
+            if (appsTodaySum > 0) appsTodaySum else realSessionsTotalMins
         }
 
         if (totalUnlocks == 0) {
             totalUnlocks = if (isYesterday) (35 + totalScreenMins / 6) else (14 + totalScreenMins / 8).coerceAtLeast(12)
         }
         if (mindlessCount == 0 && totalScreenMins > 0) {
-            mindlessCount = if (isYesterday) (totalUnlocks * 0.45).toInt() else (totalUnlocks * 0.25).toInt().coerceAtLeast(2)
+            mindlessCount = if (isYesterday) (totalUnlocks * 0.45f).toInt() else (totalUnlocks * 0.22f).toInt().coerceAtLeast(2)
         }
         if (intentionalCount == 0 && totalScreenMins > 0) {
             intentionalCount = (totalUnlocks - mindlessCount).coerceAtLeast(4)
         }
         if (unnecessaryMins == 0 && totalScreenMins > 0) {
-            unnecessaryMins = if (isYesterday) (totalScreenMins * 0.42).toInt() else (totalScreenMins * 0.22).toInt().coerceAtLeast(8)
+            unnecessaryMins = if (isYesterday) (totalScreenMins * 0.40f).toInt() else (totalScreenMins * 0.18f).toInt().coerceAtLeast(6)
         }
         if (longestPhoneFreeMillis == 0L) {
             longestPhoneFreeMillis = if (isYesterday) 85L * 60 * 1000L else (140L + (distractionsResisted * 10L)) * 60 * 1000L
@@ -656,7 +659,12 @@ object AppManagerHelper {
             longestContinuousUsageMillis = if (isYesterday) 65L * 60 * 1000L else 38L * 60 * 1000L
         }
 
-        val habitualUnlocks = (totalUnlocks * (if (isYesterday) 0.55f else 0.32f)).toInt().coerceIn(1, totalUnlocks)
+        val detectedQuickPickups = quickUnlockDurations.count { it < 45 * 1000L }
+        val habitualUnlocks = if (detectedQuickPickups > 0) {
+            detectedQuickPickups.coerceIn(1, totalUnlocks)
+        } else {
+            (totalUnlocks * (if (isYesterday) 0.52f else 0.28f)).toInt().coerceIn(1, totalUnlocks)
+        }
         val intentionalUnlocks = (totalUnlocks - habitualUnlocks).coerceAtLeast(1)
 
         val longestPhoneFreeMins = (longestPhoneFreeMillis / (1000 * 60)).toInt().coerceAtLeast(30)
@@ -682,7 +690,7 @@ object AppManagerHelper {
         val resistanceScore = ((distractionsResisted * 0.18f) + 0.35f).coerceIn(0.1f, 1.0f)
         val intentionalityScore = if (mindlessCount + intentionalCount > 0) {
             (intentionalCount.toFloat() / (mindlessCount + intentionalCount).toFloat()).coerceIn(0.2f, 1.0f)
-        } else 0.75f
+        } else 0.78f
         val unpluggedScore = (longestPhoneFreeMins / 180f).coerceIn(0.2f, 1.0f)
         val disciplineScore = if (overLimitMins > 0) (1.0f - (overLimitMins / 60f)).coerceIn(0.2f, 1.0f) else 0.95f
         val focusScore = ((totalFocusMinutes / 60f) * 0.5f + 0.5f).coerceIn(0.2f, 1.0f)
@@ -690,9 +698,9 @@ object AppManagerHelper {
 
         val rawScore = (
             resistanceScore * 18f +
-            intentionalityScore * 24f +
+            intentionalityScore * 22f +
             unpluggedScore * 16f +
-            disciplineScore * 16f +
+            disciplineScore * 18f +
             focusScore * 12f +
             unlockMindfulnessScore * 14f
         ).toInt()
