@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.OpenInNew
@@ -78,6 +79,7 @@ fun DashboardScreen(
     onNavigateToSchedules: () -> Unit,
     onNavigateToBlackout: () -> Unit,
     onNavigateToDistractions: () -> Unit,
+    onNavigateToConsciousness: () -> Unit = {},
     onOpenAccessibilitySettings: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
     onOpenOverlaySettings: () -> Unit = {},
@@ -182,7 +184,6 @@ fun DashboardScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 1. Accessibility Service
                             PermissionRow(
                                 title = "Live Accessibility Blocker",
                                 description = "Detects when distracting apps open",
@@ -192,7 +193,6 @@ fun DashboardScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // 2. Usage Stats
                             PermissionRow(
                                 title = "Screen Time Usage Access",
                                 description = "Reads exact minutes spent on each app",
@@ -202,7 +202,6 @@ fun DashboardScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            // 3. Draw Over Other Apps
                             PermissionRow(
                                 title = "Overlay Friction Lock Screen",
                                 description = "Shows mindful delay and lock screens over apps",
@@ -221,7 +220,8 @@ fun DashboardScreen(
                         .testTag("screen_time_meter_card"),
                     cornerRadius = 32.dp,
                     backgroundColor = GlassSurfaceHigh,
-                    borderColor = GlassBorderHigh
+                    borderColor = GlassBorderHigh,
+                    onClick = onNavigateToConsciousness
                 ) {
                     Column(
                         modifier = Modifier
@@ -234,7 +234,11 @@ fun DashboardScreen(
                                 val total = uiState.blackoutTotalSeconds.coerceAtLeast(1).toFloat()
                                 (uiState.blackoutSecondsRemaining.toFloat() / total).coerceIn(0f, 1f)
                             } else progress,
-                            modifier = Modifier.size(160.dp),
+                            modifier = Modifier
+                                .size(160.dp)
+                                .clip(CircleShape)
+                                .clickable(onClick = onNavigateToConsciousness)
+                                .testTag("screentime_ring_button"),
                             strokeWidth = 10.dp,
                             primaryColor = if (uiState.isBlackoutActive) IndigoPrimary else if (progress >= 1f) RoseAccent else IndigoPrimary,
                             secondaryColor = if (uiState.isBlackoutActive) IndigoLight else if (progress >= 1f) AmberAccent else IndigoLight,
@@ -277,7 +281,38 @@ fun DashboardScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = IndigoPrimary.copy(alpha = 0.16f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.35f)),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .clickable(onClick = onNavigateToConsciousness)
+                                .testTag("btn_open_consciousness_score")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoGraph,
+                                    contentDescription = null,
+                                    tint = CyanAccent,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Consciousness Score: ${uiState.consciousnessComparison.today.score}/100 • Explore",
+                                    color = IndigoLight,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(18.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -623,7 +658,6 @@ fun AppUsageGlassTile(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Real App Icon
             AppIconView(
                 packageName = app.packageName,
                 appName = app.appName,

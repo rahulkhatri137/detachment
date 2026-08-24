@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
+import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
 import com.rk.detachment.ui.screens.DashboardScreen
 import com.rk.detachment.ui.screens.DistractionShieldScreen
 import com.rk.detachment.ui.screens.SchedulesScreen
@@ -74,6 +75,11 @@ enum class NavigationTab(val title: String, val icon: ImageVector, val tag: Stri
 class MainActivity : ComponentActivity() {
     private val viewModel: DetachmentViewModel by viewModels()
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.checkPermissionsAndRefresh()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -81,6 +87,7 @@ class MainActivity : ComponentActivity() {
             DetachmentTheme {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
+                var showConsciousnessScreen by remember { mutableStateOf(false) }
                 val snackbarHostState = remember { SnackbarHostState() }
 
                 LaunchedEffect(uiState.statusMessage) {
@@ -105,7 +112,6 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     bottomBar = {
-                        // Don't show bottom bar if blackout is actively running
                         if (!uiState.isBlackoutActive) {
                             Surface(
                                 modifier = Modifier
@@ -119,10 +125,13 @@ class MainActivity : ComponentActivity() {
                                     contentColor = TextPrimary
                                 ) {
                                     NavigationTab.values().forEach { tab ->
-                                        val isSelected = currentTab == tab
+                                        val isSelected = currentTab == tab && !showConsciousnessScreen
                                         NavigationBarItem(
                                             selected = isSelected,
-                                            onClick = { currentTab = tab },
+                                            onClick = {
+                                                currentTab = tab
+                                                showConsciousnessScreen = false
+                                            },
                                             icon = {
                                                 Icon(
                                                     imageVector = tab.icon,
@@ -153,15 +162,30 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     AnimatedContent(
-                        targetState = currentTab,
+                        targetState = if (showConsciousnessScreen) "CONSCIOUSNESS" else currentTab.name,
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
                         label = "tab_switch_animation",
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(innerPadding)
-                    ) { tab ->
-                        when (tab) {
-                            NavigationTab.DASHBOARD -> {
+                    ) { screenKey ->
+                        when (screenKey) {
+                            "CONSCIOUSNESS" -> {
+                                ConsciousnessScoreScreen(
+                                    uiState = uiState,
+                                    onNavigateBack = { showConsciousnessScreen = false },
+                                    onNavigateToShield = {
+                                        showConsciousnessScreen = false
+                                        currentTab = NavigationTab.DISTRACTIONS
+                                    },
+                                    onNavigateToLimits = {
+                                        showConsciousnessScreen = false
+                                        currentTab = NavigationTab.LIMITS
+                                    },
+                                    onRefresh = { viewModel.refreshConsciousnessMetrics() }
+                                )
+                            }
+                            NavigationTab.DASHBOARD.name -> {
                                 DashboardScreen(
                                     uiState = uiState,
                                     onLaunchApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
@@ -169,12 +193,13 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToSchedules = { currentTab = NavigationTab.SCHEDULES },
                                     onNavigateToBlackout = { currentTab = NavigationTab.BLACKOUT },
                                     onNavigateToDistractions = { currentTab = NavigationTab.DISTRACTIONS },
+                                    onNavigateToConsciousness = { showConsciousnessScreen = true },
                                     onOpenAccessibilitySettings = { viewModel.openAccessibilitySettings(this@MainActivity) },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
                                     onOpenOverlaySettings = { viewModel.openOverlaySettings(this@MainActivity) }
                                 )
                             }
-                            NavigationTab.LIMITS -> {
+                            NavigationTab.LIMITS.name -> {
                                 AppLimitsScreen(
                                     uiState = uiState,
                                     onUpdateLimit = { pkg, limit -> viewModel.updateAppLimit(pkg, limit) },
@@ -190,7 +215,7 @@ class MainActivity : ComponentActivity() {
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) }
                                 )
                             }
-                            NavigationTab.SCHEDULES -> {
+                            NavigationTab.SCHEDULES.name -> {
                                 SchedulesScreen(
                                     uiState = uiState,
                                     onToggleRule = { id, enabled -> viewModel.toggleScheduleRule(id, enabled) },
@@ -198,7 +223,7 @@ class MainActivity : ComponentActivity() {
                                     onDeleteRule = { rule -> viewModel.deleteScheduleRule(rule) }
                                 )
                             }
-                            NavigationTab.BLACKOUT -> {
+                            NavigationTab.BLACKOUT.name -> {
                                 BlackoutPomodoroScreen(
                                     uiState = uiState,
                                     onStartBlackout = { duration, tag -> viewModel.startPomodoroBlackout(duration, tag) },
@@ -210,7 +235,7 @@ class MainActivity : ComponentActivity() {
                                     onOpenEssentialApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) }
                                 )
                             }
-                            NavigationTab.DISTRACTIONS -> {
+                            NavigationTab.DISTRACTIONS.name -> {
                                 DistractionShieldScreen(
                                     uiState = uiState,
                                     onToggleDistracting = { pkg, isDis -> viewModel.toggleDistracting(pkg, isDis) },

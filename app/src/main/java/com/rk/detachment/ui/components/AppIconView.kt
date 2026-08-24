@@ -32,11 +32,6 @@ import com.rk.detachment.util.AppManagerHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/**
- * Fast cached App Icon viewer for real installed apps on device.
- * Prevents scroll stutter by checking memory cache synchronously,
- * and dispatching asynchronous icon decodes on Dispatchers.IO if needed.
- */
 @Composable
 fun AppIconView(
     packageName: String,

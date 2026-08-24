@@ -151,7 +151,6 @@ fun BlackoutPomodoroScreen(
                 contentPadding = PaddingValues(top = 20.dp, bottom = 120.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header
                 item(key = "header") {
                     Column {
                         Text(
@@ -168,7 +167,6 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                // Duration Selector
                 item(key = "durations") {
                     FrostedGlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = GlassSurfaceHigh) {
                         Column(modifier = Modifier.padding(18.dp)) {
@@ -216,7 +214,6 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                // Session Tag Selector
                 item(key = "activity_tags") {
                     FrostedGlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = GlassSurfaceHigh) {
                         Column(modifier = Modifier.padding(18.dp)) {
@@ -278,7 +275,6 @@ fun BlackoutPomodoroScreen(
                     )
                 }
 
-                // Select Essential Apps (Whitelist)
                 val essentialCount = uiState.essentialApps.size
                 item(key = "select_essential_btn") {
                     FrostedGlassCard(
@@ -353,7 +349,6 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                // Select Distracting Apps (Blackout Target)
                 val distractingCount = uiState.distractingApps.size
                 item(key = "select_distracting_btn") {
                     FrostedGlassCard(
@@ -592,7 +587,6 @@ private fun EssentialAppsDialog(
                                     checked = isEssential,
                                     onCheckedChange = { checked ->
                                         if (checked && essentialCount >= 10 && !isEssential) {
-                                            // Max 10 reached
                                         } else {
                                             onToggleEssential(app.packageName, checked)
                                         }

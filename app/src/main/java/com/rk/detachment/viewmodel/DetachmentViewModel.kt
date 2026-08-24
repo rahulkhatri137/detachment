@@ -8,6 +8,7 @@ import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.model.YouVsYouComparison
 import com.rk.detachment.data.repository.DetachmentRepository
 import com.rk.detachment.util.AppManagerHelper
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +41,8 @@ data class DetachmentUiState(
     val pomodoroSessionTag: String = "Deep Work",
     val delaySeconds: Int = 15,
     val unlockMinutes: Int = 15,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val consciousnessComparison: YouVsYouComparison = YouVsYouComparison()
 ) {
     val totalScreenTimeTodayMinutes: Int
         get() = allApps.sumOf { it.usedTodayMinutes }
@@ -75,16 +77,25 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         database.appSettingsDao()
     )
 
-    private val _uiState = MutableStateFlow(DetachmentUiState())
+    private val _uiState = MutableStateFlow(
+        DetachmentUiState(
+            hasUsagePermission = AppManagerHelper.hasUsageStatsPermission(application),
+            isAccessibilityActive = AppManagerHelper.isAccessibilityServiceEnabled(application),
+            hasOverlayPermission = AppManagerHelper.hasOverlayPermission(application)
+        )
+    )
     val uiState: StateFlow<DetachmentUiState> = _uiState.asStateFlow()
 
     private var pomodoroJob: Job? = null
     private var activeTimeTickerJob: Job? = null
 
     init {
+        checkPermissionsAndRefresh()
+
         viewModelScope.launch {
             repository.allApps.collect { apps ->
                 _uiState.value = _uiState.value.copy(allApps = apps)
+                updateConsciousnessData()
             }
         }
         viewModelScope.launch {
@@ -104,12 +115,16 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         }
         viewModelScope.launch {
             repository.distractionsResisted.collect { resisted ->
-                _uiState.value = _uiState.value.copy(distractionsResistedCount = resisted?.toIntOrNull() ?: 0)
+                val count = resisted?.toIntOrNull() ?: 0
+                _uiState.value = _uiState.value.copy(distractionsResistedCount = count)
+                updateConsciousnessData()
             }
         }
         viewModelScope.launch {
             repository.totalFocusMinutes.collect { focusMins ->
-                _uiState.value = _uiState.value.copy(totalFocusMinutes = focusMins ?: 0)
+                val mins = focusMins ?: 0
+                _uiState.value = _uiState.value.copy(totalFocusMinutes = mins)
+                updateConsciousnessData()
             }
         }
         viewModelScope.launch {
@@ -175,7 +190,23 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 }
             }
             _uiState.value = _uiState.value.copy(isSyncingApps = false)
+            updateConsciousnessData()
         }
+    }
+
+    fun updateConsciousnessData() {
+        viewModelScope.launch(Dispatchers.Default) {
+            val app = getApplication<Application>()
+            val currentApps = _uiState.value.allApps
+            val resisted = _uiState.value.distractionsResistedCount
+            val focusMins = _uiState.value.totalFocusMinutes
+            val result = AppManagerHelper.calculateConsciousnessData(app, currentApps, resisted, focusMins)
+            _uiState.value = _uiState.value.copy(consciousnessComparison = result)
+        }
+    }
+
+    fun refreshConsciousnessMetrics() {
+        scanAndSyncRealApps()
     }
 
     fun setDelaySeconds(seconds: Int) {

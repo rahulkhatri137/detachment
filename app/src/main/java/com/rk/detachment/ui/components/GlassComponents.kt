@@ -89,7 +89,6 @@ fun RadialGlassBackground(
             val canvasWidth = size.width
             val canvasHeight = size.height
 
-            // Top-left Indigo orb
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = topOrbColors,
@@ -100,7 +99,6 @@ fun RadialGlassBackground(
                 radius = canvasWidth * 0.8f
             )
 
-            // Bottom-right Rose orb
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = bottomOrbColors,
@@ -290,7 +288,6 @@ fun GlowingProgressRing(
                 (size.height - arcSize.height) / 2f
             )
 
-            // Background Track
             drawArc(
                 color = trackColor,
                 startAngle = -90f,
@@ -301,7 +298,6 @@ fun GlowingProgressRing(
                 style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
             )
 
-            // Glowing Active Sweep
             val sweep = (progress.coerceIn(0f, 1f)) * 360f
             if (sweep > 0f) {
                 drawArc(

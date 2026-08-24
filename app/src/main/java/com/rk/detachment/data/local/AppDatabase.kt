@@ -68,11 +68,9 @@ abstract class AppDatabase : RoomDatabase() {
             val scheduleDao = database.scheduleRuleDao()
             val settingsDao = database.appSettingsDao()
 
-            // Seed Master PIN
             settingsDao.setSetting(AppSettingsEntity("master_pin", "1234"))
             settingsDao.setSetting(AppSettingsEntity("distractions_resisted", "0"))
 
-            // Seed Default Focus Schedules
             val initialSchedules = listOf(
                 ScheduleRuleEntity(
                     title = "Study Hours Focus",

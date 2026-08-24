@@ -91,7 +91,6 @@ fun DistractionShieldScreen(
                 }
             }
 
-            // Configurable Delay Duration
             item(key = "delay_selector_card") {
                 var dropdownExpanded by remember { mutableStateOf(false) }
                 val delayOptions = listOf(
@@ -321,7 +320,6 @@ fun DistractionShieldScreen(
                 }
             }
 
-            // List of all apps with distraction switch
             items(uiState.allApps, key = { it.packageName }) { app ->
                 val isDistracting = app.isDistracting
 
