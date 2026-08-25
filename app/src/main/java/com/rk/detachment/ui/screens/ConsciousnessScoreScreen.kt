@@ -224,12 +224,6 @@ fun ConsciousnessScoreScreen(
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    FrostedBadge(
-                        text = "LIVE TELEMETRY",
-                        color = CyanAccent,
-                        backgroundColor = CyanAccent.copy(alpha = 0.15f),
-                        borderColor = CyanAccent.copy(alpha = 0.35f)
-                    )
                 }
             }
 
@@ -411,13 +405,13 @@ fun RhythmicConsciousnessWebCard(
 
                     for (i in 0 until dotCount) {
                         val fraction = i.toFloat() / dotCount.toFloat()
-                        
                         val baseR = innerRadius + (outerRadius - innerRadius) * Math.sqrt(fraction.toDouble()).toFloat()
-                        
                         val r = baseR * breathingScale
                         val angle = (i * goldenAngle) + rotationAngle
+                        
                         val x = centerOffset.x + (r * cos(angle)).toFloat()
                         val y = centerOffset.y + (r * sin(angle)).toFloat()
+
                         val nx = (x - centerOffset.x) / outerRadius
                         val ny = (y - centerOffset.y) / outerRadius
                         val gradientFactor = ((nx + ny + 1.4f) / 2.8f).coerceIn(0f, 1f)
@@ -431,7 +425,6 @@ fun RhythmicConsciousnessWebCard(
                         }
 
                         val baseDotSize = 2.2.dp.toPx() + (4.0.dp.toPx() * Math.pow(fraction.toDouble(), 0.7).toFloat())
-                        
                         val waveDist = (fraction - wavePhase + 1f) % 1f
                         val waveGlow = if (waveDist < 0.25f) (1f - (waveDist / 0.25f)) * 0.35f else 0f
                         
@@ -844,7 +837,7 @@ fun HabitLoopSection(
     modifier: Modifier = Modifier
 ) {
     val shieldedPackageSet = remember(allApps) {
-        allApps.filter { it.isDistracting }.map { it.packageName }.toSet()
+        allApps.filter { it.isShieldActive }.map { it.packageName }.toSet()
     }
     val hasLoops = habitLoops.isNotEmpty()
 
@@ -859,7 +852,7 @@ fun HabitLoopSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(14.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -867,7 +860,7 @@ fun HabitLoopSection(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
                         .background(if (hasLoops) AmberAccent.copy(alpha = 0.20f) else EmeraldAccent.copy(alpha = 0.20f)),
                     contentAlignment = Alignment.Center
@@ -876,7 +869,7 @@ fun HabitLoopSection(
                         imageVector = Icons.Default.Loop,
                         contentDescription = null,
                         tint = if (hasLoops) AmberAccent else EmeraldAccent,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
@@ -884,18 +877,18 @@ fun HabitLoopSection(
                     Text(
                         text = "Habit Loop Detector",
                         color = TextPrimary,
-                        fontSize = 16.sp,
+                        fontSize = 15.5.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Repetitive impulsive open & close cycles",
                         color = TextSecondary,
-                        fontSize = 11.sp
+                        fontSize = 10.5.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             val bannerColor = if (hasLoops) AmberAccent else EmeraldAccent
             val bannerBg = if (hasLoops) AmberAccent.copy(alpha = 0.12f) else EmeraldAccent.copy(alpha = 0.12f)
@@ -904,10 +897,10 @@ fun HabitLoopSection(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(bannerBg)
-                    .border(1.dp, bannerBorder, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                    .border(1.dp, bannerBorder, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -919,9 +912,9 @@ fun HabitLoopSection(
                         imageVector = if (hasLoops) Icons.Default.Warning else Icons.Default.CheckCircle,
                         contentDescription = null,
                         tint = bannerColor,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = if (hasLoops) {
                             "${habitLoops.size} Compulsive Loop${if (habitLoops.size > 1) "s" else ""} Detected"
@@ -929,7 +922,7 @@ fun HabitLoopSection(
                             "Zero Compulsive Loops Detected"
                         },
                         color = TextPrimary,
-                        fontSize = 12.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -937,26 +930,26 @@ fun HabitLoopSection(
                 Text(
                     text = if (hasLoops) "ATTENTION NEEDED" else "ALL CLEAN",
                     color = bannerColor,
-                    fontSize = 10.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.5.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (!hasLoops) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(10.dp))
                         .background(GlassSurfaceLow)
-                        .padding(12.dp)
+                        .padding(10.dp)
                 ) {
                     Text(
                         text = "✨ You are opening apps with mindful intention rather than muscle-memory reflex.",
                         color = TextSecondary,
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         lineHeight = 15.sp
                     )
                 }
@@ -969,7 +962,7 @@ fun HabitLoopSection(
                         onAddShield = onNavigateToShield
                     )
                     if (index < habitLoops.size - 1) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                     }
                 }
             }
@@ -992,10 +985,10 @@ fun HabitLoopItemRow(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(GlassSurfaceLow)
-            .border(1.dp, severityColor.copy(alpha = 0.30f), RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 9.dp)
+            .border(1.dp, severityColor.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -1009,15 +1002,15 @@ fun HabitLoopItemRow(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(7.dp)
                             .clip(CircleShape)
                             .background(severityColor)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = item.appName,
                         color = TextPrimary,
-                        fontSize = 13.5.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -1026,13 +1019,13 @@ fun HabitLoopItemRow(
                     Text(
                         text = "(${item.openCount} opens in ${item.timeSpanMinutes}m)",
                         color = severityColor,
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 if (isShielded) {
                     Row(
@@ -1041,19 +1034,19 @@ fun HabitLoopItemRow(
                             .clip(RoundedCornerShape(6.dp))
                             .background(EmeraldAccent.copy(alpha = 0.15f))
                             .border(0.5.dp, EmeraldAccent.copy(alpha = 0.40f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 7.dp, vertical = 3.dp)
+                            .padding(horizontal = 6.dp, vertical = 2.5.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = null,
                             tint = EmeraldAccent,
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(10.dp)
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "Delay Active",
                             color = EmeraldAccent,
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -1062,32 +1055,32 @@ fun HabitLoopItemRow(
                         onClick = onAddShield,
                         colors = ButtonDefaults.buttonColors(containerColor = severityColor.copy(alpha = 0.22f)),
                         shape = RoundedCornerShape(6.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                        modifier = Modifier.height(24.dp)
+                        contentPadding = PaddingValues(horizontal = 7.dp, vertical = 0.dp),
+                        modifier = Modifier.height(22.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = null,
                             tint = severityColor,
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(10.dp)
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "Add Delay",
                             color = severityColor,
-                            fontSize = 10.sp,
+                            fontSize = 9.5.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
                 text = "Avg session: ${item.avgSessionDurationSeconds}s • ${item.severity.lowercase().replaceFirstChar { it.uppercase() }} reflexive loop",
                 color = TextSecondary,
-                fontSize = 11.sp,
+                fontSize = 10.5.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

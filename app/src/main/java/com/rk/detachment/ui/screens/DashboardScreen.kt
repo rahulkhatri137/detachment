@@ -67,9 +67,6 @@ import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
 import com.rk.detachment.viewmodel.DetachmentUiState
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun DashboardScreen(
@@ -91,7 +88,6 @@ fun DashboardScreen(
 
     val hours = totalMins / 60
     val minutes = totalMins % 60
-    val todayDateFormatted = SimpleDateFormat("EEEE, MMM d", Locale.getDefault()).format(Date())
 
     val allPermissionsGranted = uiState.hasUsagePermission && uiState.isAccessibilityActive && uiState.hasOverlayPermission
 
@@ -284,7 +280,7 @@ fun DashboardScreen(
                         Spacer(modifier = Modifier.height(14.dp))
 
                         Surface(
-                            shape = RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(22.dp),
                             color = IndigoPrimary.copy(alpha = 0.16f),
                             border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.35f)),
                             modifier = Modifier
@@ -300,13 +296,13 @@ fun DashboardScreen(
                                     imageVector = Icons.Default.AutoGraph,
                                     contentDescription = null,
                                     tint = CyanAccent,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Consciousness Score: ${uiState.consciousnessComparison.today.score}/100 • Explore",
+                                    text = "Consciousness Score: ${uiState.consciousnessComparison.today.score}/100",
                                     color = IndigoLight,
-                                    fontSize = 11.5.sp,
+                                    fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -532,13 +528,6 @@ fun DashboardScreen(
                                 )
                             }
                         }
-
-                        FrostedBadge(
-                            text = "OPEN",
-                            color = IndigoLight,
-                            backgroundColor = IndigoPrimary.copy(alpha = 0.15f),
-                            borderColor = IndigoPrimary.copy(alpha = 0.30f)
-                        )
                     }
                 }
             }

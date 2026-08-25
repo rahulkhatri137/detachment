@@ -57,7 +57,6 @@ fun DetachmentTheme(
     )
 }
 
-// Backward compatibility alias if needed
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = true,

@@ -80,10 +80,13 @@ For full device-level blocking functionality:
 <img src="screenshots/07.png" width="30%" />
 <img src="screenshots/08.png" width="30%" />
 <img src="screenshots/09.png" width="30%" />
+<img src="screenshots/10.png" width="30%" />
+<img src="screenshots/11.png" width="30%" />
+<img src="screenshots/12.png" width="30%" />
 </div>
 
 ---
 
 ## 🤖 AI Assistance Disclosure
 
-This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure and Concious Score quantification and visualization.
+This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure and Conciousness Score quantification and visualization.

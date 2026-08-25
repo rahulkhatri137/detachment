@@ -56,6 +56,9 @@ data class DetachmentUiState(
     val distractingApps: List<AppLimitEntity>
         get() = allApps.filter { it.isDistracting }
 
+    val shieldActiveApps: List<AppLimitEntity>
+        get() = allApps.filter { it.isShieldActive }
+
     val lockedAppsCount: Int
         get() = allApps.count { it.isCurrentlyLocked() }
 
@@ -286,6 +289,12 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun toggleShieldActive(packageName: String, isShieldActive: Boolean) {
+        viewModelScope.launch {
+            repository.toggleShieldActive(packageName, isShieldActive)
+        }
+    }
+
     fun toggleEssential(packageName: String, isEssential: Boolean) {
         viewModelScope.launch {
             val success = repository.toggleEssential(packageName, isEssential)
@@ -511,3 +520,4 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 }
 
 typealias ScreenTimeViewModel = DetachmentViewModel
+

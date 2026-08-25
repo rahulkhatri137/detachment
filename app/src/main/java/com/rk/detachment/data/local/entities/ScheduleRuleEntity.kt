@@ -8,14 +8,14 @@ import java.util.Calendar
 data class ScheduleRuleEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
-    val type: String, // "STUDY", "SLEEP", "WORK", "CUSTOM"
+    val type: String,
     val startHour: Int,
     val startMinute: Int,
     val endHour: Int,
     val endMinute: Int,
     val activeDays: String = "MON,TUE,WED,THU,FRI,SAT,SUN",
     val isEnabled: Boolean = true,
-    val blockedTarget: String = "DISTRACTING" // "DISTRACTING", "ALL_NON_ESSENTIAL"
+    val blockedTarget: String = "DISTRACTING"
 ) {
     fun isCurrentlyActive(calendar: Calendar = Calendar.getInstance()): Boolean {
         if (!isEnabled) return false

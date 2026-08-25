@@ -335,7 +335,7 @@ fun BlackoutPomodoroScreen(
                                     text = "$essentialCount / 10",
                                     color = if (essentialCount == 10) EmeraldAccent else IndigoLight,
                                     backgroundColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.18f),
-                                    borderColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.35f)
+                                    borderColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.40f)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Icon(
@@ -397,7 +397,7 @@ fun BlackoutPomodoroScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "$distractingCount Apps Distraction Delayed",
+                                        text = "$distractingCount Marked as Distracting",
                                         color = if (distractingCount > 0) AmberAccent else TextSecondary,
                                         fontSize = 12.sp
                                     )
@@ -652,13 +652,13 @@ private fun DistractingAppsDialog(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Shielded apps with mindful friction delay",
+                        text = "Designated Distracting Apps",
                         color = TextSecondary,
                         fontSize = 11.sp
                     )
                 }
                 FrostedBadge(
-                    text = "$distractingCount APPS",
+                    text = "$distractingCount",
                     color = AmberAccent,
                     backgroundColor = AmberAccent.copy(alpha = 0.18f),
                     borderColor = AmberAccent.copy(alpha = 0.35f)
@@ -745,7 +745,7 @@ private fun DistractingAppsDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = if (isDistracting) "Distraction shield active" else "Direct instant launch",
+                                            text = if (isDistracting) "Marked as distracting" else "Standard app",
                                             color = if (isDistracting) AmberAccent else TextSecondary,
                                             fontSize = 11.sp
                                         )

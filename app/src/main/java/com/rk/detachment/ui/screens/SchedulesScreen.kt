@@ -81,6 +81,7 @@ import com.rk.detachment.viewmodel.DetachmentUiState
 @Composable
 fun SchedulesScreen(
     uiState: DetachmentUiState,
+    onNavigateToBlackout: () -> Unit,
     onToggleRule: (Int, Boolean) -> Unit,
     onSaveRule: (ScheduleRuleEntity) -> Unit,
     onDeleteRule: (ScheduleRuleEntity) -> Unit,
@@ -180,10 +181,11 @@ fun SchedulesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Note: Essential apps (whitelisted) & Distracting apps (blocked) can be customized anytime in the Pomodoro screen.",
+                                        text = "Note: Essential apps (Whitelisted) & Distracting apps (Blocked) can be customized anytime in the Blackout screen.",
                                         color = TextPrimary,
                                         fontSize = 11.5.sp,
-                                        lineHeight = 16.sp
+                                        lineHeight = 16.sp,
+                                        modifier = Modifier.clickable(onClick = onNavigateToBlackout)
                                     )
                                 }
                             }
@@ -582,7 +584,7 @@ fun SchedulesScreen(
                                                 fontWeight = if (blockedTarget == "DISTRACTING") FontWeight.SemiBold else FontWeight.Normal
                                             )
                                             Text(
-                                                text = "Only locks apps marked in distraction shield",
+                                                text = "Locks apps marked as Distracting",
                                                 color = TextSecondary,
                                                 fontSize = 10.5.sp
                                             )
@@ -624,7 +626,7 @@ fun SchedulesScreen(
                                                 fontWeight = if (blockedTarget == "ALL_NON_ESSENTIAL") FontWeight.SemiBold else FontWeight.Normal
                                             )
                                             Text(
-                                                text = "Locks all apps except essential whitelist",
+                                                text = "Locks all apps except Essential whitelist",
                                                 color = TextSecondary,
                                                 fontSize = 10.5.sp
                                             )

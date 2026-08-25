@@ -60,11 +60,11 @@ import com.rk.detachment.viewmodel.DetachmentUiState
 @Composable
 fun DistractionShieldScreen(
     uiState: DetachmentUiState,
-    onToggleDistracting: (String, Boolean) -> Unit,
+    onToggleShieldActive: (String, Boolean) -> Unit,
     onSetDelaySeconds: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val distractingCount = uiState.distractingApps.size
+    val shieldedCount = uiState.shieldActiveApps.size
     val currentDelay = uiState.delaySeconds
 
     RadialGlassBackground(modifier = modifier) {
@@ -84,7 +84,7 @@ fun DistractionShieldScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Adds mindful friction delay and quotes before opening distracting apps",
+                        text = "Adds mindful friction delay and quotes before opening shielded apps",
                         color = TextSecondary,
                         fontSize = 12.sp
                     )
@@ -133,7 +133,7 @@ fun DistractionShieldScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Pause before opening distracting apps",
+                                        text = "Pause before opening shielded apps",
                                         color = TextSecondary,
                                         fontSize = 11.sp
                                     )
@@ -311,7 +311,7 @@ fun DistractionShieldScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Marked Distracting Apps ($distractingCount)",
+                        text = "Shielded Apps ($shieldedCount)",
                         color = TextPrimary,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
@@ -321,7 +321,7 @@ fun DistractionShieldScreen(
             }
 
             items(uiState.allApps, key = { it.packageName }) { app ->
-                val isDistracting = app.isDistracting
+                val isShieldActive = app.isShieldActive
 
                 FrostedGlassCard(
                     modifier = Modifier
@@ -357,17 +357,17 @@ fun DistractionShieldScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (isDistracting) "${currentDelay}s Mindful Friction Delay" else "Instant direct launch",
-                                    color = if (isDistracting) AmberAccent else TextSecondary,
+                                    text = if (isShieldActive) "${currentDelay}s Mindful Friction Delay" else "Instant direct launch",
+                                    color = if (isShieldActive) AmberAccent else TextSecondary,
                                     fontSize = 12.sp
                                 )
                             }
                         }
 
                         Switch(
-                            checked = isDistracting,
+                            checked = isShieldActive,
                             onCheckedChange = { checked ->
-                                onToggleDistracting(app.packageName, checked)
+                                onToggleShieldActive(app.packageName, checked)
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = AmberAccent,
@@ -382,3 +382,4 @@ fun DistractionShieldScreen(
         }
     }
 }
+

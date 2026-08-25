@@ -13,6 +13,7 @@ data class AppLimitEntity(
     val usedTodayMinutes: Int = 0,
     val isDistracting: Boolean = false,
     val isEssential: Boolean = false,
+    val isShieldActive: Boolean = false,
     val isLockedManually: Boolean = false,
     val unlockExpiresAtMillis: Long = 0L,
     val todayOpens: Int = 0
@@ -34,3 +35,4 @@ data class AppLimitEntity(
         return (unlockExpiresAtMillis - currentTime) / 1000L
     }
 }
+

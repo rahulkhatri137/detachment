@@ -220,6 +220,7 @@ class MainActivity : ComponentActivity() {
                                 SchedulesScreen(
                                     uiState = uiState,
                                     onToggleRule = { id, enabled -> viewModel.toggleScheduleRule(id, enabled) },
+                                    onNavigateToBlackout = { currentTab = NavigationTab.BLACKOUT },
                                     onSaveRule = { rule -> viewModel.saveScheduleRule(rule) },
                                     onDeleteRule = { rule -> viewModel.deleteScheduleRule(rule) }
                                 )
@@ -239,7 +240,7 @@ class MainActivity : ComponentActivity() {
                             NavigationTab.DISTRACTIONS.name -> {
                                 DistractionShieldScreen(
                                     uiState = uiState,
-                                    onToggleDistracting = { pkg, isDis -> viewModel.toggleDistracting(pkg, isDis) },
+                                    onToggleShieldActive = { pkg, isShield -> viewModel.toggleShieldActive(pkg, isShield) },
                                     onSetDelaySeconds = { sec -> viewModel.setDelaySeconds(sec) }
                                 )
                             }

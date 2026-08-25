@@ -20,6 +20,7 @@ class DetachmentRepository(
     val allApps: Flow<List<AppLimitEntity>> = appLimitDao.getAllApps()
     val distractingApps: Flow<List<AppLimitEntity>> = appLimitDao.getDistractingApps()
     val essentialApps: Flow<List<AppLimitEntity>> = appLimitDao.getEssentialApps()
+    val shieldActiveApps: Flow<List<AppLimitEntity>> = appLimitDao.getShieldActiveApps()
     val scheduleRules: Flow<List<ScheduleRuleEntity>> = scheduleRuleDao.getAllRules()
     val pomodoroSessions: Flow<List<PomodoroSessionEntity>> = pomodoroDao.getAllSessions()
     val totalFocusMinutes: Flow<Int?> = pomodoroDao.getTotalFocusMinutes()
@@ -47,6 +48,10 @@ class DetachmentRepository(
 
     suspend fun toggleDistracting(packageName: String, isDistracting: Boolean) {
         appLimitDao.setDistracting(packageName, isDistracting)
+    }
+
+    suspend fun toggleShieldActive(packageName: String, isShieldActive: Boolean) {
+        appLimitDao.setShieldActive(packageName, isShieldActive)
     }
 
     suspend fun toggleEssential(packageName: String, isEssential: Boolean): Boolean {
@@ -139,3 +144,4 @@ class DetachmentRepository(
         }
     }
 }
+

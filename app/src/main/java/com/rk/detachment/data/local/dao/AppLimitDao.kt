@@ -19,6 +19,9 @@ interface AppLimitDao {
     @Query("SELECT * FROM app_limits WHERE isEssential = 1")
     fun getEssentialApps(): Flow<List<AppLimitEntity>>
 
+    @Query("SELECT * FROM app_limits WHERE isShieldActive = 1")
+    fun getShieldActiveApps(): Flow<List<AppLimitEntity>>
+
     @Query("SELECT * FROM app_limits WHERE packageName = :packageName LIMIT 1")
     suspend fun getAppByPackage(packageName: String): AppLimitEntity?
 
@@ -49,6 +52,9 @@ interface AppLimitDao {
     @Query("UPDATE app_limits SET isEssential = :isEssential WHERE packageName = :packageName")
     suspend fun setEssential(packageName: String, isEssential: Boolean)
 
+    @Query("UPDATE app_limits SET isShieldActive = :isShieldActive WHERE packageName = :packageName")
+    suspend fun setShieldActive(packageName: String, isShieldActive: Boolean)
+
     @Query("UPDATE app_limits SET isLockedManually = :isLocked WHERE packageName = :packageName")
     suspend fun setManualLock(packageName: String, isLocked: Boolean)
 
@@ -64,3 +70,4 @@ interface AppLimitDao {
     @Query("UPDATE app_limits SET category = :category WHERE packageName = :packageName")
     suspend fun updateCategory(packageName: String, category: String)
 }
+

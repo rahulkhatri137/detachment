@@ -128,7 +128,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (app.isDistracting) {
+        if (app.isShieldActive) {
             val lastPassed = app.unlockExpiresAtMillis
             val now = System.currentTimeMillis()
             if (lastPassed < now) {
@@ -183,3 +183,4 @@ class DetachmentAccessibilityService : AccessibilityService() {
         isServiceRunning = false
     }
 }
+
