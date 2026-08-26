@@ -96,14 +96,14 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item(key = "dash_header") {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -128,7 +128,7 @@ fun DashboardScreen(
 
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
+                            .size(42.dp)
                             .clip(CircleShape)
                             .background(GlassSurfaceHigh)
                             .border(1.dp, GlassBorderHigh, CircleShape)
@@ -153,9 +153,9 @@ fun DashboardScreen(
                             .testTag("protection_status_card"),
                         backgroundColor = GlassSurfaceHigh,
                         borderColor = AmberAccent.copy(alpha = 0.4f),
-                        cornerRadius = 24.dp
+                        cornerRadius = 20.dp
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Default.Security,
@@ -171,14 +171,14 @@ fun DashboardScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                             Text(
                                 text = "To physically block real apps on your phone and track exact screen time, enable these Android permissions:",
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             PermissionRow(
                                 title = "Live Accessibility Blocker",
@@ -187,7 +187,7 @@ fun DashboardScreen(
                                 onGrant = onOpenAccessibilitySettings
                             )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             PermissionRow(
                                 title = "Screen Time Usage Access",
@@ -196,7 +196,7 @@ fun DashboardScreen(
                                 onGrant = onOpenUsageSettings
                             )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
 
                             PermissionRow(
                                 title = "Overlay Friction Lock Screen",
@@ -214,7 +214,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("screen_time_meter_card"),
-                    cornerRadius = 32.dp,
+                    cornerRadius = 24.dp,
                     backgroundColor = GlassSurfaceHigh,
                     borderColor = GlassBorderHigh,
                     onClick = onNavigateToConsciousness
@@ -222,7 +222,7 @@ fun DashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         GlowingProgressRing(
@@ -231,7 +231,7 @@ fun DashboardScreen(
                                 (uiState.blackoutSecondsRemaining.toFloat() / total).coerceIn(0f, 1f)
                             } else progress,
                             modifier = Modifier
-                                .size(160.dp)
+                                .size(150.dp)
                                 .clip(CircleShape)
                                 .clickable(onClick = onNavigateToConsciousness)
                                 .testTag("screentime_ring_button"),
@@ -248,7 +248,7 @@ fun DashboardScreen(
                                     Text(
                                         text = String.format("%02d:%02d", bMins, bSecs),
                                         color = TextPrimary,
-                                        fontSize = 28.sp,
+                                        fontSize = 26.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
@@ -262,7 +262,7 @@ fun DashboardScreen(
                                     Text(
                                         text = "${hours}h ${minutes}m",
                                         color = TextPrimary,
-                                        fontSize = 28.sp,
+                                        fontSize = 26.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = (-0.5).sp
                                     )
@@ -277,10 +277,10 @@ fun DashboardScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         Surface(
-                            shape = RoundedCornerShape(22.dp),
+                            shape = RoundedCornerShape(20.dp),
                             color = IndigoPrimary.copy(alpha = 0.16f),
                             border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.35f)),
                             modifier = Modifier
@@ -308,7 +308,7 @@ fun DashboardScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(18.dp))
+                        Spacer(modifier = Modifier.height(14.dp))
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -318,7 +318,7 @@ fun DashboardScreen(
                                 Text(
                                     text = "${uiState.lockedAppsCount}",
                                     color = if (uiState.lockedAppsCount > 0) RoseAccent else TextPrimary,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
@@ -331,7 +331,7 @@ fun DashboardScreen(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .height(32.dp)
+                                    .height(28.dp)
                                     .background(GlassBorderMedium)
                             )
 
@@ -339,7 +339,7 @@ fun DashboardScreen(
                                 Text(
                                     text = "${uiState.distractionsResistedCount}",
                                     color = CyanAccent,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
@@ -352,7 +352,7 @@ fun DashboardScreen(
                             Box(
                                 modifier = Modifier
                                     .width(1.dp)
-                                    .height(32.dp)
+                                    .height(28.dp)
                                     .background(GlassBorderMedium)
                             )
 
@@ -360,7 +360,7 @@ fun DashboardScreen(
                                 Text(
                                     text = "${uiState.combinedFocusMinutes}m",
                                     color = IndigoLight,
-                                    fontSize = 18.sp,
+                                    fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
@@ -377,13 +377,13 @@ fun DashboardScreen(
             item(key = "quick_actions_row") {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     FrostedGlassCard(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("quick_action_blackout"),
-                        cornerRadius = 24.dp,
+                        cornerRadius = 20.dp,
                         backgroundColor = GlassSurfaceMedium,
                         borderColor = GlassBorderMedium,
                         onClick = onNavigateToBlackout
@@ -391,11 +391,11 @@ fun DashboardScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(14.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(34.dp)
                                     .clip(CircleShape)
                                     .background(IndigoPrimary.copy(alpha = 0.20f))
                                     .border(1.dp, IndigoPrimary.copy(alpha = 0.40f), CircleShape),
@@ -409,7 +409,7 @@ fun DashboardScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
                                 text = "Blackout Mode",
@@ -430,7 +430,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("quick_action_schedules"),
-                        cornerRadius = 24.dp,
+                        cornerRadius = 20.dp,
                         backgroundColor = GlassSurfaceMedium,
                         borderColor = GlassBorderMedium,
                         onClick = onNavigateToSchedules
@@ -438,11 +438,11 @@ fun DashboardScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(14.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(34.dp)
                                     .clip(CircleShape)
                                     .background(AmberAccent.copy(alpha = 0.15f))
                                     .border(1.dp, AmberAccent.copy(alpha = 0.35f), CircleShape),
@@ -456,7 +456,7 @@ fun DashboardScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
                                 text = "Schedules",
@@ -480,7 +480,7 @@ fun DashboardScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("quick_action_shield"),
-                    cornerRadius = 24.dp,
+                    cornerRadius = 20.dp,
                     backgroundColor = GlassSurfaceLow,
                     borderColor = GlassBorderLow,
                     onClick = onNavigateToDistractions
@@ -488,7 +488,7 @@ fun DashboardScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -498,7 +498,7 @@ fun DashboardScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(40.dp)
+                                    .size(38.dp)
                                     .clip(CircleShape)
                                     .background(RoseAccent.copy(alpha = 0.18f))
                                     .border(1.dp, RoseAccent.copy(alpha = 0.35f), CircleShape),
@@ -508,7 +508,7 @@ fun DashboardScreen(
                                     imageVector = Icons.Default.FlashOn,
                                     contentDescription = null,
                                     tint = RoseAccent,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
 
@@ -522,7 +522,7 @@ fun DashboardScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "${uiState.distractingApps.size} apps delayed for mindful pause",
+                                    text = "${uiState.shieldActiveApps.size} apps delayed for mindful pause",
                                     color = TextSecondary,
                                     fontSize = 11.sp
                                 )
@@ -536,7 +536,7 @@ fun DashboardScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -706,7 +706,7 @@ fun AppUsageGlassTile(
                         if (app.isEssential) {
                             Text("Essential", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         }
-                        if (app.isDistracting) {
+                        if (app.isShieldActive) {
                             Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }

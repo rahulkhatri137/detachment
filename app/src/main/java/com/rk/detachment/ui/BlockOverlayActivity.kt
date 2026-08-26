@@ -8,7 +8,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -89,10 +91,27 @@ import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
 import com.rk.detachment.util.AppManagerHelper
+import com.rk.detachment.util.TemporaryUnlockManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import kotlin.math.ceil
+
+data class OverlayScreenData(
+    val packageName: String,
+    val appName: String,
+    val category: String,
+    val reason: String,
+    val isFrictionDelay: Boolean,
+    val delaySeconds: Int,
+    val usedMinutes: Int,
+    val limitMinutes: Int
+)
 
 class BlockOverlayActivity : ComponentActivity() {
 
@@ -105,26 +124,75 @@ class BlockOverlayActivity : ComponentActivity() {
         const val EXTRA_DELAY_SECONDS = "extra_delay_seconds"
         const val EXTRA_USED_MINUTES = "extra_used_minutes"
         const val EXTRA_LIMIT_MINUTES = "extra_limit_minutes"
+
+        @Volatile
+        var activeInstance: BlockOverlayActivity? = null
+            private set
+
+        @Volatile
+        var currentActivePackage: String? = null
+            private set
+
+        fun dismissIfActive() {
+            try {
+                activeInstance?.let { activity ->
+                    activeInstance = null
+                    currentActivePackage = null
+                    activity.finishAndRemoveTask()
+                }
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private val overlayDataState = mutableStateOf<OverlayScreenData?>(null)
+
+    private fun parseOverlayData(srcIntent: Intent): OverlayScreenData {
+        return OverlayScreenData(
+            packageName = srcIntent.getStringExtra(EXTRA_PACKAGE_NAME) ?: "",
+            appName = srcIntent.getStringExtra(EXTRA_APP_NAME) ?: "Application",
+            category = srcIntent.getStringExtra(EXTRA_CATEGORY) ?: "Apps",
+            reason = srcIntent.getStringExtra(EXTRA_REASON) ?: "App blocked by Detachment",
+            isFrictionDelay = srcIntent.getBooleanExtra(EXTRA_IS_FRICTION_DELAY, false),
+            delaySeconds = srcIntent.getIntExtra(EXTRA_DELAY_SECONDS, 15),
+            usedMinutes = srcIntent.getIntExtra(EXTRA_USED_MINUTES, 0),
+            limitMinutes = srcIntent.getIntExtra(EXTRA_LIMIT_MINUTES, 0)
+        )
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        recreate()
+        val newData = parseOverlayData(intent)
+        if (newData.packageName.isNotBlank() && 
+            newData.packageName != packageName && 
+            newData.packageName != applicationContext.packageName &&
+            !newData.packageName.startsWith("com.rk.detachment")) {
+            currentActivePackage = newData.packageName
+            overlayDataState.value = newData
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
 
-        val packageName = intent.getStringExtra(EXTRA_PACKAGE_NAME) ?: ""
-        val appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "Application"
-        val category = intent.getStringExtra(EXTRA_CATEGORY) ?: "Apps"
-        val reason = intent.getStringExtra(EXTRA_REASON) ?: "App blocked by Detachment"
-        val isFrictionDelay = intent.getBooleanExtra(EXTRA_IS_FRICTION_DELAY, false)
-        val delaySeconds = intent.getIntExtra(EXTRA_DELAY_SECONDS, 15)
-        val usedMinutes = intent.getIntExtra(EXTRA_USED_MINUTES, 0)
-        val limitMinutes = intent.getIntExtra(EXTRA_LIMIT_MINUTES, 0)
+        val initialData = parseOverlayData(intent)
+        if (initialData.packageName.isBlank() || 
+            initialData.packageName == packageName || 
+            initialData.packageName == applicationContext.packageName ||
+            initialData.packageName.startsWith("com.rk.detachment")) {
+            activeInstance = null
+            currentActivePackage = null
+            finishAndRemoveTask()
+            return
+        }
+
+        activeInstance = this
+        currentActivePackage = initialData.packageName
+        overlayDataState.value = initialData
 
         setContent {
             DetachmentTheme {
@@ -141,47 +209,79 @@ class BlockOverlayActivity : ComponentActivity() {
                     }
                 }
 
-                RadialGlassBackground(
-                    modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
-                ) {
-                    if (isFrictionDelay) {
-                        RealFrictionDelayView(
-                            packageName = packageName,
-                            appName = appName,
-                            category = category,
-                            delaySeconds = delaySeconds,
-                            onProceed = {
-                                grantTemporaryUnlockAndLaunch(packageName, defaultUnlockMinutes)
-                            },
-                            onClose = {
-                                recordDistractionResisted()
-                                returnToHome()
+                val currentData = overlayDataState.value ?: parseOverlayData(intent)
+                if (currentData.packageName.isBlank()) {
+                    LaunchedEffect(Unit) {
+                        finishAndRemoveTask()
+                    }
+                } else {
+                    RadialGlassBackground(
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    ) {
+                        AnimatedContent(
+                            targetState = currentData,
+                            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
+                            label = "overlay_content_switch"
+                        ) { data ->
+                            if (data.isFrictionDelay) {
+                                RealFrictionDelayView(
+                                    packageName = data.packageName,
+                                    appName = data.appName,
+                                    category = data.category,
+                                    delaySeconds = data.delaySeconds,
+                                    onProceed = {
+                                        grantTemporaryUnlockAndLaunch(data.packageName, 5)
+                                    },
+                                    onClose = {
+                                        recordDistractionResisted()
+                                        returnToHome()
+                                    }
+                                )
+                            } else {
+                                RealLockScreenView(
+                                    packageName = data.packageName,
+                                    appName = data.appName,
+                                    category = data.category,
+                                    reason = data.reason,
+                                    usedMinutes = data.usedMinutes,
+                                    limitMinutes = data.limitMinutes,
+                                    unlockMinutes = defaultUnlockMinutes,
+                                    onUnlock = { chosenMinutes ->
+                                        grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
+                                    },
+                                    onClose = {
+                                        recordDistractionResisted()
+                                        returnToHome()
+                                    }
+                                )
                             }
-                        )
-                    } else {
-                        RealLockScreenView(
-                            packageName = packageName,
-                            appName = appName,
-                            category = category,
-                            reason = reason,
-                            usedMinutes = usedMinutes,
-                            limitMinutes = limitMinutes,
-                            unlockMinutes = defaultUnlockMinutes,
-                            onUnlock = {
-                                grantTemporaryUnlockAndLaunch(packageName, defaultUnlockMinutes)
-                            },
-                            onClose = {
-                                recordDistractionResisted()
-                                returnToHome()
-                            }
-                        )
+                        }
                     }
                 }
             }
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        activeInstance = this
+        val currentPkg = overlayDataState.value?.packageName
+        if (!currentPkg.isNullOrBlank()) {
+            currentActivePackage = currentPkg
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (activeInstance == this) {
+            activeInstance = null
+            currentActivePackage = null
+        }
+    }
+
     private fun returnToHome() {
+        activeInstance = null
+        currentActivePackage = null
         try {
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
@@ -190,17 +290,21 @@ class BlockOverlayActivity : ComponentActivity() {
             startActivity(homeIntent)
         } catch (e: Exception) {
         }
-        finish()
+        finishAndRemoveTask()
     }
 
     private fun grantTemporaryUnlockAndLaunch(packageName: String, minutes: Int) {
+        val expiry = System.currentTimeMillis() + (minutes * 60 * 1000L)
+        TemporaryUnlockManager.setUnlock(packageName, expiry)
+        activeInstance = null
+        currentActivePackage = null
+
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(applicationContext, this)
-            val expiry = System.currentTimeMillis() + (minutes * 60 * 1000L)
             db.appLimitDao().setTemporaryUnlock(packageName, expiry)
             withContext(Dispatchers.Main) {
                 AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
-                finish()
+                finishAndRemoveTask()
             }
         }
     }
@@ -223,7 +327,7 @@ fun RealLockScreenView(
     usedMinutes: Int,
     limitMinutes: Int,
     unlockMinutes: Int = 15,
-    onUnlock: () -> Unit,
+    onUnlock: (Int) -> Unit,
     onClose: () -> Unit
 ) {
     var showPinDialog by remember { mutableStateOf(false) }
@@ -405,7 +509,7 @@ fun RealLockScreenView(
             Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(16.dp), tint = AmberAccent)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Emergency $unlockMinutes-Min PIN Unlock",
+                text = "Emergency PIN Unlock",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = AmberAccent
@@ -417,10 +521,11 @@ fun RealLockScreenView(
         PasscodeUnlockDialog(
             appName = appName,
             unlockMinutes = unlockMinutes,
+            pinLength = if (masterPin.length == 6) 6 else 4,
             onVerifyPin = { pin -> pin == masterPin },
-            onUnlockSuccess = {
+            onUnlockSuccess = { chosenMinutes ->
                 showPinDialog = false
-                onUnlock()
+                onUnlock(chosenMinutes)
             },
             onDismiss = { showPinDialog = false }
         )
@@ -436,21 +541,54 @@ fun RealFrictionDelayView(
     onProceed: () -> Unit,
     onClose: () -> Unit
 ) {
-    var secondsLeft by remember(delaySeconds) { mutableIntStateOf(delaySeconds) }
-    val totalSeconds = delaySeconds
-    var breathPhase by remember { mutableStateOf("Inhale deeply...") }
+    val safeDelaySeconds = delaySeconds.coerceAtLeast(1)
+    val progressAnim = remember(safeDelaySeconds) { Animatable(0f) }
+    var isDelayFinished by remember(safeDelaySeconds) { mutableStateOf(false) }
 
-    LaunchedEffect(delaySeconds) {
-        secondsLeft = delaySeconds
-        while (secondsLeft > 0) {
-            delay(1000L)
-            secondsLeft -= 1
-            breathPhase = when ((totalSeconds - secondsLeft) % 8) {
-                in 0..3 -> "Inhale calm & clarity..."
-                in 4..7 -> "Exhale the impulse to scroll..."
-                else -> "Pause mindfully..."
-            }
-        }
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing_cycle")
+    val breathingScale by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.10f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathing_ring_scale"
+    )
+    val breathingGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.15f,
+        targetValue = 0.50f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "breathing_glow_alpha"
+    )
+
+    LaunchedEffect(safeDelaySeconds) {
+        progressAnim.snapTo(0f)
+        progressAnim.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = safeDelaySeconds * 1000,
+                easing = LinearEasing
+            )
+        )
+        isDelayFinished = true
+    }
+
+    val currentProgress = progressAnim.value
+    val secondsRemaining = if (isDelayFinished || currentProgress >= 1f) {
+        0
+    } else {
+        ceil((1f - currentProgress) * safeDelaySeconds).toInt().coerceIn(1, safeDelaySeconds)
+    }
+
+    val elapsedSeconds = (currentProgress * safeDelaySeconds).toInt()
+    val breathPhase = when (elapsedSeconds % 8) {
+        in 0..3 -> "Inhale calm & clarity..."
+        in 4..7 -> "Exhale the impulse to scroll..."
+        else -> "Pause mindfully..."
     }
 
     val quotes = remember {
@@ -524,7 +662,7 @@ fun RealFrictionDelayView(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "${totalSeconds}-Second Mindful Delay",
+            text = "${safeDelaySeconds}-Second Mindful Delay",
             color = TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
@@ -538,25 +676,48 @@ fun RealFrictionDelayView(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        GlowingProgressRing(
-            progress = 1f - (secondsLeft.toFloat() / totalSeconds.toFloat()),
-            modifier = Modifier.size(180.dp),
-            strokeWidth = 10.dp,
-            primaryColor = if (secondsLeft == 0) EmeraldAccent else AmberAccent,
-            secondaryColor = if (secondsLeft == 0) EmeraldAccent else AmberAccent
+        Box(
+            modifier = Modifier
+                .size(200.dp)
+                .scale(if (!isDelayFinished) breathingScale else 1f),
+            contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "$secondsLeft",
-                    color = if (secondsLeft == 0) EmeraldAccent else TextPrimary,
-                    fontSize = 46.sp,
-                    fontWeight = FontWeight.Bold
+            if (!isDelayFinished) {
+                Box(
+                    modifier = Modifier
+                        .size(190.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    AmberAccent.copy(alpha = breathingGlowAlpha),
+                                    Color.Transparent
+                                )
+                            )
+                        )
                 )
-                Text(
-                    text = if (secondsLeft == 0) "Completed" else "seconds left",
-                    color = TextSecondary,
-                    fontSize = 12.sp
-                )
+            }
+
+            GlowingProgressRing(
+                progress = currentProgress,
+                modifier = Modifier.size(180.dp),
+                strokeWidth = 10.dp,
+                primaryColor = if (isDelayFinished) EmeraldAccent else AmberAccent,
+                secondaryColor = if (isDelayFinished) EmeraldAccent else AmberAccent
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = if (isDelayFinished) "0" else "$secondsRemaining",
+                        color = if (isDelayFinished) EmeraldAccent else TextPrimary,
+                        fontSize = 46.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (isDelayFinished) "Completed" else "seconds left",
+                        color = TextSecondary,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
 
@@ -613,7 +774,7 @@ fun RealFrictionDelayView(
 
         Button(
             onClick = onProceed,
-            enabled = secondsLeft == 0,
+            enabled = isDelayFinished,
             colors = ButtonDefaults.buttonColors(
                 containerColor = EmeraldAccent,
                 disabledContainerColor = Color(0x22FFFFFF)
@@ -625,12 +786,12 @@ fun RealFrictionDelayView(
                 .testTag("friction_proceed_btn")
         ) {
             Text(
-                text = if (secondsLeft == 0) "Proceed Mindfully" else "Think before Launch",
+                text = if (isDelayFinished) "Proceed Mindfully" else "Think before Launch",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = if (secondsLeft == 0) Color.Black else TextSecondary
+                color = if (isDelayFinished) Color.Black else TextSecondary
             )
-            if (secondsLeft == 0) {
+            if (isDelayFinished) {
                 Spacer(modifier = Modifier.width(6.dp))
                 Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
             }

@@ -96,8 +96,8 @@ fun SchedulesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 20.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
                     Column {
@@ -203,7 +203,7 @@ fun SchedulesScreen(
                         borderColor = if (isRuleActiveNow) IndigoLight else GlassBorderMedium,
                         backgroundColor = if (isRuleActiveNow) IndigoPrimary.copy(alpha = 0.25f) else GlassSurfaceHigh
                     ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -212,7 +212,7 @@ fun SchedulesScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Box(
                                         modifier = Modifier
-                                            .size(40.dp)
+                                            .size(38.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
                                                 when (rule.type) {

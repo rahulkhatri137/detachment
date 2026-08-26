@@ -72,8 +72,8 @@ fun DistractionShieldScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 20.dp, bottom = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item(key = "distraction_header") {
                 Column {
@@ -250,7 +250,7 @@ fun DistractionShieldScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -310,13 +310,7 @@ fun DistractionShieldScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Shielded Apps ($shieldedCount)",
-                        color = TextPrimary,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    FrostedBadge(text = "Delayed ${currentDelay}s", color = AmberAccent)
+                    FrostedBadge(text = "Shielded Apps ${shieldedCount}", color = AmberAccent)
                 }
             }
 

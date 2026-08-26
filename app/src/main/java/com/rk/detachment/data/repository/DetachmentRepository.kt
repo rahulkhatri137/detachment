@@ -8,8 +8,10 @@ import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.util.TemporaryUnlockManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 class DetachmentRepository(
     private val appLimitDao: AppLimitDao,
@@ -26,9 +28,14 @@ class DetachmentRepository(
     val totalFocusMinutes: Flow<Int?> = pomodoroDao.getTotalFocusMinutes()
     val totalSessionsCount: Flow<Int> = pomodoroDao.getTotalSessionsCount()
     val masterPin: Flow<String?> = appSettingsDao.observeValue("master_pin")
+    val isAppAuthEnabled: Flow<Boolean> = appSettingsDao.observeValue("app_auth_enabled").map { it == "true" }
     val distractionsResisted: Flow<String?> = appSettingsDao.observeValue("distractions_resisted")
     val delaySeconds: Flow<String?> = appSettingsDao.observeValue("key_delay_seconds")
     val unlockMinutes: Flow<String?> = appSettingsDao.observeValue("key_unlock_minutes")
+
+    suspend fun setAppAuthEnabled(enabled: Boolean) {
+        appSettingsDao.setSetting(AppSettingsEntity("app_auth_enabled", enabled.toString()))
+    }
 
     suspend fun setDelaySeconds(seconds: Int) {
         appSettingsDao.setSetting(AppSettingsEntity("key_delay_seconds", seconds.toString()))
@@ -72,6 +79,7 @@ class DetachmentRepository(
     suspend fun unlockApp(packageName: String, minutes: Int = 15): Long {
         val durationMillis = minutes * 60 * 1000L
         val expiryTime = System.currentTimeMillis() + durationMillis
+        TemporaryUnlockManager.setUnlock(packageName, expiryTime)
         appLimitDao.setTemporaryUnlock(packageName, expiryTime)
         return expiryTime
     }
@@ -81,6 +89,7 @@ class DetachmentRepository(
     }
 
     suspend fun relockApp(packageName: String) {
+        TemporaryUnlockManager.removeUnlock(packageName)
         appLimitDao.cancelTemporaryUnlock(packageName)
     }
 

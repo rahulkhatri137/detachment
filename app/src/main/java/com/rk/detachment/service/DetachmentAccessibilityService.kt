@@ -7,6 +7,8 @@ import android.view.accessibility.AccessibilityEvent
 import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.ui.BlockOverlayActivity
+import com.rk.detachment.util.AppManagerHelper
+import com.rk.detachment.util.TemporaryUnlockManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,6 +20,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var database: AppDatabase? = null
 
+    private var currentForegroundPackage: String? = null
     private var lastInterceptedPackage: String? = null
     private var lastInterceptTime: Long = 0L
 
@@ -31,59 +34,79 @@ class DetachmentAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isServiceRunning = true
         database = AppDatabase.getDatabase(applicationContext, serviceScope)
-        Log.i(TAG, "DetachmentAccessibilityService connected and actively protecting.")
     }
 
     private fun isLauncherOrSystem(packageName: String): Boolean {
-        val lower = packageName.lowercase()
-        return packageName == this.packageName ||
-                packageName == applicationContext.packageName ||
-                lower.contains("detachment") ||
-                packageName == "com.android.systemui" ||
-                lower.contains("launcher") ||
-                lower.contains("quickstep") ||
-                lower.contains("trebuchet") ||
-                lower.contains("nexuslauncher") ||
-                lower.contains("inputmethod") ||
-                lower.contains("recents") ||
-                lower.contains(".home")
+        val launcherPackages = AppManagerHelper.getHomeLauncherPackages(applicationContext)
+        return AppManagerHelper.isLauncherOrSystemPackage(packageName, launcherPackages)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        val eventType = event.eventType
-        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
-        ) {
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             return
         }
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName.isBlank()) return
 
+        // 1. DETACHMENT APP ITSELF (MainActivity or BlockOverlayActivity):
+        // Never block our own app and never dismiss overlay from here
+        if (packageName == this.packageName || 
+            packageName == applicationContext.packageName || 
+            packageName.startsWith("com.rk.detachment")) {
+            return
+        }
+
+        // 2. LAUNCHER OR SYSTEM UI (Notifications, Quick Settings, Recents, Keyguard):
         if (isLauncherOrSystem(packageName)) {
+            currentForegroundPackage = packageName
             lastInterceptedPackage = null
             lastInterceptTime = 0L
             return
         }
 
         val now = System.currentTimeMillis()
-        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 800L) {
+
+        // 3. TARGET APP - INSTANT IN-MEMORY UNLOCK CHECK:
+        if (TemporaryUnlockManager.isUnlocked(packageName, now)) {
+            currentForegroundPackage = packageName
+            lastInterceptedPackage = null
+            lastInterceptTime = 0L
             return
         }
 
+        // 4. If overlay is ALREADY visibly active for this exact package, prevent re-triggering
+        if (BlockOverlayActivity.currentActivePackage == packageName && BlockOverlayActivity.activeInstance != null) {
+            return
+        }
+
+        // 5. Debounce rapid repeat events for the same blocked package (e.g. splash screen transition)
+        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 2500L) {
+            return
+        }
+
+        val isNewLaunch = (packageName != currentForegroundPackage)
+        currentForegroundPackage = packageName
+
         serviceScope.launch {
-            evaluateAndEnforceApp(packageName)
+            evaluateAndEnforceApp(packageName, isNewLaunch)
         }
     }
 
-    private suspend fun evaluateAndEnforceApp(packageName: String) {
+    private suspend fun evaluateAndEnforceApp(packageName: String, isNewLaunch: Boolean) {
+        val now = System.currentTimeMillis()
+        if (TemporaryUnlockManager.isUnlocked(packageName, now)) {
+            return
+        }
+
         val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
         val app = db.appLimitDao().getAppByPackage(packageName) ?: return
 
-        if (app.isTemporaryUnlocked()) {
-            return 
+        if (app.isTemporaryUnlocked(now)) {
+            TemporaryUnlockManager.setUnlock(packageName, app.unlockExpiresAtMillis)
+            return
         }
 
         val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true"
@@ -118,7 +141,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (app.isCurrentlyLocked()) {
+        if (app.isCurrentlyLocked(now)) {
             val reason = if (app.isLockedManually) {
                 "Manually locked by Detachment Shield"
             } else {
@@ -129,18 +152,14 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         if (app.isShieldActive) {
-            val lastPassed = app.unlockExpiresAtMillis
-            val now = System.currentTimeMillis()
-            if (lastPassed < now) {
-                val delaySec = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
-                interceptBlockedApp(
-                    app = app,
-                    reason = "Mindful Pause: Detachment Distraction Shield Active",
-                    isFrictionDelay = true,
-                    delaySeconds = delaySec
-                )
-                return
-            }
+            val delaySec = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
+            interceptBlockedApp(
+                app = app,
+                reason = "Mindful Pause: Detachment Distraction Shield Active",
+                isFrictionDelay = true,
+                delaySeconds = delaySec
+            )
+            return
         }
     }
 
@@ -156,9 +175,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
         try {
             val intent = Intent(this, BlockOverlayActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_NO_ANIMATION
                 putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)
                 putExtra(BlockOverlayActivity.EXTRA_APP_NAME, app.appName)
                 putExtra(BlockOverlayActivity.EXTRA_CATEGORY, app.category)
@@ -175,7 +195,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
     }
 
     override fun onInterrupt() {
-        Log.w(TAG, "DetachmentAccessibilityService interrupted.")
     }
 
     override fun onDestroy() {
@@ -183,4 +202,5 @@ class DetachmentAccessibilityService : AccessibilityService() {
         isServiceRunning = false
     }
 }
+
 

@@ -135,8 +135,8 @@ fun ConsciousnessScoreScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item(key = "consciousness_header") {
                 Row(

@@ -35,8 +35,11 @@
             android:name=".ui.BlockOverlayActivity"
             android:exported="false"
             android:theme="@style/Theme.MyApplication"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.rk.detachment.overlay"
             android:excludeFromRecents="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:windowSoftInputMode="adjustResize" />
 
         <service

@@ -26,6 +26,7 @@ data class DetachmentUiState(
     val scheduleRules: List<ScheduleRuleEntity> = emptyList(),
     val pomodoroSessions: List<PomodoroSessionEntity> = emptyList(),
     val masterPin: String = "1234",
+    val isAppAuthEnabled: Boolean = false,
     val distractionsResistedCount: Int = 0,
     val totalFocusMinutes: Int = 0,
     val totalSessionsCount: Int = 0,
@@ -125,6 +126,11 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.masterPin.collect { pin ->
                 _uiState.value = _uiState.value.copy(masterPin = pin ?: "1234")
+            }
+        }
+        viewModelScope.launch {
+            repository.isAppAuthEnabled.collect { enabled ->
+                _uiState.value = _uiState.value.copy(isAppAuthEnabled = enabled)
             }
         }
         viewModelScope.launch {
@@ -339,6 +345,17 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
     fun verifyPin(inputPin: String): Boolean {
         return inputPin == uiState.value.masterPin
+    }
+
+    fun setAppAuthEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setAppAuthEnabled(enabled)
+            if (enabled) {
+                showMessage("App launch authentication enabled.")
+            } else {
+                showMessage("App launch authentication disabled.")
+            }
+        }
     }
 
     fun updateMasterPin(newPin: String) {

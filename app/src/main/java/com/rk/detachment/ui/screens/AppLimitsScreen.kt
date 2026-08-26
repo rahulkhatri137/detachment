@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -62,6 +63,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +79,7 @@ import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.PasscodeUnlockDialog
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
+import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
@@ -103,6 +106,7 @@ fun AppLimitsScreen(
     onRelockApp: (String) -> Unit,
     onVerifyPin: (String) -> Boolean,
     onUpdateMasterPin: (String) -> Unit,
+    onSetAppAuthEnabled: (Boolean) -> Unit = {},
     onLaunchApp: (AppLimitEntity) -> Unit,
     onRefreshApps: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
@@ -133,8 +137,8 @@ fun AppLimitsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 20.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item(key = "header_item") {
                 Row(
@@ -807,20 +811,23 @@ fun AppLimitsScreen(
             PasscodeUnlockDialog(
                 appName = app.appName,
                 unlockMinutes = uiState.unlockMinutes,
+                pinLength = if (uiState.masterPin.length == 6) 6 else 4,
                 onDismiss = { unlockingApp = null },
                 onVerifyPin = onVerifyPin,
-                onUnlockSuccess = {
-                    onUnlockApp(app.packageName, uiState.unlockMinutes)
+                onUnlockSuccess = { chosenMinutes ->
+                    onUnlockApp(app.packageName, chosenMinutes)
                     unlockingApp = null
                 }
             )
         }
 
         if (showChangePinDialog) {
+            var selectedPinLength by remember { mutableIntStateOf(if (uiState.masterPin.length == 6) 6 else 4) }
             var currentPinInput by remember { mutableStateOf("") }
             var newPinInput by remember { mutableStateOf("") }
             var confirmPinInput by remember { mutableStateOf("") }
             var isCurrentPinVerified by remember { mutableStateOf(uiState.masterPin.isBlank()) }
+            var appAuthToggle by remember(uiState.isAppAuthEnabled) { mutableStateOf(uiState.isAppAuthEnabled) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
 
             AlertDialog(
@@ -836,7 +843,7 @@ fun AppLimitsScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (!isCurrentPinVerified) "Verify Current PIN" else "Set New Master PIN",
+                            text = if (!isCurrentPinVerified) "Verify Current PIN" else "Security & Master PIN",
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -847,19 +854,19 @@ fun AppLimitsScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         if (!isCurrentPinVerified) {
                             Text(
-                                text = "Enter your current 4-digit Master PIN to authorize. Default - 1234",
+                                text = "Enter your current Master PIN to authorize. Default - 1234",
                                 color = TextSecondary,
                                 fontSize = 13.sp
                             )
                             OutlinedTextField(
                                 value = currentPinInput,
                                 onValueChange = {
-                                    if (it.length <= 4 && it.all { char -> char.isDigit() }) {
+                                    if (it.length <= 6 && it.all { char -> char.isDigit() }) {
                                         currentPinInput = it
                                         errorMessage = null
                                     }
                                 },
-                                placeholder = { Text("Current 4-digit PIN", color = TextSecondary) },
+                                placeholder = { Text("Current PIN (4 or 6 digits)", color = TextSecondary) },
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                                 singleLine = true,
@@ -874,20 +881,133 @@ fun AppLimitsScreen(
                                 )
                             )
                         } else {
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color.White.copy(alpha = 0.05f),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    if (appAuthToggle) IndigoLight.copy(alpha = 0.5f) else GlassBorderMedium
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { appAuthToggle = !appAuthToggle }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(34.dp)
+                                                .clip(CircleShape)
+                                                .background(if (appAuthToggle) IndigoPrimary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Shield,
+                                                contentDescription = null,
+                                                tint = if (appAuthToggle) CyanAccent else TextSecondary,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text(
+                                                text = "App Authentication",
+                                                color = TextPrimary,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                text = if (appAuthToggle) "Require PIN" else "No PIN required",
+                                                color = if (appAuthToggle) IndigoLight else TextSecondary,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+                                    Switch(
+                                        checked = appAuthToggle,
+                                        onCheckedChange = { appAuthToggle = it },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = IndigoPrimary,
+                                            uncheckedThumbColor = TextSecondary,
+                                            uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                                            uncheckedBorderColor = GlassBorderMedium
+                                        ),
+                                        modifier = Modifier.testTag("app_auth_toggle")
+                                    )
+                                }
+                            }
+
                             Text(
-                                text = "Choose a new 4-digit PIN for emergency unlocks.",
+                                text = "Set New Master PIN (Leave blank to keep current)",
                                 color = TextSecondary,
-                                fontSize = 13.sp
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
                             )
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color.White.copy(alpha = 0.06f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderMedium)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(3.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    listOf(4, 6).forEach { length ->
+                                        val isSelected = selectedPinLength == length
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(9.dp))
+                                                .then(
+                                                    if (isSelected) {
+                                                        Modifier.background(
+                                                            Brush.horizontalGradient(
+                                                                listOf(IndigoPrimary, CyanAccent)
+                                                            )
+                                                        )
+                                                    } else {
+                                                        Modifier.background(Color.Transparent)
+                                                    }
+                                                )
+                                                .clickable {
+                                                    selectedPinLength = length
+                                                    newPinInput = ""
+                                                    confirmPinInput = ""
+                                                    errorMessage = null
+                                                }
+                                                .padding(horizontal = 14.dp, vertical = 6.dp)
+                                                .testTag("pin_length_${length}_opt"),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "$length Digits",
+                                                color = if (isSelected) Color.White else TextSecondary,
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             OutlinedTextField(
                                 value = newPinInput,
                                 onValueChange = {
-                                    if (it.length <= 4 && it.all { char -> char.isDigit() }) {
+                                    if (it.length <= selectedPinLength && it.all { char -> char.isDigit() }) {
                                         newPinInput = it
                                         errorMessage = null
                                     }
                                 },
-                                placeholder = { Text("New 4-digit PIN", color = TextSecondary) },
+                                placeholder = { Text("New $selectedPinLength-digit PIN", color = TextSecondary) },
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                                 singleLine = true,
@@ -905,12 +1025,12 @@ fun AppLimitsScreen(
                             OutlinedTextField(
                                 value = confirmPinInput,
                                 onValueChange = {
-                                    if (it.length <= 4 && it.all { char -> char.isDigit() }) {
+                                    if (it.length <= selectedPinLength && it.all { char -> char.isDigit() }) {
                                         confirmPinInput = it
                                         errorMessage = null
                                     }
                                 },
-                                placeholder = { Text("Confirm New PIN", color = TextSecondary) },
+                                placeholder = { Text("Confirm $selectedPinLength-digit PIN", color = TextSecondary) },
                                 visualTransformation = PasswordVisualTransformation(),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                                 singleLine = true,
@@ -947,27 +1067,34 @@ fun AppLimitsScreen(
                                     errorMessage = "Incorrect current PIN. Please try again."
                                 }
                             },
-                            enabled = currentPinInput.length == 4,
+                            enabled = currentPinInput.length >= 4,
                             modifier = Modifier.testTag("verify_current_pin_btn")
                         ) {
                             Text("Verify PIN", color = IndigoLight, fontWeight = FontWeight.Bold)
                         }
                     } else {
+                        val isOnlyToggleChange = newPinInput.isEmpty() && confirmPinInput.isEmpty()
+                        val isValidPinChange = newPinInput.length == selectedPinLength && confirmPinInput.length == selectedPinLength
+
                         TextButton(
                             onClick = {
-                                if (newPinInput.length == 4) {
+                                if (isOnlyToggleChange) {
+                                    onSetAppAuthEnabled(appAuthToggle)
+                                    showChangePinDialog = false
+                                } else if (isValidPinChange) {
                                     if (newPinInput != confirmPinInput) {
                                         errorMessage = "PINs do not match."
                                     } else {
                                         onUpdateMasterPin(newPinInput)
+                                        onSetAppAuthEnabled(appAuthToggle)
                                         showChangePinDialog = false
                                     }
                                 }
                             },
-                            enabled = newPinInput.length == 4 && confirmPinInput.length == 4,
+                            enabled = isOnlyToggleChange || isValidPinChange,
                             modifier = Modifier.testTag("save_new_pin_btn")
                         ) {
-                            Text("Save New PIN", color = IndigoLight, fontWeight = FontWeight.Bold)
+                            Text("Save Changes", color = IndigoLight, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -999,7 +1126,7 @@ fun EditCategoriesDialog(
     
     val allCategoryOptions = listOf(
         "Social", "Video", "Entertainment", "Games", "Communication",
-        "Productivity", "Utilities", "Navigation", "Education", "News", "Photos", "Audio"
+        "Productivity", "Utilities", "Navigation", "Education", "Photos", "Audio"
     )
 
     val filteredList = remember(apps, searchCategoryQuery) {
@@ -1069,7 +1196,7 @@ fun EditCategoriesDialog(
                 OutlinedTextField(
                     value = searchCategoryQuery,
                     onValueChange = { searchCategoryQuery = it },
-                    placeholder = { Text("Filter apps to change category...", color = TextSecondary, fontSize = 12.sp) },
+                    placeholder = { Text("Search to change category...", color = TextSecondary, fontSize = 10.sp) },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = EmeraldAccent, modifier = Modifier.size(16.dp)) },
                     trailingIcon = {
                         if (searchCategoryQuery.isNotEmpty()) {
@@ -1130,11 +1257,6 @@ fun EditCategoriesDialog(
                                                 fontSize = 13.sp,
                                                 fontWeight = FontWeight.SemiBold,
                                                 maxLines = 1
-                                            )
-                                            Text(
-                                                text = "Current: ${app.category}",
-                                                color = TextSecondary,
-                                                fontSize = 11.sp
                                             )
                                         }
                                     }

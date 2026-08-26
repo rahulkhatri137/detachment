@@ -1,7 +1,7 @@
 package com.rk.detachment.ui.screens
 
+import android.app.Activity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FlashOn
@@ -32,7 +31,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -46,6 +44,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,11 +54,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
@@ -70,7 +73,6 @@ import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
-import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
@@ -148,8 +150,8 @@ fun BlackoutPomodoroScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(top = 20.dp, bottom = 120.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item(key = "header") {
                     Column {
@@ -169,7 +171,7 @@ fun BlackoutPomodoroScreen(
 
                 item(key = "durations") {
                     FrostedGlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = GlassSurfaceHigh) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
                                 text = "FOCUS DURATION",
                                 color = TextSecondary,
@@ -177,7 +179,7 @@ fun BlackoutPomodoroScreen(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.fillMaxWidth()
@@ -203,8 +205,8 @@ fun BlackoutPomodoroScreen(
                                             Text(
                                                 text = "${min}m",
                                                 color = if (isSelected) Color.White else TextPrimary,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 14.sp
                                             )
                                         }
                                     }
@@ -214,35 +216,40 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                item(key = "activity_tags") {
+                item(key = "tags") {
                     FrostedGlassCard(modifier = Modifier.fillMaxWidth(), backgroundColor = GlassSurfaceHigh) {
-                        Column(modifier = Modifier.padding(18.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "FOCUS ACTIVITY",
+                                text = "SESSION INTENTION",
                                 color = TextSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
                                 items(tags) { tag ->
                                     val isSelected = selectedTag == tag
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = if (isSelected) IndigoPrimary else GlassSurfaceLow,
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = if (isSelected) IndigoPrimary.copy(alpha = 0.25f) else GlassSurfaceLow,
                                         border = androidx.compose.foundation.BorderStroke(
                                             1.dp,
-                                            if (isSelected) IndigoPrimary else GlassBorderLow
+                                            if (isSelected) IndigoLight else GlassBorderLow
                                         ),
-                                        modifier = Modifier.clickable { selectedTag = tag }
+                                        modifier = Modifier
+                                            .clickable { selectedTag = tag }
+                                            .testTag("tag_chip_$tag")
                                     ) {
                                         Text(
                                             text = tag,
-                                            color = if (isSelected) Color.White else TextPrimary,
-                                            fontSize = 13.sp,
+                                            color = if (isSelected) IndigoLight else TextSecondary,
+                                            fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                                         )
                                     }
                                 }
@@ -251,39 +258,29 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                item(key = "start_btn") {
+                item(key = "start_button") {
                     FrostedGlassButton(
-                        text = "Initiate Pomodoro Blackout",
+                        text = "Ignite Blackout",
+                        icon = Icons.Default.FlashOn,
                         onClick = {
                             onStartBlackout(selectedDurationMinutes, selectedTag)
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        icon = Icons.Default.Timer,
-                        isPrimary = true,
-                        testTag = "start_blackout_btn"
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp)
+                            .testTag("start_blackout_btn")
                     )
                 }
 
-                item(key = "rules_section_header") {
-                    Text(
-                        text = "FOCUS APPLICATION RULES",
-                        color = TextSecondary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp,
-                        modifier = Modifier.padding(top = 8.dp, start = 2.dp)
-                    )
-                }
-
-                val essentialCount = uiState.essentialApps.size
-                item(key = "select_essential_btn") {
+                item(key = "essential_apps_card") {
+                    val essentialCount = uiState.essentialApps.size
                     FrostedGlassCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showEssentialAppsDialog = true }
-                            .testTag("select_essential_apps_btn"),
+                            .testTag("manage_essential_apps_card"),
                         backgroundColor = GlassSurfaceHigh,
-                        borderColor = if (essentialCount > 0) EmeraldAccent.copy(alpha = 0.35f) else GlassBorderLow
+                        borderColor = IndigoLight.copy(alpha = 0.4f),
+                        onClick = { showEssentialAppsDialog = true }
                     ) {
                         Row(
                             modifier = Modifier
@@ -298,32 +295,28 @@ fun BlackoutPomodoroScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
+                                        .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(EmeraldAccent.copy(alpha = 0.18f))
-                                        .border(1.dp, EmeraldAccent.copy(alpha = 0.35f), CircleShape),
+                                        .background(IndigoPrimary.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Shield,
+                                        imageVector = Icons.Default.Security,
                                         contentDescription = null,
-                                        tint = EmeraldAccent,
-                                        modifier = Modifier.size(22.dp)
+                                        tint = IndigoLight,
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "Essential Apps (Whitelist)",
+                                        text = "Essential Apps Whitelist",
                                         color = TextPrimary,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "$essentialCount / 10 Allowed in Blackout",
+                                        text = "$essentialCount of 10 Permitted Apps",
                                         color = if (essentialCount > 0) EmeraldAccent else TextSecondary,
                                         fontSize = 12.sp
                                     )
@@ -349,15 +342,15 @@ fun BlackoutPomodoroScreen(
                     }
                 }
 
-                val distractingCount = uiState.distractingApps.size
-                item(key = "select_distracting_btn") {
+                item(key = "distracting_apps_card") {
+                    val distractingCount = uiState.distractingApps.size
                     FrostedGlassCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showDistractingAppsDialog = true }
-                            .testTag("select_distracting_apps_btn"),
+                            .testTag("manage_distracting_apps_card"),
                         backgroundColor = GlassSurfaceHigh,
-                        borderColor = if (distractingCount > 0) AmberAccent.copy(alpha = 0.35f) else GlassBorderLow
+                        borderColor = AmberAccent.copy(alpha = 0.4f),
+                        onClick = { showDistractingAppsDialog = true }
                     ) {
                         Row(
                             modifier = Modifier
@@ -372,30 +365,26 @@ fun BlackoutPomodoroScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
+                                        .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(AmberAccent.copy(alpha = 0.18f))
-                                        .border(1.dp, AmberAccent.copy(alpha = 0.35f), CircleShape),
+                                        .background(AmberAccent.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.FlashOn,
+                                        imageVector = Icons.Default.Shield,
                                         contentDescription = null,
                                         tint = AmberAccent,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "Distracting Apps (Blocklist)",
+                                        text = "Distracting Apps Tagging",
                                         color = TextPrimary,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = "$distractingCount Marked as Distracting",
                                         color = if (distractingCount > 0) AmberAccent else TextSecondary,
@@ -576,7 +565,7 @@ private fun EssentialAppsDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = if (isEssential) "Allowed during blackout" else "${app.usedTodayMinutes}m used today",
+                                            text = if (isEssential) "Whitelisted Essential App" else "Blocked in Blackout",
                                             color = if (isEssential) EmeraldAccent else TextSecondary,
                                             fontSize = 11.sp
                                         )
@@ -586,16 +575,15 @@ private fun EssentialAppsDialog(
                                 Checkbox(
                                     checked = isEssential,
                                     onCheckedChange = { checked ->
-                                        if (checked && essentialCount >= 10 && !isEssential) {
-                                        } else {
+                                        if (isEssential || canSelect) {
                                             onToggleEssential(app.packageName, checked)
                                         }
                                     },
-                                    enabled = canSelect,
+                                    enabled = isEssential || canSelect,
                                     colors = CheckboxDefaults.colors(
                                         checkedColor = EmeraldAccent,
-                                        checkmarkColor = Color.Black,
-                                        uncheckedColor = TextSecondary
+                                        uncheckedColor = TextSecondary,
+                                        checkmarkColor = Color.Black
                                     )
                                 )
                             }
@@ -789,6 +777,17 @@ fun ActiveBlackoutCanvas(
     onRequestStop: () -> Unit,
     onOpenEssentialApp: (AppLimitEntity) -> Unit
 ) {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val window = (context as? Activity)?.window
+        val insetsController = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
+        insetsController?.hide(WindowInsetsCompat.Type.systemBars())
+        insetsController?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        onDispose {
+            insetsController?.show(WindowInsetsCompat.Type.systemBars())
+        }
+    }
+
     val totalSecs = uiState.blackoutTotalSeconds.coerceAtLeast(1)
     val remainingSecs = uiState.blackoutSecondsRemaining
     val progress = (remainingSecs.toFloat() / totalSecs.toFloat()).coerceIn(0f, 1f)
@@ -800,7 +799,7 @@ fun ActiveBlackoutCanvas(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(24.dp)
+            .padding(20.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -810,7 +809,7 @@ fun ActiveBlackoutCanvas(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -858,7 +857,7 @@ fun ActiveBlackoutCanvas(
             ) {
                 GlowingProgressRing(
                     progress = progress,
-                    modifier = Modifier.size(280.dp),
+                    modifier = Modifier.size(260.dp),
                     strokeWidth = 12.dp,
                     primaryColor = IndigoPrimary,
                     secondaryColor = IndigoLight,
@@ -868,20 +867,20 @@ fun ActiveBlackoutCanvas(
                         Text(
                             text = String.format("%02d:%02d", minutes, seconds),
                             color = Color.White,
-                            fontSize = 52.sp,
+                            fontSize = 48.sp,
                             fontWeight = FontWeight.Black
                         )
                         Text(
                             text = if (uiState.isPomodoroRunning) "DETACHMENT BLACKOUT ACTIVE" else "PAUSED",
                             color = if (uiState.isPomodoroRunning) IndigoLight else AmberAccent,
-                            fontSize = 11.sp,
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
+                            letterSpacing = 1.8.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -932,7 +931,7 @@ fun ActiveBlackoutCanvas(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -943,10 +942,10 @@ fun ActiveBlackoutCanvas(
                     letterSpacing = 1.sp
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     uiState.essentialApps.take(5).forEach { app ->
@@ -957,8 +956,8 @@ fun ActiveBlackoutCanvas(
                             AppIconView(
                                 packageName = app.packageName,
                                 appName = app.appName,
-                                size = 42.dp,
-                                cornerRadius = 14.dp
+                                size = 40.dp,
+                                cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
@@ -971,10 +970,10 @@ fun ActiveBlackoutCanvas(
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     uiState.essentialApps.drop(5).forEach { app ->
@@ -985,8 +984,8 @@ fun ActiveBlackoutCanvas(
                             AppIconView(
                                 packageName = app.packageName,
                                 appName = app.appName,
-                                size = 42.dp,
-                                cornerRadius = 14.dp
+                                size = 40.dp,
+                                cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(

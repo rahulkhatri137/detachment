@@ -127,6 +127,43 @@ object AppManagerHelper {
         }
     }
 
+    fun getHomeLauncherPackages(context: Context): Set<String> {
+        val pm = context.packageManager
+        val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        val resolveInfos = try {
+            pm.queryIntentActivities(homeIntent, PackageManager.MATCH_DEFAULT_ONLY) +
+                    pm.queryIntentActivities(homeIntent, 0)
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val set = mutableSetOf<String>()
+        set.add(context.packageName)
+        for (info in resolveInfos) {
+            info.activityInfo?.packageName?.let { set.add(it) }
+        }
+        try {
+            pm.resolveActivity(homeIntent, 0)?.activityInfo?.packageName?.let { set.add(it) }
+        } catch (e: Exception) {
+        }
+        return set
+    }
+
+    fun isLauncherOrSystemPackage(packageName: String, launcherPackages: Set<String> = emptySet()): Boolean {
+        val lower = packageName.lowercase()
+        return launcherPackages.contains(packageName) ||
+                lower.contains("detachment") ||
+                packageName == "com.android.systemui" ||
+                lower.contains("launcher") ||
+                lower.contains("quickstep") ||
+                lower.contains("trebuchet") ||
+                lower.contains("nexuslauncher") ||
+                lower.contains("inputmethod") ||
+                lower.contains("recents") ||
+                lower.contains(".home")
+    }
+
     fun scanRealInstalledApps(
         context: Context,
         existingEntities: List<AppLimitEntity>
@@ -134,6 +171,7 @@ object AppManagerHelper {
         val pm = context.packageManager
         val existingMap = existingEntities.associateBy { it.packageName }
         val usageMap = getTodayUsageMinutesMap(context)
+        val launcherPackages = getHomeLauncherPackages(context)
 
         val launcherIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
@@ -145,6 +183,7 @@ object AppManagerHelper {
         for (resolveInfo in resolveInfos) {
             val pkg = resolveInfo.activityInfo.packageName
             if (pkg == context.packageName) continue
+            if (isLauncherOrSystemPackage(pkg, launcherPackages)) continue
             if (seenPackages.contains(pkg)) continue
             seenPackages.add(pkg)
 
@@ -392,7 +431,6 @@ object AppManagerHelper {
                 ApplicationInfo.CATEGORY_VIDEO -> return "Video"
                 ApplicationInfo.CATEGORY_IMAGE -> return "Photos"
                 ApplicationInfo.CATEGORY_SOCIAL -> return "Social"
-                ApplicationInfo.CATEGORY_NEWS -> return "News"
                 ApplicationInfo.CATEGORY_MAPS -> return "Navigation"
                 ApplicationInfo.CATEGORY_PRODUCTIVITY -> return "Productivity"
             }

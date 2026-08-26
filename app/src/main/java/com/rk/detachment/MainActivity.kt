@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,6 +48,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rk.detachment.ui.BlockOverlayActivity
+import com.rk.detachment.ui.components.AppLaunchSecurityScreen
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
 import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
@@ -74,18 +77,27 @@ enum class NavigationTab(val title: String, val icon: ImageVector, val tag: Stri
 
 class MainActivity : ComponentActivity() {
     private val viewModel: DetachmentViewModel by viewModels()
+    private val isAppUnlockedState = mutableStateOf(false)
 
     override fun onResume() {
         super.onResume()
+        BlockOverlayActivity.dismissIfActive()
         viewModel.checkPermissionsAndRefresh()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isAppUnlockedState.value = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BlockOverlayActivity.dismissIfActive()
         enableEdgeToEdge()
         setContent {
             DetachmentTheme {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                var isAppUnlocked by remember { isAppUnlockedState }
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
                 var showConsciousnessScreen by remember { mutableStateOf(false) }
                 val snackbarHostState = remember { SnackbarHostState() }
@@ -97,20 +109,28 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = FrostedBackground,
-                    snackbarHost = {
-                        SnackbarHost(snackbarHostState) { data ->
-                            Snackbar(
-                                snackbarData = data,
-                                containerColor = FrostedBackgroundDarker,
-                                contentColor = TextPrimary,
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    },
+                val requiresAppAuth = uiState.isAppAuthEnabled && !isAppUnlocked
+
+                if (requiresAppAuth) {
+                    AppLaunchSecurityScreen(
+                        masterPin = uiState.masterPin,
+                        onUnlocked = { isAppUnlocked = true }
+                    )
+                } else {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = FrostedBackground,
+                        snackbarHost = {
+                            SnackbarHost(snackbarHostState) { data ->
+                                Snackbar(
+                                    snackbarData = data,
+                                    containerColor = FrostedBackgroundDarker,
+                                    contentColor = TextPrimary,
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        },
                     bottomBar = {
                         if (!uiState.isBlackoutActive) {
                             Surface(
@@ -210,6 +230,7 @@ class MainActivity : ComponentActivity() {
                                     onRelockApp = { pkg -> viewModel.relockApp(pkg) },
                                     onVerifyPin = { pin -> viewModel.verifyPin(pin) },
                                     onUpdateMasterPin = { pin -> viewModel.updateMasterPin(pin) },
+                                    onSetAppAuthEnabled = { enabled -> viewModel.setAppAuthEnabled(enabled) },
                                     onLaunchApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
                                     onRefreshApps = { viewModel.scanInstalledApps() },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
@@ -250,4 +271,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 }
