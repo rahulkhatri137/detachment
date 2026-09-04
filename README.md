@@ -39,6 +39,7 @@ Detachment empowers users to reclaim their focus and attention through intention
 * Configure individual daily usage limits in minutes or hours for any installed app.
 * When an app exceeds its limit (or is manually locked), an App Lock Screen is presented.
 * Master Passcode to unlock the app for breaks. When period expires, the app automatically relocks. Users can also manually relock the app early at any point.
+* Notch Pill: A compact, top-notch heads-up pill features an illuminated blue capsule contour to aware about app screentime. Reminders every 15 min interval.
 
 ---
 

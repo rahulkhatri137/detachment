@@ -1,5 +1,6 @@
 package com.rk.detachment.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +64,7 @@ fun DistractionShieldScreen(
     uiState: DetachmentUiState,
     onToggleShieldActive: (String, Boolean) -> Unit,
     onSetDelaySeconds: (Int) -> Unit = {},
+    onToggleDelayForDistractingApps: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val shieldedCount = uiState.shieldActiveApps.size
@@ -310,12 +313,63 @@ fun DistractionShieldScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    FrostedBadge(text = "Shielded Apps ${shieldedCount}", color = AmberAccent)
+                    FrostedBadge(
+                        text = "Shielded Apps ${shieldedCount}",
+                        color = AmberAccent,
+                        backgroundColor = AmberAccent.copy(alpha = 0.20f),
+                        borderColor = AmberAccent.copy(alpha = 0.35f)
+                    )
+
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onToggleDelayForDistractingApps(!uiState.isDelayForDistractingApps) }
+                            .testTag("delay_for_distracting_badge_toggle"),
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (uiState.isDelayForDistractingApps) AmberAccent.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.05f),
+                        border = BorderStroke(
+                            0.8.dp,
+                            if (uiState.isDelayForDistractingApps) AmberAccent.copy(alpha = 0.35f) else GlassBorderHigh.copy(alpha = 0.2f)
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(start = 6.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
+                        ) {
+                            Text(
+                                text = "Delay Distracting Apps",
+                                color = if (uiState.isDelayForDistractingApps) AmberAccent else TextSecondary,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.4.sp
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Box(
+                                modifier = Modifier.size(width = 30.dp, height = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Switch(
+                                    checked = uiState.isDelayForDistractingApps,
+                                    onCheckedChange = { onToggleDelayForDistractingApps(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = AmberAccent,
+                                        checkedTrackColor = AmberAccent.copy(alpha = 0.45f),
+                                        uncheckedThumbColor = TextSecondary,
+                                        uncheckedTrackColor = Color(0x331E293B)
+                                    ),
+                                    modifier = Modifier
+                                        .scale(0.55f)
+                                        .testTag("delay_for_distracting_switch")
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             items(uiState.allApps, key = { it.packageName }) { app ->
-                val isShieldActive = app.isShieldActive
+                val isFromDistracting = uiState.isDelayForDistractingApps && app.isDistracting
+                val isShieldActive = app.isShieldActive || isFromDistracting
 
                 FrostedGlassCard(
                     modifier = Modifier
@@ -351,7 +405,10 @@ fun DistractionShieldScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (isShieldActive) "${currentDelay}s Mindful Friction Delay" else "Instant direct launch",
+                                    text = if (isShieldActive) {
+                                        if (isFromDistracting && !app.isShieldActive) "${currentDelay}s Delay (Blackout Distracting)"
+                                        else "${currentDelay}s Mindful Friction Delay"
+                                    } else "Instant direct launch",
                                     color = if (isShieldActive) AmberAccent else TextSecondary,
                                     fontSize = 12.sp
                                 )

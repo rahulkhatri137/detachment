@@ -8,10 +8,13 @@ import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.util.AppManagerHelper
+import com.rk.detachment.util.HeadsUpNotchPillManager
 import com.rk.detachment.util.TemporaryUnlockManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
@@ -23,6 +26,12 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private var currentForegroundPackage: String? = null
     private var lastInterceptedPackage: String? = null
     private var lastInterceptTime: Long = 0L
+
+    private var monitoredPackage: String? = null
+    private var monitoredAppName: String? = null
+    private var monitoredBaseMinutes: Int = 0
+    private var monitoredSessionStart: Long = 0L
+    private var pillTickerJob: Job? = null
 
     companion object {
         const val TAG = "DetachmentBlocker"
@@ -56,24 +65,29 @@ class DetachmentAccessibilityService : AccessibilityService() {
         if (packageName == this.packageName || 
             packageName == applicationContext.packageName || 
             packageName.startsWith("com.rk.detachment")) {
+            stopActiveAppMonitoring()
             return
         }
 
-        // 2. LAUNCHER OR SYSTEM UI (Notifications, Quick Settings, Recents, Keyguard):
         if (isLauncherOrSystem(packageName)) {
             currentForegroundPackage = packageName
             lastInterceptedPackage = null
             lastInterceptTime = 0L
+            stopActiveAppMonitoring()
             return
         }
 
         val now = System.currentTimeMillis()
 
-        // 3. TARGET APP - INSTANT IN-MEMORY UNLOCK CHECK:
         if (TemporaryUnlockManager.isUnlocked(packageName, now)) {
             currentForegroundPackage = packageName
             lastInterceptedPackage = null
             lastInterceptTime = 0L
+            serviceScope.launch {
+                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+                val app = db.appLimitDao().getAppByPackage(packageName) ?: return@launch
+                startActiveAppMonitoring(app)
+            }
             return
         }
 
@@ -151,7 +165,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (app.isShieldActive) {
+        val delayForDistracting = (db.appSettingsDao().getValue("key_delay_for_distracting_apps") ?: "true") != "false"
+        val isDelayActive = app.isShieldActive || (delayForDistracting && app.isDistracting)
+
+        if (isDelayActive) {
             val delaySec = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
             interceptBlockedApp(
                 app = app,
@@ -161,6 +178,66 @@ class DetachmentAccessibilityService : AccessibilityService() {
             )
             return
         }
+
+        startActiveAppMonitoring(app)
+    }
+
+    private fun startActiveAppMonitoring(app: AppLimitEntity) {
+        if (!app.isDistracting && app.dailyLimitMinutes <= 0) {
+            stopActiveAppMonitoring()
+            return
+        }
+
+        if (monitoredPackage == app.packageName && pillTickerJob?.isActive == true) {
+            return
+        }
+
+        monitoredPackage = app.packageName
+        monitoredAppName = app.appName
+        monitoredBaseMinutes = app.usedTodayMinutes
+        monitoredSessionStart = System.currentTimeMillis()
+
+        serviceScope.launch {
+            val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+            val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
+            if (!isPillEnabled) return@launch
+
+            HeadsUpNotchPillManager.checkAndTriggerMilestone(
+                context = this@DetachmentAccessibilityService,
+                packageName = app.packageName,
+                appName = app.appName,
+                minutesUsed = app.usedTodayMinutes,
+                intervalMinutes = 15
+            )
+        }
+
+        pillTickerJob?.cancel()
+        pillTickerJob = serviceScope.launch {
+            while (monitoredPackage == app.packageName) {
+                delay(20000L)
+                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+                val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
+                if (!isPillEnabled) continue
+
+                val elapsedMins = ((System.currentTimeMillis() - monitoredSessionStart) / 60000L).toInt()
+                val totalMins = monitoredBaseMinutes + elapsedMins
+                HeadsUpNotchPillManager.checkAndTriggerMilestone(
+                    context = this@DetachmentAccessibilityService,
+                    packageName = app.packageName,
+                    appName = app.appName,
+                    minutesUsed = totalMins,
+                    intervalMinutes = 15
+                )
+            }
+        }
+    }
+
+    private fun stopActiveAppMonitoring() {
+        pillTickerJob?.cancel()
+        pillTickerJob = null
+        monitoredPackage = null
+        monitoredAppName = null
+        monitoredSessionStart = 0L
     }
 
     private fun interceptBlockedApp(
@@ -169,6 +246,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
         isFrictionDelay: Boolean,
         delaySeconds: Int = 15
     ) {
+        stopActiveAppMonitoring()
         lastInterceptedPackage = app.packageName
         lastInterceptTime = System.currentTimeMillis()
 
@@ -199,6 +277,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        stopActiveAppMonitoring()
+        HeadsUpNotchPillManager.dismissPill()
         isServiceRunning = false
     }
 }

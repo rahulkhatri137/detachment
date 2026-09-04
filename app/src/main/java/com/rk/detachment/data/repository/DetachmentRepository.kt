@@ -32,6 +32,16 @@ class DetachmentRepository(
     val distractionsResisted: Flow<String?> = appSettingsDao.observeValue("distractions_resisted")
     val delaySeconds: Flow<String?> = appSettingsDao.observeValue("key_delay_seconds")
     val unlockMinutes: Flow<String?> = appSettingsDao.observeValue("key_unlock_minutes")
+    val isDelayForDistractingApps: Flow<Boolean> = appSettingsDao.observeValue("key_delay_for_distracting_apps").map { it != "false" }
+    val isHeadsUpPillEnabled: Flow<Boolean> = appSettingsDao.observeValue("key_heads_up_pill_enabled").map { it != "false" }
+
+    suspend fun setHeadsUpPillEnabled(enabled: Boolean) {
+        appSettingsDao.setSetting(AppSettingsEntity("key_heads_up_pill_enabled", enabled.toString()))
+    }
+
+    suspend fun setDelayForDistractingApps(enabled: Boolean) {
+        appSettingsDao.setSetting(AppSettingsEntity("key_delay_for_distracting_apps", enabled.toString()))
+    }
 
     suspend fun setAppAuthEnabled(enabled: Boolean) {
         appSettingsDao.setSetting(AppSettingsEntity("app_auth_enabled", enabled.toString()))

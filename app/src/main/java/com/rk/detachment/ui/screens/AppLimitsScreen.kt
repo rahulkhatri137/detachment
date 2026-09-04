@@ -1,5 +1,6 @@
 package com.rk.detachment.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
@@ -111,6 +113,7 @@ fun AppLimitsScreen(
     onRefreshApps: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
     onUpdateCategory: (String, String) -> Unit = { _, _ -> },
+    onToggleHeadsUpPill: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -411,6 +414,75 @@ fun AppLimitsScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            item(key = "heads_up_notch_pill_card") {
+                FrostedGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("heads_up_notch_pill_card"),
+                    backgroundColor = GlassSurfaceHigh,
+                    borderColor = Color(0xFF2563EB).copy(alpha = 0.5f)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF2563EB).copy(alpha = 0.2f))
+                                        .border(1.dp, Color(0xFF2563EB).copy(alpha = 0.5f), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FlashOn,
+                                        contentDescription = null,
+                                        tint = Color(0xFF60A5FA),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column {
+                                    Text(
+                                        text = "Notch Screen Time Pill",
+                                        color = TextPrimary,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Floating 15-min interval awareness for limited & distracting apps",
+                                        color = TextSecondary,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+
+                            Switch(
+                                checked = uiState.isHeadsUpPillEnabled,
+                                onCheckedChange = { onToggleHeadsUpPill(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color(0xFF3B82F6),
+                                    checkedTrackColor = Color(0xFF2563EB).copy(alpha = 0.45f),
+                                    uncheckedThumbColor = TextSecondary,
+                                    uncheckedTrackColor = Color(0x331E293B)
+                                ),
+                                modifier = Modifier.testTag("heads_up_pill_switch")
+                            )
                         }
                     }
                 }

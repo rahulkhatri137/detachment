@@ -11,6 +11,7 @@ import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.data.model.YouVsYouComparison
 import com.rk.detachment.data.repository.DetachmentRepository
 import com.rk.detachment.util.AppManagerHelper
+import com.rk.detachment.util.HeadsUpNotchPillManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,6 +43,8 @@ data class DetachmentUiState(
     val pomodoroSessionTag: String = "Deep Work",
     val delaySeconds: Int = 15,
     val unlockMinutes: Int = 15,
+    val isDelayForDistractingApps: Boolean = true,
+    val isHeadsUpPillEnabled: Boolean = true,
     val statusMessage: String? = null,
     val consciousnessComparison: YouVsYouComparison = YouVsYouComparison()
 ) {
@@ -58,7 +61,7 @@ data class DetachmentUiState(
         get() = allApps.filter { it.isDistracting }
 
     val shieldActiveApps: List<AppLimitEntity>
-        get() = allApps.filter { it.isShieldActive }
+        get() = allApps.filter { it.isShieldActive || (isDelayForDistractingApps && it.isDistracting) }
 
     val lockedAppsCount: Int
         get() = allApps.count { it.isCurrentlyLocked() }
@@ -162,6 +165,16 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             repository.unlockMinutes.collect { minStr ->
                 val mins = minStr?.toIntOrNull() ?: 15
                 _uiState.value = _uiState.value.copy(unlockMinutes = mins)
+            }
+        }
+        viewModelScope.launch {
+            repository.isDelayForDistractingApps.collect { enabled ->
+                _uiState.value = _uiState.value.copy(isDelayForDistractingApps = enabled)
+            }
+        }
+        viewModelScope.launch {
+            repository.isHeadsUpPillEnabled.collect { enabled ->
+                _uiState.value = _uiState.value.copy(isHeadsUpPillEnabled = enabled)
             }
         }
 
@@ -298,6 +311,18 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     fun toggleShieldActive(packageName: String, isShieldActive: Boolean) {
         viewModelScope.launch {
             repository.toggleShieldActive(packageName, isShieldActive)
+            if (!isShieldActive && _uiState.value.isDelayForDistractingApps) {
+                val app = _uiState.value.allApps.find { it.packageName == packageName }
+                if (app?.isDistracting == true) {
+                    repository.toggleDistracting(packageName, false)
+                }
+            }
+        }
+    }
+
+    fun setDelayForDistractingApps(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setDelayForDistractingApps(enabled)
         }
     }
 
@@ -523,6 +548,34 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
     fun clearStatusMessage() {
         _uiState.value = _uiState.value.copy(statusMessage = null)
+    }
+
+    fun setHeadsUpPillEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.setHeadsUpPillEnabled(enabled)
+        }
+    }
+
+    fun testHeadsUpPill(app: AppLimitEntity? = null, minutes: Int = 15) {
+        val targetApp = app
+            ?: _uiState.value.distractingApps.firstOrNull()
+            ?: _uiState.value.allApps.firstOrNull { it.dailyLimitMinutes > 0 }
+            ?: _uiState.value.allApps.firstOrNull()
+            ?: AppLimitEntity(
+                packageName = "com.google.android.youtube",
+                appName = "YouTube",
+                iconName = "youtube",
+                category = "Social & Media",
+                dailyLimitMinutes = 30,
+                usedTodayMinutes = 15,
+                isDistracting = true
+            )
+        HeadsUpNotchPillManager.showPill(
+            context = getApplication(),
+            packageName = targetApp.packageName,
+            appName = targetApp.appName,
+            minutesUsed = minutes
+        )
     }
 
     private fun showMessage(msg: String) {

@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.ui.components.AppLaunchSecurityScreen
+import com.rk.detachment.ui.components.HeadsUpNotchPillOverlay
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
 import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
@@ -65,6 +67,7 @@ import com.rk.detachment.ui.theme.IndigoPrimary
 import com.rk.detachment.ui.theme.TextMuted
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
+import com.rk.detachment.util.HeadsUpNotchPillManager
 import com.rk.detachment.viewmodel.DetachmentViewModel
 
 enum class NavigationTab(val title: String, val icon: ImageVector, val tag: String) {
@@ -97,6 +100,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DetachmentTheme {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                val headsUpPillData by HeadsUpNotchPillManager.currentPillState.collectAsStateWithLifecycle()
                 var isAppUnlocked by remember { isAppUnlockedState }
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
                 var showConsciousnessScreen by remember { mutableStateOf(false) }
@@ -109,15 +113,16 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                val requiresAppAuth = uiState.isAppAuthEnabled && !isAppUnlocked
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val requiresAppAuth = uiState.isAppAuthEnabled && !isAppUnlocked
 
-                if (requiresAppAuth) {
-                    AppLaunchSecurityScreen(
-                        masterPin = uiState.masterPin,
-                        onUnlocked = { isAppUnlocked = true }
-                    )
-                } else {
-                    Scaffold(
+                    if (requiresAppAuth) {
+                        AppLaunchSecurityScreen(
+                            masterPin = uiState.masterPin,
+                            onUnlocked = { isAppUnlocked = true }
+                        )
+                    } else {
+                        Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         containerColor = FrostedBackground,
                         snackbarHost = {
@@ -234,7 +239,8 @@ class MainActivity : ComponentActivity() {
                                     onLaunchApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
                                     onRefreshApps = { viewModel.scanInstalledApps() },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
-                                    onUpdateCategory = { pkg, cat -> viewModel.updateAppCategory(pkg, cat) }
+                                    onUpdateCategory = { pkg, cat -> viewModel.updateAppCategory(pkg, cat) },
+                                    onToggleHeadsUpPill = { enabled -> viewModel.setHeadsUpPillEnabled(enabled) }
                                 )
                             }
                             NavigationTab.SCHEDULES.name -> {
@@ -262,14 +268,21 @@ class MainActivity : ComponentActivity() {
                                 DistractionShieldScreen(
                                     uiState = uiState,
                                     onToggleShieldActive = { pkg, isShield -> viewModel.toggleShieldActive(pkg, isShield) },
-                                    onSetDelaySeconds = { sec -> viewModel.setDelaySeconds(sec) }
+                                    onSetDelaySeconds = { sec -> viewModel.setDelaySeconds(sec) },
+                                    onToggleDelayForDistractingApps = { enabled -> viewModel.setDelayForDistractingApps(enabled) }
                                 )
                             }
                         }
                     }
                 }
             }
+
+            HeadsUpNotchPillOverlay(
+                pillData = headsUpPillData,
+                onDismiss = { HeadsUpNotchPillManager.dismissPill() }
+            )
         }
     }
+}
 }
 }

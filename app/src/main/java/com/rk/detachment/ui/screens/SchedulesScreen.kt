@@ -3,6 +3,8 @@ package com.rk.detachment.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -370,6 +372,9 @@ fun SchedulesScreen(
 
         if (showAddDialog || editingRule != null) {
             val isEdit = editingRule != null
+            val allWeekDays = listOf("MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN")
+            val dayLetters = listOf("M", "T", "W", "T", "F", "S", "S")
+
             var title by remember { mutableStateOf(editingRule?.title ?: "New Focus Block") }
             var type by remember { mutableStateOf(editingRule?.type ?: "STUDY") }
             var startH by remember { mutableIntStateOf(editingRule?.startHour ?: 9) }
@@ -377,6 +382,15 @@ fun SchedulesScreen(
             var endH by remember { mutableIntStateOf(editingRule?.endHour ?: 17) }
             var endM by remember { mutableIntStateOf(editingRule?.endMinute ?: 0) }
             var blockedTarget by remember { mutableStateOf(editingRule?.blockedTarget ?: "DISTRACTING") }
+            var selectedDays by remember(editingRule) {
+                val initialDays = editingRule?.activeDays ?: "MON,TUE,WED,THU,FRI,SAT,SUN"
+                val set = if (initialDays.contains("ALL")) {
+                    allWeekDays.toSet()
+                } else {
+                    allWeekDays.filter { initialDays.contains(it) }.toSet()
+                }
+                mutableStateOf(if (set.isEmpty()) allWeekDays.toSet() else set)
+            }
 
             var showStartTimePicker by remember { mutableStateOf(false) }
             var showEndTimePicker by remember { mutableStateOf(false) }
@@ -398,7 +412,9 @@ fun SchedulesScreen(
                 text = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
                     ) {
                         OutlinedTextField(
                             value = title,
@@ -432,6 +448,55 @@ fun SchedulesScreen(
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                     )
+                                }
+                            }
+                        }
+
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Active Days:",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                allWeekDays.forEachIndexed { index, day ->
+                                    val isSelected = day in selectedDays
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                if (isSelected) IndigoPrimary
+                                                else Color(0x1AFFFFFF)
+                                            )
+                                            .border(
+                                                1.dp,
+                                                if (isSelected) IndigoLight else GlassBorderMedium,
+                                                CircleShape
+                                            )
+                                            .clickable {
+                                                selectedDays = if (isSelected) {
+                                                    if (selectedDays.size > 1) selectedDays - day else selectedDays
+                                                } else {
+                                                    selectedDays + day
+                                                }
+                                            }
+                                            .testTag("schedule_day_selector_$day"),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = dayLetters[index],
+                                            color = if (isSelected) Color.White else TextSecondary,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -640,6 +705,7 @@ fun SchedulesScreen(
                 confirmButton = {
                     TextButton(
                         onClick = {
+                            val daysString = allWeekDays.filter { it in selectedDays }.joinToString(",")
                             val newRule = ScheduleRuleEntity(
                                 id = editingRule?.id ?: 0,
                                 title = title,
@@ -648,8 +714,8 @@ fun SchedulesScreen(
                                 startMinute = startM,
                                 endHour = endH,
                                 endMinute = endM,
-                                activeDays = "MON,TUE,WED,THU,FRI,SAT,SUN",
-                                isEnabled = true,
+                                activeDays = if (daysString.isEmpty()) "MON,TUE,WED,THU,FRI,SAT,SUN" else daysString,
+                                isEnabled = editingRule?.isEnabled ?: true,
                                 blockedTarget = blockedTarget
                             )
                             onSaveRule(newRule)
