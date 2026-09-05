@@ -230,7 +230,7 @@ class BlockOverlayActivity : ComponentActivity() {
                                     category = data.category,
                                     delaySeconds = data.delaySeconds,
                                     onProceed = {
-                                        grantTemporaryUnlockAndLaunch(data.packageName, 5)
+                                        grantDelayProceedAndLaunch(data.packageName)
                                     },
                                     onClose = {
                                         recordDistractionResisted()
@@ -290,6 +290,14 @@ class BlockOverlayActivity : ComponentActivity() {
             startActivity(homeIntent)
         } catch (e: Exception) {
         }
+        finishAndRemoveTask()
+    }
+
+    private fun grantDelayProceedAndLaunch(packageName: String) {
+        TemporaryUnlockManager.setDelaySessionActive(packageName)
+        activeInstance = null
+        currentActivePackage = null
+        AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
         finishAndRemoveTask()
     }
 

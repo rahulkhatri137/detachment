@@ -1,8 +1,11 @@
 package com.rk.detachment.ui.components
 
+import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -34,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,11 +51,14 @@ fun HeadsUpNotchPillOverlay(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val topPadding = if (isLandscape) 8.dp else 24.dp
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(top = 10.dp)
+            .padding(top = topPadding)
             .zIndex(9999f),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -62,9 +69,9 @@ fun HeadsUpNotchPillOverlay(
                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
             ) + fadeIn() + scaleIn(initialScale = 0.85f),
             exit = slideOutVertically(
-                targetOffsetY = { -it },
-                animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessHigh)
-            ) + fadeOut() + scaleOut(targetScale = 0.85f)
+                targetOffsetY = { -it * 2 },
+                animationSpec = tween(durationMillis = 240, easing = FastOutLinearInEasing)
+            ) + fadeOut(animationSpec = tween(180)) + scaleOut(targetScale = 0.85f, animationSpec = tween(240))
         ) {
             if (pillData != null) {
                 HeadsUpNotchPillContent(

@@ -150,18 +150,111 @@ object AppManagerHelper {
         return set
     }
 
-    fun isLauncherOrSystemPackage(packageName: String, launcherPackages: Set<String> = emptySet()): Boolean {
+    fun isHomeScreenLauncher(packageName: String, launcherPackages: Set<String> = emptySet()): Boolean {
+        if (packageName.isBlank()) return false
         val lower = packageName.lowercase()
         return launcherPackages.contains(packageName) ||
-                lower.contains("detachment") ||
-                packageName == "com.android.systemui" ||
                 lower.contains("launcher") ||
                 lower.contains("quickstep") ||
                 lower.contains("trebuchet") ||
                 lower.contains("nexuslauncher") ||
-                lower.contains("inputmethod") ||
-                lower.contains("recents") ||
-                lower.contains(".home")
+                lower.contains(".home") ||
+                lower.contains("recents")
+    }
+
+    fun isExcludedOrSystemPackage(
+        packageName: String,
+        launcherPackages: Set<String> = emptySet(),
+        context: Context? = null
+    ): Boolean {
+        if (packageName.isBlank()) return true
+        val lower = packageName.lowercase()
+
+        if (packageName == "android" ||
+            packageName == "com.android.systemui" ||
+            lower.contains("systemui") ||
+            packageName == "com.google.android.gms"
+        ) {
+            return true
+        }
+
+        if (context != null && packageName == context.packageName) {
+            return true
+        }
+        if (lower.contains("detachment") || packageName.startsWith("com.rk.detachment")) {
+            return true
+        }
+
+        if (isHomeScreenLauncher(packageName, launcherPackages)) {
+            return true
+        }
+
+        if (lower.contains("wellbeing") ||
+            lower.contains("digitalwellbeing") ||
+            lower.contains(".forest") ||
+            lower.contains("screentime")
+        ) {
+            return true
+        }
+
+        if (lower.contains("intentresolver") ||
+            lower.contains("resolver") ||
+            lower.contains("documentsui")
+        ) {
+            return true
+        }
+
+        if (lower.contains("permissioncontroller") ||
+            lower.contains("packageinstaller") ||
+            lower.contains("certinstaller") ||
+            lower.contains("companiondevice") ||
+            lower.contains("captiveportallogin") ||
+            lower.contains("defcontainer")
+        ) {
+            return true
+        }
+
+        if (lower.contains("inputmethod") ||
+            lower.contains("latin") ||
+            lower.contains("gboard") ||
+            lower.contains("swiftkey") ||
+            lower.contains("ime")
+        ) {
+            return true
+        }
+
+        if (lower.contains("incallui") ||
+            lower.contains("telecom") ||
+            lower.contains("emergency")
+        ) {
+            return true
+        }
+
+        if (context != null) {
+            try {
+                val pm = context.packageManager
+                val appInfo = pm.getApplicationInfo(packageName, 0)
+                val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                        (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                if (isSystem) {
+                    val launchIntent = pm.getLaunchIntentForPackage(packageName)
+                    if (launchIntent == null) {
+                        return true
+                    }
+                }
+            } catch (e: Exception) {
+            }
+        }
+
+        return false
+    }
+
+    fun isLauncherOrSystemPackage(
+        packageName: String,
+        launcherPackages: Set<String> = emptySet(),
+        context: Context? = null
+    ): Boolean {
+        return isExcludedOrSystemPackage(packageName, launcherPackages, context)
     }
 
     fun scanRealInstalledApps(
@@ -183,7 +276,7 @@ object AppManagerHelper {
         for (resolveInfo in resolveInfos) {
             val pkg = resolveInfo.activityInfo.packageName
             if (pkg == context.packageName) continue
-            if (isLauncherOrSystemPackage(pkg, launcherPackages)) continue
+            if (isLauncherOrSystemPackage(pkg, launcherPackages, context)) continue
             if (seenPackages.contains(pkg)) continue
             seenPackages.add(pkg)
 
@@ -195,7 +288,7 @@ object AppManagerHelper {
                 resultList.add(
                     existing.copy(
                         appName = appLabel,
-                        usedTodayMinutes = realMinutesToday
+                        usedTodayMinutes = maxOf(realMinutesToday, existing.usedTodayMinutes)
                     )
                 )
             } else {
@@ -222,6 +315,16 @@ object AppManagerHelper {
             compareByDescending<AppLimitEntity> { it.usedTodayMinutes }
                 .thenBy { it.appName.lowercase() }
         )
+    }
+
+    fun getAppUsageMinutesToday(context: Context, packageName: String): Int {
+        if (!hasUsageStatsPermission(context)) return 0
+        try {
+            val usageMap = getTodayUsageMinutesMap(context)
+            return usageMap[packageName] ?: 0
+        } catch (e: Exception) {
+        }
+        return 0
     }
 
     fun getTodayUsageMinutesMap(context: Context): Map<String, Int> {
@@ -297,14 +400,13 @@ object AppManagerHelper {
                     (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
             }
 
-            if (eventCount > 0 && eventUsageMillis.isNotEmpty()) {
+            if (eventUsageMillis.isNotEmpty()) {
                 for ((pkg, ms) in eventUsageMillis) {
                     val mins = (ms / (1000 * 60)).toInt()
                     if (mins > 0) {
                         usageMap[pkg] = mins
                     }
                 }
-                return usageMap
             }
 
             val aggregateStats = usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
@@ -314,12 +416,10 @@ object AppManagerHelper {
                         val totalMs = stat.totalTimeInForeground
                         val mins = (totalMs / (1000 * 60)).toInt()
                         if (mins > 0) {
-                            usageMap[pkg] = mins
+                            val current = usageMap[pkg] ?: 0
+                            usageMap[pkg] = maxOf(current, mins)
                         }
                     }
-                }
-                if (usageMap.isNotEmpty()) {
-                    return usageMap
                 }
             }
 
@@ -333,8 +433,10 @@ object AppManagerHelper {
                     if (stat.lastTimeUsed >= startTime) {
                         val totalMs = stat.totalTimeInForeground
                         val mins = (totalMs / (1000 * 60)).toInt()
-                        val current = usageMap[stat.packageName] ?: 0
-                        usageMap[stat.packageName] = maxOf(current, mins)
+                        if (mins > 0) {
+                            val current = usageMap[stat.packageName] ?: 0
+                            usageMap[stat.packageName] = maxOf(current, mins)
+                        }
                     }
                 }
             }
@@ -386,7 +488,7 @@ object AppManagerHelper {
         return bitmap
     }
 
-    private fun guessCategory(appInfo: ApplicationInfo?, packageName: String, label: String): String {
+    fun guessCategory(appInfo: ApplicationInfo?, packageName: String, label: String): String {
         val pkg = packageName.lowercase()
         val lbl = label.lowercase()
 

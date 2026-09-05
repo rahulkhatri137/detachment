@@ -34,6 +34,9 @@ interface AppLimitDao {
     @Query("DELETE FROM app_limits WHERE packageName NOT IN (:packageNames)")
     suspend fun deleteAppsNotIn(packageNames: List<String>)
 
+    @Query("DELETE FROM app_limits WHERE packageName = :packageName")
+    suspend fun deleteApp(packageName: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertApp(app: AppLimitEntity)
 
@@ -42,6 +45,9 @@ interface AppLimitDao {
 
     @Query("UPDATE app_limits SET dailyLimitMinutes = :limitMinutes WHERE packageName = :packageName")
     suspend fun updateLimit(packageName: String, limitMinutes: Int)
+
+    @Query("UPDATE app_limits SET usedTodayMinutes = :minutes WHERE packageName = :packageName")
+    suspend fun updateUsedMinutes(packageName: String, minutes: Int)
 
     @Query("UPDATE app_limits SET usedTodayMinutes = usedTodayMinutes + :additionalMinutes WHERE packageName = :packageName")
     suspend fun addUsage(packageName: String, additionalMinutes: Int)

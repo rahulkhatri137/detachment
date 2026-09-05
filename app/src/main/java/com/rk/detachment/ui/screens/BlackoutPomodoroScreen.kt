@@ -310,7 +310,7 @@ fun BlackoutPomodoroScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "Essential Apps Whitelist",
+                                        text = "Essential Apps",
                                         color = TextPrimary,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
@@ -380,7 +380,7 @@ fun BlackoutPomodoroScreen(
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(
-                                        text = "Distracting Apps Tagging",
+                                        text = "Distracting Apps",
                                         color = TextPrimary,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold

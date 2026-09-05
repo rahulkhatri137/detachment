@@ -465,7 +465,7 @@ fun AppLimitsScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Floating 15-min interval awareness for limited & distracting apps",
+                                        text = "Floating 15-min screentime awareness reminders",
                                         color = TextSecondary,
                                         fontSize = 11.sp
                                     )

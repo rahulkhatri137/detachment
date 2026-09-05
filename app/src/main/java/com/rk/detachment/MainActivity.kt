@@ -51,7 +51,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.ui.components.AppLaunchSecurityScreen
-import com.rk.detachment.ui.components.HeadsUpNotchPillOverlay
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
 import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
@@ -100,7 +99,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             DetachmentTheme {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-                val headsUpPillData by HeadsUpNotchPillManager.currentPillState.collectAsStateWithLifecycle()
                 var isAppUnlocked by remember { isAppUnlockedState }
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
                 var showConsciousnessScreen by remember { mutableStateOf(false) }
@@ -276,11 +274,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-
-            HeadsUpNotchPillOverlay(
-                pillData = headsUpPillData,
-                onDismiss = { HeadsUpNotchPillManager.dismissPill() }
-            )
         }
     }
 }

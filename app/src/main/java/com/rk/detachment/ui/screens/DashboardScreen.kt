@@ -412,7 +412,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
-                                text = "Blackout Mode",
+                                text = "Pomodoro Blackout",
                                 color = TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
@@ -459,7 +459,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
-                                text = "Schedules",
+                                text = "Focus Schedules",
                                 color = TextPrimary,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
