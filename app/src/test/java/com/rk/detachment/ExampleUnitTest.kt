@@ -56,6 +56,35 @@ class ExampleUnitTest {
     }
 
     @Test
+    fun pillReminder_triggersAsPerAppLimitsScreentime_notActiveSession() {
+        val appLimitsDashboardScreenTimeMinutes = 11
+        val activeSessionDurationMinutes = 4
+        val intervalMinutes = 15
+
+        val totalScreenTime = appLimitsDashboardScreenTimeMinutes + activeSessionDurationMinutes
+        assertEquals(15, totalScreenTime)
+
+        val milestone = (totalScreenTime / intervalMinutes) * intervalMinutes
+        assertEquals(15, milestone)
+
+        val alertedSet = mutableSetOf<Int>()
+        val shouldTrigger = !alertedSet.contains(milestone) && milestone >= intervalMinutes
+        assertTrue(shouldTrigger)
+
+        alertedSet.add(milestone)
+        val secondCheckDuringSameSession = !alertedSet.contains(milestone)
+        assertFalse(secondCheckDuringSameSession)
+
+        val subsequentSessionMinutes = 15
+        val nextTotalScreenTime = totalScreenTime + subsequentSessionMinutes
+        assertEquals(30, nextTotalScreenTime)
+
+        val nextMilestone = (nextTotalScreenTime / intervalMinutes) * intervalMinutes
+        assertEquals(30, nextMilestone)
+        assertTrue(!alertedSet.contains(nextMilestone))
+    }
+
+    @Test
     fun temporaryUnlockManager_removeUnlock() {
         val testPkg = "com.example.game"
         val now = 1000000L

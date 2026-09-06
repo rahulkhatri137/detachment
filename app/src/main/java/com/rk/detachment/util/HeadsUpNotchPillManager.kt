@@ -115,7 +115,7 @@ object HeadsUpNotchPillManager {
         val highestPastMilestone = (currentTotalMinutes / intervalMinutes) * intervalMinutes
         var changed = false
         var m = intervalMinutes
-        while (m < highestPastMilestone) {
+        while (m <= highestPastMilestone) {
             if (set.add(m)) {
                 changed = true
             }

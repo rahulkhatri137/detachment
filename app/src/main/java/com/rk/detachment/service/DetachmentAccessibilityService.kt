@@ -243,7 +243,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
         val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
         val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, packageName) else 0
-        val currentMins = if (hasUsage) liveUsage else app.usedTodayMinutes
+        val currentMins = maxOf(app.usedTodayMinutes, liveUsage)
         if (currentMins != app.usedTodayMinutes) {
             db.appLimitDao().updateUsedMinutes(packageName, currentMins)
             app = app.copy(usedTodayMinutes = currentMins)
@@ -334,7 +334,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
         val hasUsage = AppManagerHelper.hasUsageStatsPermission(this)
         val usageMins = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this, currentPkg) else 0
-        val initialMinutes = if (hasUsage) usageMins else app.usedTodayMinutes
+        val initialMinutes = maxOf(app.usedTodayMinutes, usageMins)
 
         monitoredPackage = currentPkg
         monitoredAppName = displayName
@@ -389,11 +389,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, currentPkg) else 0
                 val currentDbApp = db.appLimitDao().getAppByPackage(currentPkg)
                 val currentDbMinutes = currentDbApp?.usedTodayMinutes ?: 0
-                val totalMins = if (hasUsage) {
-                    maxOf(liveUsage, monitoredBaseMinutes + elapsedMins)
-                } else {
-                    monitoredBaseMinutes + elapsedMins
-                }
+                val totalMins = maxOf(currentDbMinutes, monitoredBaseMinutes + elapsedMins, liveUsage)
 
                 if (totalMins != currentDbMinutes) {
                     db.appLimitDao().updateUsedMinutes(currentPkg, totalMins)
@@ -449,10 +445,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
             val elapsedMins = ((System.currentTimeMillis() - sessionStart) / 60000L).toInt()
             val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
             val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, pkg) else 0
-            val totalMins = if (hasUsage) maxOf(liveUsage, baseMins + elapsedMins) else (baseMins + elapsedMins)
             serviceScope.launch {
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
                 val currentDbMinutes = db.appLimitDao().getAppByPackage(pkg)?.usedTodayMinutes ?: 0
+                val totalMins = maxOf(currentDbMinutes, baseMins + elapsedMins, liveUsage)
                 if (totalMins != currentDbMinutes) {
                     db.appLimitDao().updateUsedMinutes(pkg, totalMins)
                 }

@@ -205,8 +205,9 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 val currentApps = repository.allApps.first()
                 for (installedApp in currentApps) {
                     val realMins = todayUsageMap[installedApp.packageName] ?: 0
-                    if (realMins != installedApp.usedTodayMinutes) {
-                        repository.updateUsedMinutes(installedApp.packageName, realMins)
+                    val targetMins = maxOf(installedApp.usedTodayMinutes, realMins)
+                    if (targetMins != installedApp.usedTodayMinutes) {
+                        repository.updateUsedMinutes(installedApp.packageName, targetMins)
                     }
                 }
             }
