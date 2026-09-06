@@ -49,6 +49,9 @@ interface AppLimitDao {
     @Query("UPDATE app_limits SET usedTodayMinutes = :minutes WHERE packageName = :packageName")
     suspend fun updateUsedMinutes(packageName: String, minutes: Int)
 
+    @Query("UPDATE app_limits SET usedTodayMinutes = 0, todayOpens = 0")
+    suspend fun resetDailyUsage()
+
     @Query("UPDATE app_limits SET usedTodayMinutes = usedTodayMinutes + :additionalMinutes WHERE packageName = :packageName")
     suspend fun addUsage(packageName: String, additionalMinutes: Int)
 

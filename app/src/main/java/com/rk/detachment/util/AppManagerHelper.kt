@@ -14,6 +14,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
@@ -288,7 +289,7 @@ object AppManagerHelper {
                 resultList.add(
                     existing.copy(
                         appName = appLabel,
-                        usedTodayMinutes = maxOf(realMinutesToday, existing.usedTodayMinutes)
+                        usedTodayMinutes = if (hasUsageStatsPermission(context)) realMinutesToday else existing.usedTodayMinutes
                     )
                 )
             } else {
@@ -328,8 +329,36 @@ object AppManagerHelper {
     }
 
     fun getTodayUsageMinutesMap(context: Context): Map<String, Int> {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val startTime = calendar.timeInMillis
+        val endTime = System.currentTimeMillis()
+        return getUsageMinutesMapForRange(context, startTime, endTime)
+    }
+
+    fun getYesterdayUsageMinutesMap(context: Context): Map<String, Int> {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val yesterdayCalendar = Calendar.getInstance().apply {
+            timeInMillis = todayStart
+            add(Calendar.DAY_OF_YEAR, -1)
+        }
+        val yesterdayStart = yesterdayCalendar.timeInMillis
+        val yesterdayEnd = todayStart - 1
+        return getUsageMinutesMapForRange(context, yesterdayStart, yesterdayEnd)
+    }
+
+    fun getUsageMinutesMapForRange(context: Context, startTime: Long, endTime: Long): Map<String, Int> {
         val usageMap = mutableMapOf<String, Int>()
-        if (!hasUsageStatsPermission(context)) {
+        if (!hasUsageStatsPermission(context) || startTime >= endTime) {
             return usageMap
         }
 
@@ -337,26 +366,16 @@ object AppManagerHelper {
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
                 ?: return usageMap
 
-            val calendar = Calendar.getInstance().apply {
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            val startTime = calendar.timeInMillis
-            val endTime = System.currentTimeMillis()
-
-            val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
+            val lookbackStart = maxOf(0L, startTime - 15 * 60 * 1000L)
+            val usageEvents = usageStatsManager.queryEvents(lookbackStart, endTime)
             val eventUsageMillis = mutableMapOf<String, Long>()
             var currentInteractiveForeground: String? = null
             var currentForegroundStart: Long = 0L
 
             val event = UsageEvents.Event()
-            var eventCount = 0
 
             while (usageEvents != null && usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
-                eventCount++
                 val pkg = event.packageName ?: continue
                 val time = event.timeStamp
 
@@ -364,9 +383,13 @@ object AppManagerHelper {
                     UsageEvents.Event.ACTIVITY_RESUMED,
                     UsageEvents.Event.MOVE_TO_FOREGROUND -> {
                         if (currentInteractiveForeground != null && currentForegroundStart > 0L) {
-                            val duration = (time - currentForegroundStart).coerceAtLeast(0L)
-                            eventUsageMillis[currentInteractiveForeground!!] =
-                                (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
+                            val effStart = maxOf(currentForegroundStart, startTime)
+                            val effEnd = minOf(time, endTime)
+                            if (effEnd > effStart) {
+                                val duration = (effEnd - effStart).coerceAtMost(2 * 3600 * 1000L)
+                                eventUsageMillis[currentInteractiveForeground!!] =
+                                    (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
+                            }
                         }
                         currentInteractiveForeground = pkg
                         currentForegroundStart = time
@@ -374,8 +397,12 @@ object AppManagerHelper {
                     UsageEvents.Event.ACTIVITY_PAUSED,
                     UsageEvents.Event.MOVE_TO_BACKGROUND -> {
                         if (currentInteractiveForeground == pkg && currentForegroundStart > 0L) {
-                            val duration = (time - currentForegroundStart).coerceAtLeast(0L)
-                            eventUsageMillis[pkg] = (eventUsageMillis[pkg] ?: 0L) + duration
+                            val effStart = maxOf(currentForegroundStart, startTime)
+                            val effEnd = minOf(time, endTime)
+                            if (effEnd > effStart) {
+                                val duration = (effEnd - effStart).coerceAtMost(2 * 3600 * 1000L)
+                                eventUsageMillis[pkg] = (eventUsageMillis[pkg] ?: 0L) + duration
+                            }
                             currentInteractiveForeground = null
                             currentForegroundStart = 0L
                         }
@@ -384,9 +411,13 @@ object AppManagerHelper {
                     UsageEvents.Event.KEYGUARD_SHOWN,
                     UsageEvents.Event.DEVICE_SHUTDOWN -> {
                         if (currentInteractiveForeground != null && currentForegroundStart > 0L) {
-                            val duration = (time - currentForegroundStart).coerceAtLeast(0L)
-                            eventUsageMillis[currentInteractiveForeground!!] =
-                                (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
+                            val effStart = maxOf(currentForegroundStart, startTime)
+                            val effEnd = minOf(time, endTime)
+                            if (effEnd > effStart) {
+                                val duration = (effEnd - effStart).coerceAtMost(2 * 3600 * 1000L)
+                                eventUsageMillis[currentInteractiveForeground!!] =
+                                    (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
+                            }
                             currentInteractiveForeground = null
                             currentForegroundStart = 0L
                         }
@@ -395,49 +426,33 @@ object AppManagerHelper {
             }
 
             if (currentInteractiveForeground != null && currentForegroundStart > 0L) {
-                val duration = (endTime - currentForegroundStart).coerceIn(0L, 12 * 3600 * 1000L)
-                eventUsageMillis[currentInteractiveForeground!!] =
-                    (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
-            }
+                val now = System.currentTimeMillis()
+                val isPastInterval = endTime < (now - 60_000L)
+                val isInteractive = try {
+                    (context.getSystemService(Context.POWER_SERVICE) as? PowerManager)?.isInteractive == true
+                } catch (e: Exception) {
+                    true
+                }
 
-            if (eventUsageMillis.isNotEmpty()) {
-                for ((pkg, ms) in eventUsageMillis) {
-                    val mins = (ms / (1000 * 60)).toInt()
-                    if (mins > 0) {
-                        usageMap[pkg] = mins
+                if (isPastInterval || isInteractive) {
+                    val effStart = maxOf(currentForegroundStart, startTime)
+                    val effEnd = minOf(now, endTime)
+                    if (effEnd > effStart) {
+                        val maxAllowed = if (isPastInterval) (2 * 3600 * 1000L) else (20 * 60 * 1000L)
+                        val duration = (effEnd - effStart).coerceIn(0L, maxAllowed)
+                        eventUsageMillis[currentInteractiveForeground!!] =
+                            (eventUsageMillis[currentInteractiveForeground!!] ?: 0L) + duration
                     }
                 }
             }
 
-            val aggregateStats = usageStatsManager.queryAndAggregateUsageStats(startTime, endTime)
-            if (!aggregateStats.isNullOrEmpty()) {
-                for ((pkg, stat) in aggregateStats) {
-                    if (stat.lastTimeUsed >= startTime) {
-                        val totalMs = stat.totalTimeInForeground
-                        val mins = (totalMs / (1000 * 60)).toInt()
-                        if (mins > 0) {
-                            val current = usageMap[pkg] ?: 0
-                            usageMap[pkg] = maxOf(current, mins)
-                        }
-                    }
-                }
-            }
-
-            val stats = usageStatsManager.queryUsageStats(
-                UsageStatsManager.INTERVAL_BEST,
-                startTime,
-                endTime
-            )
-            if (stats != null) {
-                for (stat in stats) {
-                    if (stat.lastTimeUsed >= startTime) {
-                        val totalMs = stat.totalTimeInForeground
-                        val mins = (totalMs / (1000 * 60)).toInt()
-                        if (mins > 0) {
-                            val current = usageMap[stat.packageName] ?: 0
-                            usageMap[stat.packageName] = maxOf(current, mins)
-                        }
-                    }
+            val launcherPackages = getHomeLauncherPackages(context)
+            for ((pkg, ms) in eventUsageMillis) {
+                if (pkg == context.packageName) continue
+                if (launcherPackages.contains(pkg)) continue
+                val mins = (ms / (1000 * 60)).toInt()
+                if (mins > 0) {
+                    usageMap[pkg] = mins
                 }
             }
         } catch (e: Exception) {
@@ -748,6 +763,16 @@ object AppManagerHelper {
             }
         }
 
+        val periodUsageMap = getUsageMinutesMapForRange(context, startTime, endTime)
+        val periodMapTotalMins = periodUsageMap.values.sum()
+
+        if (sessions.isEmpty() && periodUsageMap.isNotEmpty()) {
+            for ((pkg, mins) in periodUsageMap) {
+                val durSec = mins * 60
+                sessions.add(RawAppSession(pkg, startTime, startTime + durSec * 1000L, durSec))
+            }
+        }
+
         var mindlessCount = 0
         var intentionalCount = 0
         var unnecessaryMins = 0
@@ -770,14 +795,20 @@ object AppManagerHelper {
 
         val realSessionsTotalMins = sessions.sumOf { it.durationSec } / 60
         val totalScreenMins = if (isYesterday) {
-            if (realSessionsTotalMins > 0) {
+            if (periodMapTotalMins > 0) {
+                periodMapTotalMins
+            } else if (realSessionsTotalMins > 0) {
                 realSessionsTotalMins
             } else {
-                (allApps.sumOf { it.usedTodayMinutes } * 1.35f + 40).toInt()
+                (allApps.sumOf { it.usedTodayMinutes } * 1.2f + 30).toInt().coerceAtLeast(30)
             }
         } else {
-            val appsTodaySum = allApps.sumOf { it.usedTodayMinutes }
-            if (appsTodaySum > 0) appsTodaySum else realSessionsTotalMins
+            if (periodMapTotalMins > 0) {
+                periodMapTotalMins
+            } else {
+                val appsTodaySum = allApps.sumOf { it.usedTodayMinutes }
+                if (appsTodaySum > 0) appsTodaySum else realSessionsTotalMins
+            }
         }
 
         if (totalUnlocks == 0) {
@@ -811,8 +842,14 @@ object AppManagerHelper {
         val longestContinuousUsageMins = (longestContinuousUsageMillis / (1000 * 60)).toInt().coerceAtLeast(15)
         val totalPhoneFreeMins = (1440 - totalScreenMins).coerceIn(300, 1400)
 
-        val overLimitMins = allApps.filter { it.dailyLimitMinutes > 0 && it.usedTodayMinutes > it.dailyLimitMinutes }
-            .sumOf { it.usedTodayMinutes - it.dailyLimitMinutes }
+        val overLimitMins = allApps.filter { it.dailyLimitMinutes > 0 }.sumOf { app ->
+            val used = if (isYesterday) {
+                periodUsageMap[app.packageName] ?: 0
+            } else {
+                periodUsageMap[app.packageName] ?: app.usedTodayMinutes
+            }
+            maxOf(0, used - app.dailyLimitMinutes)
+        }
 
         if (isYesterday && habitLoops.isEmpty()) {
             habitLoops.add(

@@ -215,6 +215,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             _uiState.value = _uiState.value.copy(isSyncingApps = true)
             withContext(Dispatchers.IO) {
                 val app = getApplication<Application>()
+                repository.checkAndResetDailyUsageIfNeeded()
                 val existing = repository.allApps.first()
                 val scanned = AppManagerHelper.scanRealInstalledApps(app, existing)
                 if (scanned.isNotEmpty()) {

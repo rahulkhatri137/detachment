@@ -9,6 +9,9 @@ import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.util.TemporaryUnlockManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -160,6 +163,15 @@ class DetachmentRepository(
             appLimitDao.insertApps(apps)
             val packageNames = apps.map { it.packageName }
             appLimitDao.deleteAppsNotIn(packageNames)
+        }
+    }
+
+    suspend fun checkAndResetDailyUsageIfNeeded() {
+        val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val lastResetDate = appSettingsDao.getValue("key_last_usage_reset_date")
+        if (lastResetDate != todayDateString) {
+            appLimitDao.resetDailyUsage()
+            appSettingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
         }
     }
 }
