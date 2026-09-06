@@ -133,6 +133,10 @@ class BlockOverlayActivity : ComponentActivity() {
         var currentActivePackage: String? = null
             private set
 
+        @Volatile
+        var isActivityResumed: Boolean = false
+            private set
+
         fun dismissIfActive() {
             try {
                 activeInstance?.let { activity ->
@@ -146,6 +150,7 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private val overlayDataState = mutableStateOf<OverlayScreenData?>(null)
+    private var isExiting = false
 
     private fun parseOverlayData(srcIntent: Intent): OverlayScreenData {
         return OverlayScreenData(
@@ -264,6 +269,7 @@ class BlockOverlayActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        isActivityResumed = true
         activeInstance = this
         val currentPkg = overlayDataState.value?.packageName
         if (!currentPkg.isNullOrBlank()) {
@@ -271,8 +277,19 @@ class BlockOverlayActivity : ComponentActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        isActivityResumed = false
+    }
+
+    override fun onStop() {
+        super.onStop()
+        isActivityResumed = false
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        isActivityResumed = false
         if (activeInstance == this) {
             activeInstance = null
             currentActivePackage = null
@@ -280,6 +297,8 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun returnToHome() {
+        isExiting = true
+        isActivityResumed = false
         activeInstance = null
         currentActivePackage = null
         try {
@@ -294,6 +313,8 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun grantDelayProceedAndLaunch(packageName: String) {
+        isExiting = true
+        isActivityResumed = false
         TemporaryUnlockManager.setDelaySessionActive(packageName)
         activeInstance = null
         currentActivePackage = null
@@ -302,6 +323,8 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun grantTemporaryUnlockAndLaunch(packageName: String, minutes: Int) {
+        isExiting = true
+        isActivityResumed = false
         val expiry = System.currentTimeMillis() + (minutes * 60 * 1000L)
         TemporaryUnlockManager.setUnlock(packageName, expiry)
         activeInstance = null

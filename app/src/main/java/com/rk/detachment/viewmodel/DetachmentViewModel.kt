@@ -182,8 +182,33 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
         activeTimeTickerJob = viewModelScope.launch {
             while (true) {
-                delay(3000L)
+                delay(4000L)
                 checkPermissionsAndRefresh()
+                checkDailyResetAndRefreshUsage()
+            }
+        }
+    }
+
+    fun checkDailyResetAndRefreshUsage() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val wasReset = repository.checkAndResetDailyUsageIfNeeded()
+            if (wasReset) {
+                val existing = repository.allApps.first()
+                val scanned = AppManagerHelper.scanRealInstalledApps(app, existing)
+                if (scanned.isNotEmpty()) {
+                    repository.syncApps(scanned)
+                }
+                updateConsciousnessData()
+            } else if (AppManagerHelper.hasUsageStatsPermission(app)) {
+                val todayUsageMap = AppManagerHelper.getTodayUsageMinutesMap(app)
+                val currentApps = repository.allApps.first()
+                for (installedApp in currentApps) {
+                    val realMins = todayUsageMap[installedApp.packageName] ?: 0
+                    if (realMins != installedApp.usedTodayMinutes) {
+                        repository.updateUsedMinutes(installedApp.packageName, realMins)
+                    }
+                }
             }
         }
     }

@@ -166,13 +166,19 @@ class DetachmentRepository(
         }
     }
 
-    suspend fun checkAndResetDailyUsageIfNeeded() {
+    suspend fun updateUsedMinutes(packageName: String, minutes: Int) {
+        appLimitDao.updateUsedMinutes(packageName, minutes)
+    }
+
+    suspend fun checkAndResetDailyUsageIfNeeded(): Boolean {
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val lastResetDate = appSettingsDao.getValue("key_last_usage_reset_date")
         if (lastResetDate != todayDateString) {
             appLimitDao.resetDailyUsage()
             appSettingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
+            return true
         }
+        return false
     }
 }
 

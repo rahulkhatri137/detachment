@@ -65,10 +65,26 @@ object HeadsUpNotchPillManager {
     }
 
     private fun getAlertedSet(context: Context, todayKey: String): MutableSet<Int> {
+        val todayPrefix = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+        alertedMilestones.keys.retainAll { it.startsWith(todayPrefix) }
+
         val memorySet = alertedMilestones[todayKey]
         if (memorySet != null) return memorySet
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val allEntries = prefs.all
+        val editor = prefs.edit()
+        var cleaned = false
+        for (key in allEntries.keys) {
+            if (!key.startsWith(todayPrefix)) {
+                editor.remove(key)
+                cleaned = true
+            }
+        }
+        if (cleaned) {
+            editor.apply()
+        }
+
         val saved = prefs.getStringSet(todayKey, null)
         val set = mutableSetOf<Int>()
         if (saved != null) {

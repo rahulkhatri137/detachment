@@ -10,10 +10,14 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
+import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.util.AppManagerHelper
 import com.rk.detachment.util.HeadsUpNotchPillManager
 import com.rk.detachment.util.TemporaryUnlockManager
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -159,11 +163,14 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (BlockOverlayActivity.currentActivePackage == packageName && BlockOverlayActivity.activeInstance != null) {
+        val isOverlayShowing = BlockOverlayActivity.isActivityResumed &&
+                BlockOverlayActivity.currentActivePackage == packageName
+
+        if (isOverlayShowing) {
             return
         }
 
-        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 2500L) {
+        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 300L) {
             return
         }
 
@@ -195,6 +202,13 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+        val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val lastResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
+        if (lastResetDate != todayDateString) {
+            db.appLimitDao().resetDailyUsage()
+            db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
+        }
+
         var app = db.appLimitDao().getAppByPackage(packageName)
         if (app == null) {
             try {
@@ -225,6 +239,14 @@ class DetachmentAccessibilityService : AccessibilityService() {
             } catch (e: Exception) {
                 return
             }
+        }
+
+        val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
+        val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, packageName) else 0
+        val currentMins = if (hasUsage) liveUsage else app.usedTodayMinutes
+        if (currentMins != app.usedTodayMinutes) {
+            db.appLimitDao().updateUsedMinutes(packageName, currentMins)
+            app = app.copy(usedTodayMinutes = currentMins)
         }
 
         if (app.isTemporaryUnlocked(now)) {
@@ -279,7 +301,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
         val isDelayActive = app.isShieldActive || (delayForDistracting && app.isDistracting)
 
         if (isDelayActive) {
-            if (isNewLaunch && !TemporaryUnlockManager.isDelaySessionActive(packageName)) {
+            if (!TemporaryUnlockManager.isDelaySessionActive(packageName)) {
                 val delaySec = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
                 interceptBlockedApp(
                     app = app,
@@ -321,6 +343,13 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
         serviceScope.launch {
             val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+            val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            val lastResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
+            if (lastResetDate != todayDateString) {
+                db.appLimitDao().resetDailyUsage()
+                db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
+            }
+
             if (initialMinutes != app.usedTodayMinutes) {
                 db.appLimitDao().updateUsedMinutes(currentPkg, initialMinutes)
             }
@@ -329,11 +358,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
             if (!isPillEnabled) return@launch
 
             if (initialMinutes >= 15) {
-                HeadsUpNotchPillManager.checkAndTriggerMilestone(
+                HeadsUpNotchPillManager.syncPastMilestones(
                     context = this@DetachmentAccessibilityService,
                     packageName = currentPkg,
-                    appName = displayName,
-                    minutesUsed = initialMinutes,
+                    currentTotalMinutes = initialMinutes,
                     intervalMinutes = 15
                 )
             }
@@ -341,19 +369,33 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
         pillTickerJob = serviceScope.launch {
             while (monitoredPackage == currentPkg) {
-                delay(10000L)
+                delay(5000L)
                 if (monitoredPackage != currentPkg) break
 
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+                val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                val lastReset = db.appSettingsDao().getValue("key_last_usage_reset_date")
+                if (lastReset != todayDate) {
+                    db.appLimitDao().resetDailyUsage()
+                    db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDate))
+                    monitoredBaseMinutes = 0
+                    monitoredSessionStart = System.currentTimeMillis()
+                }
+
                 val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
 
                 val elapsedMins = ((System.currentTimeMillis() - monitoredSessionStart) / 60000L).toInt()
                 val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
                 val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, currentPkg) else 0
-                val totalMins = if (hasUsage) maxOf(liveUsage, monitoredBaseMinutes + elapsedMins) else (monitoredBaseMinutes + elapsedMins)
+                val currentDbApp = db.appLimitDao().getAppByPackage(currentPkg)
+                val currentDbMinutes = currentDbApp?.usedTodayMinutes ?: 0
+                val totalMins = if (hasUsage) {
+                    maxOf(liveUsage, monitoredBaseMinutes + elapsedMins)
+                } else {
+                    monitoredBaseMinutes + elapsedMins
+                }
 
-                val currentDbMinutes = db.appLimitDao().getAppByPackage(currentPkg)?.usedTodayMinutes ?: 0
-                if (totalMins > currentDbMinutes || (hasUsage && totalMins != currentDbMinutes)) {
+                if (totalMins != currentDbMinutes) {
                     db.appLimitDao().updateUsedMinutes(currentPkg, totalMins)
                 }
 
@@ -367,11 +409,25 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     )
                 }
 
-                if (app.dailyLimitMinutes > 0 && totalMins >= app.dailyLimitMinutes) {
+                val limitMinutes = currentDbApp?.dailyLimitMinutes ?: app.dailyLimitMinutes
+                val isLockedManually = currentDbApp?.isLockedManually ?: app.isLockedManually
+
+                if (isLockedManually || (limitMinutes > 0 && totalMins >= limitMinutes)) {
                     val now = System.currentTimeMillis()
                     if (!TemporaryUnlockManager.isUnlocked(currentPkg, now)) {
-                        evaluateAndEnforceApp(currentPkg, isNewLaunch = false)
-                        break
+                        val updatedApp = (currentDbApp ?: app).copy(
+                            usedTodayMinutes = totalMins,
+                            dailyLimitMinutes = limitMinutes,
+                            isLockedManually = isLockedManually
+                        )
+                        val reason = if (isLockedManually) {
+                            "Manually locked by Detachment Shield"
+                        } else {
+                            "Daily screen time limit of ${limitMinutes}m exceeded (${totalMins}m used today)"
+                        }
+                        interceptBlockedApp(app = updatedApp, reason = reason, isFrictionDelay = false, delaySeconds = 15)
+                        delay(1500L)
+                        continue
                     }
                 }
             }
@@ -397,7 +453,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             serviceScope.launch {
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
                 val currentDbMinutes = db.appLimitDao().getAppByPackage(pkg)?.usedTodayMinutes ?: 0
-                if (totalMins > currentDbMinutes || (hasUsage && totalMins != currentDbMinutes)) {
+                if (totalMins != currentDbMinutes) {
                     db.appLimitDao().updateUsedMinutes(pkg, totalMins)
                 }
             }
@@ -420,9 +476,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
         try {
             val intent = Intent(this, BlockOverlayActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
                         Intent.FLAG_ACTIVITY_NO_ANIMATION
                 putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)
                 putExtra(BlockOverlayActivity.EXTRA_APP_NAME, app.appName)
@@ -436,6 +491,52 @@ class DetachmentAccessibilityService : AccessibilityService() {
             startActivity(intent)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch BlockOverlayActivity", e)
+        }
+
+        serviceScope.launch {
+            val checkDelays = longArrayOf(250L, 500L, 850L, 1300L, 1900L)
+            for (delayMs in checkDelays) {
+                delay(delayMs)
+                val currentTime = System.currentTimeMillis()
+                if (TemporaryUnlockManager.isUnlocked(app.packageName, currentTime)) break
+                if (TemporaryUnlockManager.isDelaySessionActive(app.packageName)) break
+                if (BlockOverlayActivity.activeInstance == null) break
+
+                val activePkg = try { rootInActiveWindow?.packageName?.toString() } catch (e: Exception) { null }
+                val isResumed = BlockOverlayActivity.isActivityResumed
+
+                if (!isResumed || activePkg == app.packageName) {
+                    reassertBlockOverlay(app, reason, isFrictionDelay, delaySeconds)
+                }
+            }
+        }
+    }
+
+    private fun reassertBlockOverlay(
+        app: AppLimitEntity,
+        reason: String,
+        isFrictionDelay: Boolean,
+        delaySeconds: Int
+    ) {
+        if (isExcludedOrSystem(app.packageName)) return
+        try {
+            val intent = Intent(this, BlockOverlayActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_NO_ANIMATION
+                putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)
+                putExtra(BlockOverlayActivity.EXTRA_APP_NAME, app.appName)
+                putExtra(BlockOverlayActivity.EXTRA_CATEGORY, app.category)
+                putExtra(BlockOverlayActivity.EXTRA_REASON, reason)
+                putExtra(BlockOverlayActivity.EXTRA_IS_FRICTION_DELAY, isFrictionDelay)
+                putExtra(BlockOverlayActivity.EXTRA_DELAY_SECONDS, delaySeconds)
+                putExtra(BlockOverlayActivity.EXTRA_USED_MINUTES, app.usedTodayMinutes)
+                putExtra(BlockOverlayActivity.EXTRA_LIMIT_MINUTES, app.dailyLimitMinutes)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reassert BlockOverlayActivity", e)
         }
     }
 

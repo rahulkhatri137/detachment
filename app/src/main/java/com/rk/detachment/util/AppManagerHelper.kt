@@ -447,6 +447,7 @@ object AppManagerHelper {
             }
 
             val launcherPackages = getHomeLauncherPackages(context)
+
             for ((pkg, ms) in eventUsageMillis) {
                 if (pkg == context.packageName) continue
                 if (launcherPackages.contains(pkg)) continue
