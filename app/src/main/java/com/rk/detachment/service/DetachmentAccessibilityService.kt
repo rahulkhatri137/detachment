@@ -61,6 +61,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         isServiceRunning = true
+        HeadsUpNotchPillManager.registerAccessibilityService(this)
         database = AppDatabase.getDatabase(applicationContext, serviceScope)
 
         if (!isReceiverRegistered) {
@@ -197,9 +198,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         val now = System.currentTimeMillis()
-        if (TemporaryUnlockManager.isUnlocked(packageName, now)) {
-            return
-        }
 
         val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
@@ -249,8 +247,11 @@ class DetachmentAccessibilityService : AccessibilityService() {
             app = app.copy(usedTodayMinutes = currentMins)
         }
 
-        if (app.isTemporaryUnlocked(now)) {
-            TemporaryUnlockManager.setUnlock(packageName, app.unlockExpiresAtMillis)
+        val isUnlocked = TemporaryUnlockManager.isUnlocked(packageName, now) || app.isTemporaryUnlocked(now)
+        if (isUnlocked) {
+            if (app.isTemporaryUnlocked(now)) {
+                TemporaryUnlockManager.setUnlock(packageName, app.unlockExpiresAtMillis)
+            }
             startActiveAppMonitoring(app)
             return
         }
@@ -362,6 +363,13 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     context = this@DetachmentAccessibilityService,
                     packageName = currentPkg,
                     currentTotalMinutes = initialMinutes,
+                    intervalMinutes = 15
+                )
+                HeadsUpNotchPillManager.checkAndTriggerMilestone(
+                    context = this@DetachmentAccessibilityService,
+                    packageName = currentPkg,
+                    appName = displayName,
+                    minutesUsed = initialMinutes,
                     intervalMinutes = 15
                 )
             }
@@ -549,6 +557,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             isReceiverRegistered = false
         }
         stopActiveAppMonitoring()
+        HeadsUpNotchPillManager.unregisterAccessibilityService(this)
         HeadsUpNotchPillManager.dismissPill()
         isServiceRunning = false
     }

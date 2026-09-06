@@ -32,6 +32,7 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,6 +54,18 @@ object HeadsUpNotchPillManager {
     val currentPillState: StateFlow<HeadsUpPillData?> = _currentPillState.asStateFlow()
 
     private val alertedMilestones = mutableMapOf<String, MutableSet<Int>>()
+
+    private var accessibilityServiceRef: WeakReference<AccessibilityService>? = null
+
+    fun registerAccessibilityService(service: AccessibilityService) {
+        accessibilityServiceRef = WeakReference(service)
+    }
+
+    fun unregisterAccessibilityService(service: AccessibilityService) {
+        if (accessibilityServiceRef?.get() == service) {
+            accessibilityServiceRef = null
+        }
+    }
 
     private var activeOverlayView: View? = null
     private var activeWindowManager: WindowManager? = null
@@ -115,7 +128,7 @@ object HeadsUpNotchPillManager {
         val highestPastMilestone = (currentTotalMinutes / intervalMinutes) * intervalMinutes
         var changed = false
         var m = intervalMinutes
-        while (m <= highestPastMilestone) {
+        while (m < highestPastMilestone) {
             if (set.add(m)) {
                 changed = true
             }
@@ -216,8 +229,9 @@ object HeadsUpNotchPillManager {
             wmList.add(windowManagerOverride to type)
         }
 
-        if (context is AccessibilityService) {
-            val a11yWm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+        val a11yService = (context as? AccessibilityService) ?: accessibilityServiceRef?.get()
+        if (a11yService != null) {
+            val a11yWm = a11yService.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
             if (a11yWm != null) {
                 val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
