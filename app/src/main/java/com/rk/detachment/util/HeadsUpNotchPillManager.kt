@@ -32,6 +32,7 @@ import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.lang.ref.WeakReference
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -54,6 +55,18 @@ object HeadsUpNotchPillManager {
 
     private val alertedMilestones = mutableMapOf<String, MutableSet<Int>>()
 
+    private var accessibilityServiceRef: WeakReference<AccessibilityService>? = null
+
+    fun registerAccessibilityService(service: AccessibilityService) {
+        accessibilityServiceRef = WeakReference(service)
+    }
+
+    fun unregisterAccessibilityService(service: AccessibilityService) {
+        if (accessibilityServiceRef?.get() == service) {
+            accessibilityServiceRef = null
+        }
+    }
+
     private var activeOverlayView: View? = null
     private var activeWindowManager: WindowManager? = null
     private var dismissRunnable: Runnable? = null
@@ -65,10 +78,26 @@ object HeadsUpNotchPillManager {
     }
 
     private fun getAlertedSet(context: Context, todayKey: String): MutableSet<Int> {
+        val todayPrefix = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+        alertedMilestones.keys.retainAll { it.startsWith(todayPrefix) }
+
         val memorySet = alertedMilestones[todayKey]
         if (memorySet != null) return memorySet
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val allEntries = prefs.all
+        val editor = prefs.edit()
+        var cleaned = false
+        for (key in allEntries.keys) {
+            if (!key.startsWith(todayPrefix)) {
+                editor.remove(key)
+                cleaned = true
+            }
+        }
+        if (cleaned) {
+            editor.apply()
+        }
+
         val saved = prefs.getStringSet(todayKey, null)
         val set = mutableSetOf<Int>()
         if (saved != null) {
@@ -200,8 +229,9 @@ object HeadsUpNotchPillManager {
             wmList.add(windowManagerOverride to type)
         }
 
-        if (context is AccessibilityService) {
-            val a11yWm = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
+        val a11yService = (context as? AccessibilityService) ?: accessibilityServiceRef?.get()
+        if (a11yService != null) {
+            val a11yWm = a11yService.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
             if (a11yWm != null) {
                 val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
