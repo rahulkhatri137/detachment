@@ -50,7 +50,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
                 TemporaryUnlockManager.clearAllDelaySessions()
                 stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
                 currentForegroundPackage = null
             }
         }
@@ -110,7 +109,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
             packageName == applicationContext.packageName || 
             packageName.startsWith("com.rk.detachment")) {
             stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
             return
         }
 
@@ -123,13 +121,11 @@ class DetachmentAccessibilityService : AccessibilityService() {
             lastInterceptedPackage = null
             lastInterceptTime = 0L
             stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
             return
         }
 
         if (isExcludedOrSystem(packageName)) {
             stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(true)
             serviceScope.launch {
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
                 db.appLimitDao().deleteApp(packageName)
@@ -147,7 +143,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     TemporaryUnlockManager.endDelaySession(prevPkg)
                 }
                 stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
             }
             currentForegroundPackage = packageName
             lastInterceptedPackage = null
@@ -168,7 +163,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     TemporaryUnlockManager.endDelaySession(prevPkg)
                 }
                 stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
             }
             currentForegroundPackage = packageName
             lastInterceptedPackage = null
@@ -203,7 +197,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 TemporaryUnlockManager.endDelaySession(prevPkg)
             }
             stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
         }
         currentForegroundPackage = packageName
 
@@ -212,17 +205,49 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
     }
 
-    private suspend fun evaluateAndEnforceApp(packageName: String, isNewLaunch: Boolean) {
-        if (isExcludedOrSystem(packageName)) {
+
+    private suspend fun updatePomodoroVisibility(packageName: String, db: AppDatabase) {
+        val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true"
+        if (!isBlackoutActive) {
+            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
+            return
+        }
+        if (isExcludedOrSystem(packageName) || packageName == this.packageName) {
+            if (packageName == this.packageName) {
+                com.rk.detachment.service.PomodoroManager.setOverlayHidden(true)
+            }
+            return
+        }
+        if (isHomeScreenLauncher(packageName)) {
+            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
+            return
+        }
+        val app = db.appLimitDao().getAppByPackage(packageName)
+        if (app != null && app.isEssential) {
             com.rk.detachment.service.PomodoroManager.setOverlayHidden(true)
-            val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+        } else {
+            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
+        }
+    }
+
+    private suspend fun evaluateAndEnforceApp(packageName: String, isNewLaunch: Boolean) {
+        val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+        if (isExcludedOrSystem(packageName)) {
             db.appLimitDao().deleteApp(packageName)
             return
         }
 
         val now = System.currentTimeMillis()
 
-        val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
+        val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true"
+        val checkApp = db.appLimitDao().getAppByPackage(packageName)
+        if (isBlackoutActive && (checkApp == null || !checkApp.isEssential)) {
+            try {
+                val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                am?.killBackgroundProcesses(packageName)
+            } catch (e: Exception) {}
+            return
+        }
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val lastResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
         if (lastResetDate != todayDateString) {
@@ -276,22 +301,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 TemporaryUnlockManager.setUnlock(packageName, app.unlockExpiresAtMillis)
             }
             startActiveAppMonitoring(app)
-            return
-        }
-
-        val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true"
-        if (isBlackoutActive) {
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(app.isEssential)
-        } else {
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
-        }
-        if (isBlackoutActive && !app.isEssential) {
-            interceptBlockedApp(
-                app = app,
-                reason = "Blocked by active Detachment Blackout. Only essential apps permitted.",
-                isFrictionDelay = false,
-                delaySeconds = 15
-            )
             return
         }
 
@@ -353,7 +362,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
         val currentPkg = app.packageName
         if (isExcludedOrSystem(currentPkg)) {
             stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
             return
         }
         if (monitoredPackage == currentPkg && pillTickerJob?.isActive == true) {
@@ -361,7 +369,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
 
         val displayName = if (app.appName.isNotBlank()) app.appName else {
             try {
@@ -468,8 +475,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                             "Daily screen time limit of ${limitMinutes}m exceeded (${totalMins}m used today)"
                         }
                         interceptBlockedApp(app = updatedApp, reason = reason, isFrictionDelay = false, delaySeconds = 15)
-                        delay(1500L)
-                        continue
+                        break
                     }
                 }
             }
@@ -512,10 +518,15 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
         stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
+        
+        val now = System.currentTimeMillis()
+        if (app.packageName == lastInterceptedPackage && (now - lastInterceptTime) < 1500) {
+            return
+        }
+        
         lastInterceptedPackage = app.packageName
-        lastInterceptTime = System.currentTimeMillis()
-
+        lastInterceptTime = now
+        
         try {
             val intent = Intent(this, BlockOverlayActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -535,52 +546,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch BlockOverlayActivity", e)
         }
-
-        serviceScope.launch {
-            val checkDelays = longArrayOf(250L, 500L, 850L, 1300L, 1900L, 2500L)
-            for (delayMs in checkDelays) {
-                delay(delayMs)
-                val currentTime = System.currentTimeMillis()
-                if (TemporaryUnlockManager.isUnlocked(app.packageName, currentTime)) break
-                if (TemporaryUnlockManager.isDelaySessionActive(app.packageName)) break
-                
-                val activePkg = try { rootInActiveWindow?.packageName?.toString() } catch (e: Exception) { null }
-                if (activePkg != null && isHomeScreenLauncher(activePkg)) break
-                
-                val isResumed = BlockOverlayActivity.isActivityResumed
-                if (!isResumed || activePkg == app.packageName) {
-                    reassertBlockOverlay(app, reason, isFrictionDelay, delaySeconds)
-                }
-            }
-        }
-    }
-
-    private fun reassertBlockOverlay(
-        app: AppLimitEntity,
-        reason: String,
-        isFrictionDelay: Boolean,
-        delaySeconds: Int
-    ) {
-        if (isExcludedOrSystem(app.packageName)) return
-        try {
-            val intent = Intent(this, BlockOverlayActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK or
-                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
-                        Intent.FLAG_ACTIVITY_NO_ANIMATION
-                putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)
-                putExtra(BlockOverlayActivity.EXTRA_APP_NAME, app.appName)
-                putExtra(BlockOverlayActivity.EXTRA_CATEGORY, app.category)
-                putExtra(BlockOverlayActivity.EXTRA_REASON, reason)
-                putExtra(BlockOverlayActivity.EXTRA_IS_FRICTION_DELAY, isFrictionDelay)
-                putExtra(BlockOverlayActivity.EXTRA_DELAY_SECONDS, delaySeconds)
-                putExtra(BlockOverlayActivity.EXTRA_USED_MINUTES, app.usedTodayMinutes)
-                putExtra(BlockOverlayActivity.EXTRA_LIMIT_MINUTES, app.dailyLimitMinutes)
-            }
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to reassert BlockOverlayActivity", e)
-        }
     }
 
     override fun onInterrupt() {
@@ -596,7 +561,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
             isReceiverRegistered = false
         }
         stopActiveAppMonitoring()
-            com.rk.detachment.service.PomodoroManager.setOverlayHidden(false)
         HeadsUpNotchPillManager.unregisterAccessibilityService(this)
         HeadsUpNotchPillManager.dismissPill()
         isServiceRunning = false
