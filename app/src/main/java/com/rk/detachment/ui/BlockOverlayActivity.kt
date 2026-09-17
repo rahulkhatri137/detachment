@@ -285,9 +285,31 @@ class BlockOverlayActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         isActivityResumed = false
+        val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
+        if (!isExiting) {
+            if (pkgToKill.isNotBlank() && pkgToKill != packageName) {
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    kotlinx.coroutines.delay(300)
+                    try {
+                        val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                        am?.killBackgroundProcesses(pkgToKill)
+                    } catch (e: Exception) {}
+                }
+            }
+            finishAndRemoveTask()
+        }
     }
 
     override fun onDestroy() {
+        val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
+        if (!isExiting && pkgToKill.isNotBlank() && pkgToKill != packageName) {
+            try {
+                val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                am?.killBackgroundProcesses(pkgToKill)
+            } catch (e: Exception) {
+            }
+        }
+        
         super.onDestroy()
         isActivityResumed = false
         if (activeInstance == this) {
@@ -297,10 +319,13 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun returnToHome() {
+        val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
+        
         isExiting = true
         isActivityResumed = false
         activeInstance = null
         currentActivePackage = null
+        
         try {
             val homeIntent = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
@@ -309,6 +334,17 @@ class BlockOverlayActivity : ComponentActivity() {
             startActivity(homeIntent)
         } catch (e: Exception) {
         }
+        
+        if (pkgToKill.isNotBlank() && pkgToKill != packageName) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                kotlinx.coroutines.delay(800)
+                try {
+                    val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                    am?.killBackgroundProcesses(pkgToKill)
+                } catch (e: Exception) {}
+            }
+        }
+        
         finishAndRemoveTask()
     }
 
@@ -316,6 +352,7 @@ class BlockOverlayActivity : ComponentActivity() {
         isExiting = true
         isActivityResumed = false
         TemporaryUnlockManager.setDelaySessionActive(packageName)
+        TemporaryUnlockManager.setDelayGrace(packageName)
         activeInstance = null
         currentActivePackage = null
         AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)

@@ -108,34 +108,54 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     private var activeTimeTickerJob: Job? = null
 
     init {
+        com.rk.detachment.service.PomodoroManager.initialize(application, repository, database)
+        com.rk.detachment.service.PomodoroManager.onShowMessage = { showMessage(it) }
         checkPermissionsAndRefresh()
 
         viewModelScope.launch {
             repository.allApps.collect { apps ->
-                _uiState.value = _uiState.value.copy(allApps = apps)
+                val filtered = apps.filter { !AppManagerHelper.isLauncherOrSystemPackage(it.packageName, emptySet(), application) }
+                _uiState.value = _uiState.value.copy(allApps = filtered)
                 updateConsciousnessData()
             }
         }
+        
+        viewModelScope.launch {
+            com.rk.detachment.service.PomodoroManager.state.collect { pState ->
+                _uiState.value = _uiState.value.copy(
+                    isBlackoutActive = pState.isBlackoutActive,
+                    isPomodoroRunning = pState.isPomodoroRunning,
+                    blackoutTotalSeconds = pState.blackoutTotalSeconds,
+                    blackoutSecondsRemaining = pState.blackoutSecondsRemaining,
+                    pomodoroSessionTag = pState.pomodoroSessionTag
+                )
+            }
+        }
+        
         viewModelScope.launch {
             repository.scheduleRules.collect { schedules ->
                 _uiState.value = _uiState.value.copy(scheduleRules = schedules)
             }
         }
+
         viewModelScope.launch {
             repository.pomodoroSessions.collect { sessions ->
                 _uiState.value = _uiState.value.copy(pomodoroSessions = sessions)
             }
         }
+
         viewModelScope.launch {
             repository.masterPin.collect { pin ->
                 _uiState.value = _uiState.value.copy(masterPin = pin ?: "1234")
             }
         }
+
         viewModelScope.launch {
             repository.isAppAuthEnabled.collect { enabled ->
                 _uiState.value = _uiState.value.copy(isAppAuthEnabled = enabled)
             }
         }
+
         viewModelScope.launch {
             repository.distractionsResisted.collect { resisted ->
                 val count = resisted?.toIntOrNull() ?: 0
@@ -143,6 +163,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 updateConsciousnessData()
             }
         }
+
         viewModelScope.launch {
             repository.totalFocusMinutes.collect { focusMins ->
                 val mins = focusMins ?: 0
@@ -150,28 +171,33 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 updateConsciousnessData()
             }
         }
+
         viewModelScope.launch {
             repository.totalSessionsCount.collect { count ->
                 _uiState.value = _uiState.value.copy(totalSessionsCount = count)
             }
         }
+
         viewModelScope.launch {
             repository.delaySeconds.collect { secStr ->
                 val sec = secStr?.toIntOrNull() ?: 15
                 _uiState.value = _uiState.value.copy(delaySeconds = sec)
             }
         }
+
         viewModelScope.launch {
             repository.unlockMinutes.collect { minStr ->
                 val mins = minStr?.toIntOrNull() ?: 15
                 _uiState.value = _uiState.value.copy(unlockMinutes = mins)
             }
         }
+
         viewModelScope.launch {
             repository.isDelayForDistractingApps.collect { enabled ->
                 _uiState.value = _uiState.value.copy(isDelayForDistractingApps = enabled)
             }
         }
+
         viewModelScope.launch {
             repository.isHeadsUpPillEnabled.collect { enabled ->
                 _uiState.value = _uiState.value.copy(isHeadsUpPillEnabled = enabled)
@@ -183,12 +209,10 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         activeTimeTickerJob = viewModelScope.launch {
             while (true) {
                 delay(4000L)
-                checkPermissionsAndRefresh()
                 checkDailyResetAndRefreshUsage()
             }
         }
     }
-
     fun checkDailyResetAndRefreshUsage() {
         viewModelScope.launch(Dispatchers.IO) {
             val app = getApplication<Application>()
@@ -204,6 +228,10 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 val todayUsageMap = AppManagerHelper.getTodayUsageMinutesMap(app)
                 val currentApps = repository.allApps.first()
                 for (installedApp in currentApps) {
+                    if (AppManagerHelper.isLauncherOrSystemPackage(installedApp.packageName, emptySet(), app)) {
+                        repository.deleteApp(installedApp.packageName)
+                        continue
+                    }
                     val realMins = todayUsageMap[installedApp.packageName] ?: 0
                     val targetMins = maxOf(installedApp.usedTodayMinutes, realMins)
                     if (targetMins != installedApp.usedTodayMinutes) {
@@ -486,91 +514,19 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun startPomodoroBlackout(durationMinutes: Int = 25, tag: String = "Deep Work") {
-        pomodoroJob?.cancel()
-        val totalSecs = durationMinutes * 60
-        _uiState.value = _uiState.value.copy(
-            isBlackoutActive = true,
-            isPomodoroRunning = true,
-            blackoutTotalSeconds = totalSecs,
-            blackoutSecondsRemaining = totalSecs,
-            pomodoroSessionTag = tag,
-            isPomodoroBreak = false
-        )
-
-        viewModelScope.launch {
-            database.appSettingsDao().setSetting(AppSettingsEntity("is_blackout_active", "true"))
-        }
-
-        pomodoroJob = viewModelScope.launch {
-            while (_uiState.value.blackoutSecondsRemaining > 0 && _uiState.value.isPomodoroRunning) {
-                delay(1000L)
-                val remaining = _uiState.value.blackoutSecondsRemaining - 1
-                _uiState.value = _uiState.value.copy(
-                    blackoutSecondsRemaining = remaining
-                )
-            }
-
-            if (_uiState.value.blackoutSecondsRemaining <= 0) {
-                repository.savePomodoroSession(durationMinutes, tag, 0)
-                database.appSettingsDao().setSetting(AppSettingsEntity("is_blackout_active", "false"))
-                showMessage("Detachment Blackout completed! +$durationMinutes min focus logged.")
-                _uiState.value = _uiState.value.copy(
-                    isPomodoroRunning = false,
-                    isBlackoutActive = false
-                )
-            }
-        }
+        com.rk.detachment.service.PomodoroManager.startBlackout(durationMinutes, tag)
     }
 
     fun pausePomodoro() {
-        _uiState.value = _uiState.value.copy(
-            isPomodoroRunning = false
-        )
-        pomodoroJob?.cancel()
+        com.rk.detachment.service.PomodoroManager.pause()
     }
 
     fun resumePomodoro() {
-        if (_uiState.value.blackoutSecondsRemaining > 0) {
-            _uiState.value = _uiState.value.copy(
-                isPomodoroRunning = true
-            )
-            viewModelScope.launch {
-                database.appSettingsDao().setSetting(AppSettingsEntity("is_blackout_active", "true"))
-            }
-            val durationMinutes = _uiState.value.blackoutTotalSeconds / 60
-            val tag = _uiState.value.pomodoroSessionTag
-            pomodoroJob = viewModelScope.launch {
-                while (_uiState.value.blackoutSecondsRemaining > 0 && _uiState.value.isPomodoroRunning) {
-                    delay(1000L)
-                    val remaining = _uiState.value.blackoutSecondsRemaining - 1
-                    _uiState.value = _uiState.value.copy(
-                        blackoutSecondsRemaining = remaining
-                    )
-                }
-
-                if (_uiState.value.blackoutSecondsRemaining <= 0) {
-                    repository.savePomodoroSession(durationMinutes, tag, 0)
-                    database.appSettingsDao().setSetting(AppSettingsEntity("is_blackout_active", "false"))
-                    showMessage("Detachment focus session completed!")
-                    _uiState.value = _uiState.value.copy(
-                        isPomodoroRunning = false,
-                        isBlackoutActive = false
-                    )
-                }
-            }
-        }
+        com.rk.detachment.service.PomodoroManager.resume()
     }
 
     fun stopBlackout() {
-        pomodoroJob?.cancel()
-        viewModelScope.launch {
-            database.appSettingsDao().setSetting(AppSettingsEntity("is_blackout_active", "false"))
-        }
-        _uiState.value = _uiState.value.copy(
-            isBlackoutActive = false,
-            isPomodoroRunning = false
-        )
-        showMessage("Detachment Blackout ended.")
+        com.rk.detachment.service.PomodoroManager.stop()
     }
 
     fun clearStatusMessage() {

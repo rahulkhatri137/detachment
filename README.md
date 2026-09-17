@@ -10,16 +10,16 @@ Detachment empowers users to reclaim their focus and attention through intention
 <details>
 <br>
   
-**Fibonacci Phyllotaxis Rosette Structure**: Replaced the line hexagon with a 260-node golden-angle spiral lattice that radiates outward in intertwined clockwise and counter-clockwise curved spokes visualizing real-time intentionality across:
+**Fibonacci Phyllotaxis Rosette Structure**: A 260-node golden-angle spiral lattice that radiates outward in intertwined clockwise and counter-clockwise curved spokes visualizing real-time intentionality across:
 - Distraction Resistance (delay screen completions)
 - Session Intentionality (deep sessions vs. quick bounces)
 - Unplugged Gap (longest phone-free block)
 - Limit Discipline (adherence to daily app limits)
 - Pomodoro Focus (completed blackout focus minutes)
-- Unlock Mindfulness (intentional unlocks vs. habitual checks)
+- Unlock Mindfulness (intentional unlocks vs habitual checks)
 
 **In-Depth Mindful Telemetry**:
-- Unlocks Distribution: Interactive visual breakdown separating intentional vs. habitual unlocks.
+- Unlocks Distribution: Breakdown separating intentional vs. habitual unlocks.
 - Time Leak Analysis: Metrics for potentially unnecessary usage and quick-bounce (<60s) sessions.
 - Restorative Gaps: Precision tracking of the longest continuous phone-free time and longest continuous screen streak.
 
@@ -28,8 +28,8 @@ Detachment empowers users to reclaim their focus and attention through intention
 - Displays loop severity, average bounce duration, and direct actions to apply mindful friction delays.
 
 **You vs You Comparative Engine**:
-- Real-time comparison comparing Today vs. Yesterday with percentage changes and trend indicators.
-- Compares consciousness score, screen time, total unlocks, habitual pickups, phone-free blocks, and mindless sessions.
+- Real-time comparison comparing Today vs Yesterday with percentage changes and trend indicators.
+- Compares consciousness score, screen time, total unlocks, habitual pickups, phone-free blocks and mindless sessions.
 </details>
 
 ---
@@ -45,19 +45,20 @@ Detachment empowers users to reclaim their focus and attention through intention
 
 ### 🛡️ Distraction Shield (Habit Loop Interrupter): 
 * Designate apps as "Distracting".
-* Every attempt to launch a distracting app triggers a full-screen customised delay time period mindful intercept with live second countdown to build positive willpower habits.
+* Every attempt to launch a distracting app triggers a full-screen customised delay time period mindful intercept to build positive willpower habits.
+* Grant a 10 min grace period once unlocked allowing user to complete tasks without friction.
 
 ---
 
 ### 🍅 Pomodoro Blackout Mode
-* Pitch-Blackout canvas featuring a glowing countdown timer, session activities (Deep Work, Study, Reading).
+* Pitch-Blackout canvas featuring a countdown timer, session activities (Deep Work, Study, Reading).
 * Essential Apps Whitelist: Users can select up to a strict maximum of 10 essential apps (e.g. Phone, Messages, Maps, Calendar, Notes) to remain accessible from the blackout dock while all other phone usage is completely blocked.
 
 ---
 
 ### 📅 Automated Focus Schedules
 * Recurring Time Windows: Set automated focus blocks tailored for Work, Sleep, Morning Focus, or Study routines.
-* Automatic Enforcement: The background accessibility engine detects active schedule time slots and enforces blackout restrictions seamlessly.
+* Automatic Enforcement: The background accessibility engine detects active schedule time slots and enforces restrictions seamlessly.
 * Configure customizable ranges, active days of the week, and blocking policies ("Lock Distracting Apps Only" vs "Lock All Non-Essential Apps").
 
 ---

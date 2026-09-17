@@ -166,6 +166,10 @@ class DetachmentRepository(
         }
     }
 
+    suspend fun deleteApp(packageName: String) {
+        appLimitDao.deleteApp(packageName)
+    }
+
     suspend fun updateUsedMinutes(packageName: String, minutes: Int) {
         appLimitDao.updateUsedMinutes(packageName, minutes)
     }

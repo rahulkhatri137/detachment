@@ -86,7 +86,7 @@ import com.rk.detachment.viewmodel.DetachmentUiState
 
 @Composable
 fun BlackoutPomodoroScreen(
-    uiState: DetachmentUiState,
+    uiState: com.rk.detachment.viewmodel.ScreenTimeUiState,
     onStartBlackout: (Int, String) -> Unit,
     onPauseBlackout: () -> Unit,
     onResumeBlackout: () -> Unit,
@@ -107,7 +107,11 @@ fun BlackoutPomodoroScreen(
 
     if (uiState.isBlackoutActive) {
         ActiveBlackoutCanvas(
-            uiState = uiState,
+            blackoutTotalSeconds = uiState.blackoutTotalSeconds,
+            blackoutSecondsRemaining = uiState.blackoutSecondsRemaining,
+            isPomodoroRunning = uiState.isPomodoroRunning,
+            pomodoroSessionTag = uiState.pomodoroSessionTag,
+            essentialApps = uiState.essentialApps,
             onPause = onPauseBlackout,
             onResume = onResumeBlackout,
             onRequestStop = { showExitConfirmDialog = true },
@@ -434,7 +438,7 @@ fun BlackoutPomodoroScreen(
 
 @Composable
 private fun EssentialAppsDialog(
-    uiState: DetachmentUiState,
+    uiState: com.rk.detachment.viewmodel.DetachmentUiState,
     onToggleEssential: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -605,7 +609,7 @@ private fun EssentialAppsDialog(
 
 @Composable
 private fun DistractingAppsDialog(
-    uiState: DetachmentUiState,
+    uiState: com.rk.detachment.viewmodel.DetachmentUiState,
     onToggleDistracting: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -771,11 +775,15 @@ private fun DistractingAppsDialog(
 
 @Composable
 fun ActiveBlackoutCanvas(
-    uiState: DetachmentUiState,
+    blackoutTotalSeconds: Int,
+    blackoutSecondsRemaining: Int,
+    isPomodoroRunning: Boolean,
+    pomodoroSessionTag: String,
+    essentialApps: List<com.rk.detachment.data.local.entities.AppLimitEntity>,
     onPause: () -> Unit,
     onResume: () -> Unit,
     onRequestStop: () -> Unit,
-    onOpenEssentialApp: (AppLimitEntity) -> Unit
+    onOpenEssentialApp: (com.rk.detachment.data.local.entities.AppLimitEntity) -> Unit
 ) {
     val context = LocalContext.current
     DisposableEffect(Unit) {
@@ -788,8 +796,8 @@ fun ActiveBlackoutCanvas(
         }
     }
 
-    val totalSecs = uiState.blackoutTotalSeconds.coerceAtLeast(1)
-    val remainingSecs = uiState.blackoutSecondsRemaining
+    val totalSecs = blackoutTotalSeconds.coerceAtLeast(1)
+    val remainingSecs = blackoutSecondsRemaining
     val progress = (remainingSecs.toFloat() / totalSecs.toFloat()).coerceIn(0f, 1f)
 
     val minutes = remainingSecs / 60
@@ -830,7 +838,7 @@ fun ActiveBlackoutCanvas(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = uiState.pomodoroSessionTag.uppercase(),
+                            text = pomodoroSessionTag.uppercase(),
                             color = IndigoLight,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -871,8 +879,8 @@ fun ActiveBlackoutCanvas(
                             fontWeight = FontWeight.Black
                         )
                         Text(
-                            text = if (uiState.isPomodoroRunning) "DETACHMENT BLACKOUT ACTIVE" else "PAUSED",
-                            color = if (uiState.isPomodoroRunning) IndigoLight else AmberAccent,
+                            text = if (isPomodoroRunning) "DETACHMENT BLACKOUT ACTIVE" else "PAUSED",
+                            color = if (isPomodoroRunning) IndigoLight else AmberAccent,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.8.sp
@@ -886,7 +894,7 @@ fun ActiveBlackoutCanvas(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (uiState.isPomodoroRunning) {
+                    if (isPomodoroRunning) {
                         Surface(
                             shape = CircleShape,
                             color = Color(0x331E293B),
@@ -935,7 +943,7 @@ fun ActiveBlackoutCanvas(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "ACCESSIBLE ESSENTIAL APPS (${uiState.essentialApps.size}/10)",
+                    text = "ACCESSIBLE ESSENTIAL APPS (${essentialApps.size}/10)",
                     color = TextSecondary,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -948,7 +956,7 @@ fun ActiveBlackoutCanvas(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    uiState.essentialApps.take(5).forEach { app ->
+                    essentialApps.take(5).forEach { app ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable { onOpenEssentialApp(app) }
@@ -976,7 +984,7 @@ fun ActiveBlackoutCanvas(
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    uiState.essentialApps.drop(5).forEach { app ->
+                    essentialApps.drop(5).forEach { app ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.clickable { onOpenEssentialApp(app) }

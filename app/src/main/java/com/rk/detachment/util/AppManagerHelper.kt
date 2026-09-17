@@ -151,16 +151,53 @@ object AppManagerHelper {
         return set
     }
 
-    fun isHomeScreenLauncher(packageName: String, launcherPackages: Set<String> = emptySet()): Boolean {
+    fun isCoreUtilityPackage(packageName: String, context: Context? = null): Boolean {
         if (packageName.isBlank()) return false
         val lower = packageName.lowercase()
-        return launcherPackages.contains(packageName) ||
-                lower.contains("launcher") ||
-                lower.contains("quickstep") ||
-                lower.contains("trebuchet") ||
-                lower.contains("nexuslauncher") ||
-                lower.contains(".home") ||
-                lower.contains("recents")
+
+        if (lower.contains("clock") || lower.contains("deskclock") || lower.contains("alarmclock")) {
+            return true
+        }
+        if (lower.contains("calculator") || lower.contains(".calc") || lower.endsWith(".calc") || lower.contains("popupcalculator")) {
+            return true
+        }
+        if (lower.contains("contact") || lower.contains("addressbook")) {
+            return true
+        }
+        if (lower.contains("settings") || lower == "com.android.settings") {
+            return true
+        }
+        if (lower.contains("calendar") || lower.contains("camera")) {
+            return true
+        }
+        if (lower.contains("dialer") || lower.contains("telecom") || lower.contains("incallui") ||
+            lower.contains("emergency") || lower.contains(".phone") || lower.endsWith(".phone") ||
+            lower == "com.android.phone"
+        ) {
+            return true
+        }
+
+        if (context != null) {
+            try {
+                val pm = context.packageManager
+                val appInfo = pm.getApplicationInfo(packageName, 0)
+                val isSystem = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
+                        (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                if (isSystem) {
+                    val label = pm.getApplicationLabel(appInfo).toString().lowercase()
+                    if (label == "clock" || label.contains("clock") || label == "alarm") return true
+                    if (label == "calculator" || label.contains("calculator")) return true
+                    if (label == "contacts" || label.contains("contacts") || label == "phonebook" || label == "address book") return true
+                    if (label == "calendar" || label.contains("calendar")) return true
+                    if (label == "camera" || label.contains("camera")) return true
+                    if (label == "settings" || label.contains("settings")) return true
+                    if (label == "phone" || label.contains("dialer") || label == "calls") return true
+                }
+            } catch (e: Exception) {
+            }
+        }
+
+        return false
     }
 
     fun isExcludedOrSystemPackage(
@@ -186,7 +223,13 @@ object AppManagerHelper {
             return true
         }
 
-        if (isHomeScreenLauncher(packageName, launcherPackages)) {
+        if (lower.contains("launcher") ||
+             lower.contains("quickstep") ||
+             lower.contains("trebuchet") ||
+             lower.contains("nexuslauncher") ||
+             lower.contains(".home") ||
+             lower.contains("recents")
+        ) {
             return true
         }
 
@@ -228,6 +271,10 @@ object AppManagerHelper {
             lower.contains("telecom") ||
             lower.contains("emergency")
         ) {
+            return true
+        }
+
+        if (isCoreUtilityPackage(packageName, context)) {
             return true
         }
 
