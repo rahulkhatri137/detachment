@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -803,21 +806,79 @@ fun ActiveBlackoutCanvas(
     val minutes = remainingSecs / 60
     val seconds = remainingSecs % 60
 
+    var showExitConfirmation by remember { mutableStateOf(false) }
+
+    if (showExitConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirmation = false },
+            containerColor = Color(0xFF131722),
+            title = {
+                Text(
+                    text = "End Blackout Session?",
+                    color = TextPrimary,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to end this focus session early?",
+                    color = TextSecondary,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitConfirmation = false
+                        onRequestStop()
+                    },
+                    modifier = Modifier.testTag("confirm_exit_blackout_btn")
+                ) {
+                    Text(
+                        text = "End Session",
+                        color = RoseAccent,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitConfirmation = false },
+                    modifier = Modifier.testTag("cancel_exit_blackout_btn")
+                ) {
+                    Text(
+                        text = "Keep Focusing",
+                        color = IndigoLight
+                    )
+                }
+            },
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .padding(20.dp)
+            .clickable(
+                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                indication = null
+            ) { }
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 12.dp),
+                    .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -848,7 +909,7 @@ fun ActiveBlackoutCanvas(
                 }
 
                 IconButton(
-                    onClick = onRequestStop,
+                    onClick = { showExitConfirmation = true },
                     modifier = Modifier.testTag("exit_blackout_top_btn")
                 ) {
                     Icon(
@@ -953,18 +1014,22 @@ fun ActiveBlackoutCanvas(
                 Spacer(modifier = Modifier.height(10.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     essentialApps.take(5).forEach { app ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onOpenEssentialApp(app) }
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onOpenEssentialApp(app) }
+                                .padding(horizontal = 6.dp, vertical = 6.dp)
+                                .widthIn(min = 48.dp)
                         ) {
                             AppIconView(
                                 packageName = app.packageName,
                                 appName = app.appName,
-                                size = 40.dp,
+                                size = 42.dp,
                                 cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -972,27 +1037,31 @@ fun ActiveBlackoutCanvas(
                                 text = app.appName,
                                 color = TextPrimary,
                                 fontSize = 10.sp,
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     essentialApps.drop(5).forEach { app ->
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable { onOpenEssentialApp(app) }
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onOpenEssentialApp(app) }
+                                .padding(horizontal = 6.dp, vertical = 6.dp)
+                                .widthIn(min = 48.dp)
                         ) {
                             AppIconView(
                                 packageName = app.packageName,
                                 appName = app.appName,
-                                size = 40.dp,
+                                size = 42.dp,
                                 cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -1000,7 +1069,7 @@ fun ActiveBlackoutCanvas(
                                 text = app.appName,
                                 color = TextPrimary,
                                 fontSize = 10.sp,
-                                maxLines = 2,
+                                maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                         }

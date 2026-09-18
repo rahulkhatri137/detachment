@@ -208,7 +208,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
         activeTimeTickerJob = viewModelScope.launch {
             while (true) {
-                delay(4000L)
+                delay(10000L)
                 checkDailyResetAndRefreshUsage()
             }
         }
@@ -227,6 +227,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             } else if (AppManagerHelper.hasUsageStatsPermission(app)) {
                 val todayUsageMap = AppManagerHelper.getTodayUsageMinutesMap(app)
                 val currentApps = repository.allApps.first()
+                val toUpdate = mutableListOf<Pair<String, Int>>()
                 for (installedApp in currentApps) {
                     if (AppManagerHelper.isLauncherOrSystemPackage(installedApp.packageName, emptySet(), app)) {
                         repository.deleteApp(installedApp.packageName)
@@ -235,8 +236,11 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                     val realMins = todayUsageMap[installedApp.packageName] ?: 0
                     val targetMins = maxOf(installedApp.usedTodayMinutes, realMins)
                     if (targetMins != installedApp.usedTodayMinutes) {
-                        repository.updateUsedMinutes(installedApp.packageName, targetMins)
+                        toUpdate.add(installedApp.packageName to targetMins)
                     }
+                }
+                for ((pkg, mins) in toUpdate) {
+                    repository.updateUsedMinutes(pkg, mins)
                 }
             }
         }
@@ -480,6 +484,10 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         if (uiState.value.isBlackoutActive && !app.isEssential) {
             showMessage("${app.appName} is blocked by active Detachment Blackout.")
             return
+        }
+
+        if (uiState.value.isBlackoutActive && app.isEssential) {
+            com.rk.detachment.service.PomodoroManager.setOverlayHidden(true)
         }
 
         val activeSchedules = uiState.value.activeSchedules

@@ -33,12 +33,6 @@ object PomodoroManager {
         applicationContext = context.applicationContext
         repository = repo
         database = db
-        
-        scope.launch {
-            val isActive = db.appSettingsDao().getValue("is_blackout_active") == "true"
-            if (isActive) {
-            }
-        }
     }
 
     fun startBlackout(durationMinutes: Int = 25, tag: String = "Deep Work") {
@@ -60,13 +54,14 @@ object PomodoroManager {
         applicationContext?.let { PomodoroOverlayService.start(it) }
 
         pomodoroJob = scope.launch {
-            while (_state.value.blackoutSecondsRemaining > 0 && _state.value.isPomodoroRunning) {
+            while (isActive && _state.value.blackoutSecondsRemaining > 0 && _state.value.isPomodoroRunning) {
                 delay(1000L)
-                val remaining = _state.value.blackoutSecondsRemaining - 1
+                if (!isActive || !_state.value.isPomodoroRunning) break
+                val remaining = (_state.value.blackoutSecondsRemaining - 1).coerceAtLeast(0)
                 _state.value = _state.value.copy(blackoutSecondsRemaining = remaining)
             }
 
-            if (_state.value.blackoutSecondsRemaining <= 0) {
+            if (isActive && _state.value.blackoutSecondsRemaining <= 0 && _state.value.isBlackoutActive) {
                 repository?.savePomodoroSession(durationMinutes, tag, 0)
                 database?.appSettingsDao()?.setSetting(AppSettingsEntity("is_blackout_active", "false"))
                 onShowMessage?.invoke("Detachment Blackout completed! +$durationMinutes min focus logged.")
@@ -94,13 +89,14 @@ object PomodoroManager {
             val tag = _state.value.pomodoroSessionTag
 
             pomodoroJob = scope.launch {
-                while (_state.value.blackoutSecondsRemaining > 0 && _state.value.isPomodoroRunning) {
+                while (isActive && _state.value.blackoutSecondsRemaining > 0 && _state.value.isPomodoroRunning) {
                     delay(1000L)
-                    val remaining = _state.value.blackoutSecondsRemaining - 1
+                    if (!isActive || !_state.value.isPomodoroRunning) break
+                    val remaining = (_state.value.blackoutSecondsRemaining - 1).coerceAtLeast(0)
                     _state.value = _state.value.copy(blackoutSecondsRemaining = remaining)
                 }
 
-                if (_state.value.blackoutSecondsRemaining <= 0) {
+                if (isActive && _state.value.blackoutSecondsRemaining <= 0 && _state.value.isBlackoutActive) {
                     repository?.savePomodoroSession(durationMinutes, tag, 0)
                     database?.appSettingsDao()?.setSetting(AppSettingsEntity("is_blackout_active", "false"))
                     onShowMessage?.invoke("Detachment Blackout completed! +$durationMinutes min focus logged.")

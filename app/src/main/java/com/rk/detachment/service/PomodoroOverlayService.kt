@@ -11,10 +11,14 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.view.Gravity
+import android.view.View
 import android.view.WindowManager
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -28,9 +32,12 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.rk.detachment.ui.screens.ActiveBlackoutCanvas
+import com.rk.detachment.util.AppManagerHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import com.rk.detachment.data.local.entities.AppLimitEntity
@@ -63,9 +70,11 @@ class PomodoroOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, S
 
     private var windowManager: WindowManager? = null
     private var composeView: ComposeView? = null
+    private var overlayParams: WindowManager.LayoutParams? = null
     
     private val scope = CoroutineScope(Dispatchers.Main + Job())
     private var isViewAttached = false
+    private var lastAppliedShouldShow: Boolean? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -79,17 +88,41 @@ class PomodoroOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, S
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
         scope.launch {
-            PomodoroManager.state.collectLatest { state ->
-                updateViewVisibility(state)
-            }
+            PomodoroManager.state
+                .map { Pair(it.isBlackoutActive, it.isOverlayHidden) }
+                .distinctUntilChanged()
+                .collectLatest { (isActive, isHidden) ->
+                    updateViewVisibility(isActive, isHidden)
+                }
         }
     }
 
     private fun setupComposeView() {
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS,
+            PixelFormat.TRANSLUCENT
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        params.gravity = Gravity.TOP or Gravity.START
+        params.x = 0
+        params.y = 0
+        params.width = WindowManager.LayoutParams.MATCH_PARENT
+        params.height = WindowManager.LayoutParams.MATCH_PARENT
+        overlayParams = params
+
         composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(this@PomodoroOverlayService)
             setViewTreeViewModelStoreOwner(this@PomodoroOverlayService)
             setViewTreeSavedStateRegistryOwner(this@PomodoroOverlayService)
+            fitsSystemWindows = false
             
             setContent {
                 MaterialTheme {
@@ -102,62 +135,95 @@ class PomodoroOverlayService : Service(), LifecycleOwner, ViewModelStoreOwner, S
                         }
                     }
 
-                    ActiveBlackoutCanvas(
-                        blackoutTotalSeconds = state.blackoutTotalSeconds,
-                        blackoutSecondsRemaining = state.blackoutSecondsRemaining,
-                        isPomodoroRunning = state.isPomodoroRunning,
-                        pomodoroSessionTag = state.pomodoroSessionTag,
-                        essentialApps = essentialApps,
-                        onPause = { PomodoroManager.pause() },
-                        onResume = { PomodoroManager.resume() },
-                        onRequestStop = { PomodoroManager.stop() },
-                        onOpenEssentialApp = { app ->
-                            val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName)
-                            if (launchIntent != null) {
-                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                startActivity(launchIntent)
+                    if (state.isBlackoutActive && !state.isOverlayHidden) {
+                        ActiveBlackoutCanvas(
+                            blackoutTotalSeconds = state.blackoutTotalSeconds,
+                            blackoutSecondsRemaining = state.blackoutSecondsRemaining,
+                            isPomodoroRunning = state.isPomodoroRunning,
+                            pomodoroSessionTag = state.pomodoroSessionTag,
+                            essentialApps = essentialApps,
+                            onPause = { PomodoroManager.pause() },
+                            onResume = { PomodoroManager.resume() },
+                            onRequestStop = { PomodoroManager.stop() },
+                            onOpenEssentialApp = { app ->
+                                PomodoroManager.setOverlayHidden(true)
+                                AppManagerHelper.launchRealApp(this@PomodoroOverlayService, app.packageName)
                             }
-                        }
-                    )
+                        )
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize())
+                    }
                 }
             }
         }
     }
     
-    private fun updateViewVisibility(state: PomodoroState) {
-        val shouldShow = state.isBlackoutActive && !state.isOverlayHidden
-        
-        if (shouldShow && !isViewAttached) {
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.MATCH_PARENT,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT
-            )
-            params.gravity = Gravity.CENTER
-            
-            try {
-                windowManager?.addView(composeView, params)
-                isViewAttached = true
-            } catch (e: Exception) {
-                Log.e("PomodoroOverlay", "Failed to add view", e)
-            }
-        } else if (!shouldShow && isViewAttached) {
-            try {
-                windowManager?.removeView(composeView)
+    private fun updateViewVisibility(isActive: Boolean, isHidden: Boolean) {
+        if (!isActive) {
+            if (isViewAttached) {
+                try {
+                    windowManager?.removeView(composeView)
+                } catch (e: Exception) {}
                 isViewAttached = false
-            } catch (e: Exception) {
-                Log.e("PomodoroOverlay", "Failed to remove view", e)
+            }
+            lastAppliedShouldShow = null
+            stopSelf()
+            return
+        }
+
+        val shouldShow = !isHidden
+        if (lastAppliedShouldShow == shouldShow && isViewAttached) {
+            return
+        }
+
+        val params = overlayParams ?: return
+        val view = composeView ?: return
+
+        if (shouldShow) {
+            params.alpha = 1.0f
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+            params.width = WindowManager.LayoutParams.MATCH_PARENT
+            params.height = WindowManager.LayoutParams.MATCH_PARENT
+            view.visibility = View.VISIBLE
+
+            if (!isViewAttached) {
+                try {
+                    windowManager?.addView(view, params)
+                    isViewAttached = true
+                } catch (e: Exception) {
+                    Log.e("PomodoroOverlay", "Failed to add view", e)
+                }
+            } else {
+                try {
+                    windowManager?.updateViewLayout(view, params)
+                } catch (e: Exception) {}
+            }
+        } else {
+            params.alpha = 0.0f
+            params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            view.visibility = View.GONE
+
+            if (isViewAttached) {
+                try {
+                    windowManager?.updateViewLayout(view, params)
+                } catch (e: Exception) {}
             }
         }
-        
-        if (!state.isBlackoutActive) {
-            stopSelf()
-        }
+        lastAppliedShouldShow = shouldShow
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val state = PomodoroManager.state.value
+        updateViewVisibility(state.isBlackoutActive, state.isOverlayHidden)
         return START_STICKY
     }
 

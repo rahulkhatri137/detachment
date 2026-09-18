@@ -115,9 +115,23 @@ object AppManagerHelper {
     fun launchRealApp(context: Context, packageName: String): Boolean {
         return try {
             val pm = context.packageManager
-            val launchIntent = pm.getLaunchIntentForPackage(packageName)
+            var launchIntent = pm.getLaunchIntentForPackage(packageName)
+            if (launchIntent == null) {
+                val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    setPackage(packageName)
+                }
+                val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+                if (resolveInfos.isNotEmpty()) {
+                    val info = resolveInfos[0]
+                    launchIntent = Intent(Intent.ACTION_MAIN).apply {
+                        addCategory(Intent.CATEGORY_LAUNCHER)
+                        setClassName(info.activityInfo.packageName, info.activityInfo.name)
+                    }
+                }
+            }
             if (launchIntent != null) {
-                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                 context.startActivity(launchIntent)
                 true
             } else {

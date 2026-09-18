@@ -121,18 +121,19 @@ object HeadsUpNotchPillManager {
         currentTotalMinutes: Int,
         intervalMinutes: Int = 15
     ) {
-        if (currentTotalMinutes < intervalMinutes) return
+        val step = if (intervalMinutes <= 0) 15 else intervalMinutes
+        if (currentTotalMinutes < step) return
         val todayKey = getTodayKey(packageName)
         val set = getAlertedSet(context, todayKey)
 
-        val highestPastMilestone = (currentTotalMinutes / intervalMinutes) * intervalMinutes
+        val highestPastMilestone = (currentTotalMinutes / step) * step
         var changed = false
-        var m = intervalMinutes
+        var m = step
         while (m < highestPastMilestone) {
             if (set.add(m)) {
                 changed = true
             }
-            m += intervalMinutes
+            m += step
         }
         if (changed) {
             saveAlertedSet(context, todayKey, set)
@@ -146,17 +147,18 @@ object HeadsUpNotchPillManager {
         minutesUsed: Int,
         intervalMinutes: Int = 15
     ): Boolean {
-        if (minutesUsed < intervalMinutes) return false
+        val step = if (intervalMinutes <= 0) 15 else intervalMinutes
+        if (minutesUsed < step) return false
 
-        val milestone = (minutesUsed / intervalMinutes) * intervalMinutes
+        val milestone = (minutesUsed / step) * step
         val todayKey = getTodayKey(packageName)
         val set = getAlertedSet(context, todayKey)
 
         if (!set.contains(milestone)) {
-            var prev = intervalMinutes
+            var prev = step
             while (prev < milestone) {
                 set.add(prev)
-                prev += intervalMinutes
+                prev += step
             }
             set.add(milestone)
             saveAlertedSet(context, todayKey, set)

@@ -13,8 +13,8 @@ android {
     applicationId = "com.rk.detachment"
     minSdk = 24
     targetSdk = 36
-    versionCode = 9
-    versionName = "9.0"
+    versionName = version.toString()
+    versionCode = version.toString().substringBefore(".").toInt()
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -57,6 +57,12 @@ android {
     includeInApk = false
     includeInBundle = true
   }
+}
+
+base {
+    archivesName.set(provider {
+        "${rootProject.name}-v${project.version}"
+    })
 }
 
 dependencies {
