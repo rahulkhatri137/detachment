@@ -9,14 +9,10 @@ object TemporaryUnlockManager {
 
     fun setUnlock(packageName: String, expiryMillis: Long) {
         unlockMap[packageName] = expiryMillis
-        activeDelaySessions.add(packageName)
-        setDelayGrace(packageName, expiryMillis)
     }
 
     fun removeUnlock(packageName: String) {
         unlockMap.remove(packageName)
-        activeDelaySessions.remove(packageName)
-        delayGraceMap.remove(packageName)
     }
 
     fun isUnlocked(packageName: String, currentTime: Long = System.currentTimeMillis()): Boolean {

@@ -456,60 +456,113 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         pillTickerJob = serviceScope.launch {
+            var loopSeconds = 0
             while (monitoredPackage == currentPkg) {
-                delay(5000L)
+                delay(1000L)
                 if (monitoredPackage != currentPkg) break
+                loopSeconds++
 
+                val now = System.currentTimeMillis()
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
-                val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                val lastReset = db.appSettingsDao().getValue("key_last_usage_reset_date")
-                if (lastReset != todayDate) {
-                    db.appLimitDao().resetDailyUsage()
-                    db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDate))
-                    monitoredBaseMinutes = 0
-                    monitoredSessionStart = System.currentTimeMillis()
-                }
 
-                val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
-
-                val elapsedMins = ((System.currentTimeMillis() - monitoredSessionStart) / 60000L).toInt()
-                val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
-                val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, currentPkg) else 0
-                val currentDbApp = db.appLimitDao().getAppByPackage(currentPkg)
+                val shouldUpdateUsage = (loopSeconds % 5 == 0)
+                var currentDbApp = db.appLimitDao().getAppByPackage(currentPkg)
+                val elapsedMins = ((now - monitoredSessionStart) / 60000L).toInt()
                 val currentDbMinutes = currentDbApp?.usedTodayMinutes ?: 0
-                val totalMins = maxOf(currentDbMinutes, monitoredBaseMinutes + elapsedMins, liveUsage)
+                val totalMins = maxOf(currentDbMinutes, monitoredBaseMinutes + elapsedMins)
 
-                if (totalMins != currentDbMinutes) {
-                    db.appLimitDao().updateUsedMinutes(currentPkg, totalMins)
+                if (shouldUpdateUsage) {
+                    val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val lastReset = db.appSettingsDao().getValue("key_last_usage_reset_date")
+                    if (lastReset != todayDate) {
+                        db.appLimitDao().resetDailyUsage()
+                        db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDate))
+                        monitoredBaseMinutes = 0
+                        monitoredSessionStart = now
+                    }
+
+                    val hasUsage = AppManagerHelper.hasUsageStatsPermission(this@DetachmentAccessibilityService)
+                    val liveUsage = if (hasUsage) AppManagerHelper.getAppUsageMinutesToday(this@DetachmentAccessibilityService, currentPkg) else 0
+                    val finalMins = maxOf(totalMins, liveUsage)
+
+                    if (finalMins != currentDbMinutes) {
+                        db.appLimitDao().updateUsedMinutes(currentPkg, finalMins)
+                        currentDbApp = currentDbApp?.copy(usedTodayMinutes = finalMins)
+                    }
+
+                    val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
+                    if (isPillEnabled && monitoredPackage == currentPkg) {
+                        HeadsUpNotchPillManager.checkAndTriggerMilestone(
+                            context = this@DetachmentAccessibilityService,
+                            packageName = currentPkg,
+                            appName = displayName,
+                            minutesUsed = finalMins,
+                            intervalMinutes = 15
+                        )
+                    }
                 }
 
-                if (isPillEnabled && monitoredPackage == currentPkg) {
-                    HeadsUpNotchPillManager.checkAndTriggerMilestone(
-                        context = this@DetachmentAccessibilityService,
-                        packageName = currentPkg,
-                        appName = displayName,
-                        minutesUsed = totalMins,
-                        intervalMinutes = 15
-                    )
+                val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true" || PomodoroManager.state.value.isBlackoutActive
+                if (isBlackoutActive && (currentDbApp == null || !currentDbApp.isEssential)) {
+                    stopActiveAppMonitoring()
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    break
                 }
 
-                val limitMinutes = currentDbApp?.dailyLimitMinutes ?: app.dailyLimitMinutes
-                val isLockedManually = currentDbApp?.isLockedManually ?: app.isLockedManually
+                val isUnlocked = TemporaryUnlockManager.isUnlocked(currentPkg, now) || (currentDbApp?.isTemporaryUnlocked(now) == true)
+                if (!isUnlocked) {
+                    val limitMinutes = currentDbApp?.dailyLimitMinutes ?: app.dailyLimitMinutes
+                    val isLockedManually = currentDbApp?.isLockedManually ?: app.isLockedManually
 
-                if (isLockedManually || (limitMinutes > 0 && totalMins >= limitMinutes)) {
-                    val now = System.currentTimeMillis()
-                    if (!TemporaryUnlockManager.isUnlocked(currentPkg, now)) {
+                    if (isLockedManually) {
+                        val updatedApp = (currentDbApp ?: app).copy(
+                            usedTodayMinutes = totalMins,
+                            dailyLimitMinutes = limitMinutes,
+                            isLockedManually = true
+                        )
+                        interceptBlockedApp(
+                            app = updatedApp,
+                            reason = "Manually locked by Detachment Shield",
+                            isFrictionDelay = false,
+                            delaySeconds = 15
+                        )
+                        break
+                    }
+
+                    if (limitMinutes > 0 && totalMins >= limitMinutes) {
                         val updatedApp = (currentDbApp ?: app).copy(
                             usedTodayMinutes = totalMins,
                             dailyLimitMinutes = limitMinutes,
                             isLockedManually = isLockedManually
                         )
-                        val reason = if (isLockedManually) {
-                            "Manually locked by Detachment Shield"
-                        } else {
-                            "Daily screen time limit of ${limitMinutes}m exceeded (${totalMins}m used today)"
-                        }
-                        interceptBlockedApp(app = updatedApp, reason = reason, isFrictionDelay = false, delaySeconds = 15)
+                        interceptBlockedApp(
+                            app = updatedApp,
+                            reason = "Daily screen time limit of ${limitMinutes}m exceeded (${totalMins}m used today)",
+                            isFrictionDelay = false,
+                            delaySeconds = 15
+                        )
+                        break
+                    }
+
+                    val allSchedules = db.scheduleRuleDao().getAllRules().firstOrNull() ?: emptyList()
+                    val activeSchedule = allSchedules.firstOrNull { rule ->
+                        if (rule.isCurrentlyActive()) {
+                            when (rule.blockedTarget) {
+                                "DISTRACTING" -> (currentDbApp?.isDistracting ?: app.isDistracting)
+                                "ALL_NON_ESSENTIAL" -> !(currentDbApp?.isEssential ?: app.isEssential)
+                                else -> true
+                            }
+                        } else false
+                    }
+
+                    if (activeSchedule != null) {
+                        val updatedApp = (currentDbApp ?: app).copy(usedTodayMinutes = totalMins)
+                        interceptBlockedApp(
+                            app = updatedApp,
+                            reason = "Locked by focus schedule '${activeSchedule.title}' (${activeSchedule.formattedTimeRange()})",
+                            isFrictionDelay = false,
+                            delaySeconds = 15
+                        )
                         break
                     }
                 }
