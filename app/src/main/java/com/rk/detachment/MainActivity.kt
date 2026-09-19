@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
@@ -70,11 +70,11 @@ import com.rk.detachment.util.HeadsUpNotchPillManager
 import com.rk.detachment.viewmodel.DetachmentViewModel
 
 enum class NavigationTab(val title: String, val icon: ImageVector, val tag: String) {
-    DASHBOARD("Usage", Icons.Default.Shield, "tab_dashboard"),
+    DASHBOARD("Usage", Icons.Default.Home, "tab_dashboard"),
     LIMITS("Limits", Icons.Default.LockClock, "tab_limits"),
     SCHEDULES("Schedules", Icons.Default.Schedule, "tab_schedules"),
     BLACKOUT("Blackout", Icons.Default.Timer, "tab_blackout"),
-    DISTRACTIONS("Shield", Icons.Default.FlashOn, "tab_distractions")
+    DISTRACTIONS("Shield", Icons.Default.Shield, "tab_distractions")
 }
 
 class MainActivity : ComponentActivity() {
@@ -247,7 +247,8 @@ class MainActivity : ComponentActivity() {
                                     onToggleRule = { id, enabled -> viewModel.toggleScheduleRule(id, enabled) },
                                     onNavigateToBlackout = { currentTab = NavigationTab.BLACKOUT },
                                     onSaveRule = { rule -> viewModel.saveScheduleRule(rule) },
-                                    onDeleteRule = { rule -> viewModel.deleteScheduleRule(rule) }
+                                    onDeleteRule = { rule -> viewModel.deleteScheduleRule(rule) },
+                                    onResetDefaults = { viewModel.resetSchedulesToDefaults() }
                                 )
                             }
                             NavigationTab.BLACKOUT.name -> {

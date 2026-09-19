@@ -46,6 +46,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.rk.detachment.ui.theme.GlassPillBackground
+import com.rk.detachment.ui.theme.GlassPillBadgeBg
+import com.rk.detachment.ui.theme.GlassPillBorder
+import com.rk.detachment.ui.theme.GlassPillSurface
+import com.rk.detachment.ui.theme.GlassPillText
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.util.HeadsUpPillData
 
 @Composable
@@ -104,10 +111,10 @@ fun HeadsUpNotchPillContent(
 
     val pillBorderBrush = Brush.verticalGradient(
         listOf(
-            Color.White.copy(alpha = 0.75f),
-            Color.White.copy(alpha = 0.25f),
-            Color.White.copy(alpha = 0.12f),
-            Color.White.copy(alpha = 0.40f)
+            PurpleLight.copy(alpha = 0.90f),
+            PurplePrimary.copy(alpha = 0.70f),
+            PurplePrimary.copy(alpha = 0.45f),
+            PurpleLight.copy(alpha = 0.80f)
         )
     )
 
@@ -120,7 +127,7 @@ fun HeadsUpNotchPillContent(
                 ambientColor = Color.Black.copy(alpha = 0.3f)
             )
             .clip(CircleShape)
-            .background(com.rk.detachment.ui.theme.GlassPillBackground)
+            .background(GlassPillBackground)
             .border(BorderStroke(1.2.dp, pillBorderBrush), CircleShape)
             .clickable(
                 interactionSource = interactionSource,
@@ -153,8 +160,8 @@ fun HeadsUpNotchPillContent(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.10f))
-                    .border(BorderStroke(0.8.dp, Color.White.copy(alpha = 0.25f)), CircleShape),
+                    .background(GlassPillSurface)
+                    .border(BorderStroke(0.8.dp, GlassPillBorder), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 AppIconView(
@@ -169,8 +176,8 @@ fun HeadsUpNotchPillContent(
 
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White.copy(alpha = 0.12f),
-                border = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.30f))
+                color = GlassPillBadgeBg,
+                border = BorderStroke(0.8.dp, PurplePrimary.copy(alpha = 0.80f))
             ) {
                 Box(
                     modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp),
@@ -178,7 +185,7 @@ fun HeadsUpNotchPillContent(
                 ) {
                     Text(
                         text = formattedTime,
-                        color = Color.White,
+                        color = GlassPillText,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.3.sp

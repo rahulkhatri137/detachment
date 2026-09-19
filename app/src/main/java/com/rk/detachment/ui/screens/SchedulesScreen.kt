@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Work
@@ -45,7 +46,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberTimePickerState
@@ -66,12 +66,14 @@ import androidx.compose.ui.unit.sp
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
+import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
 import com.rk.detachment.ui.theme.PurpleLight
 import com.rk.detachment.ui.theme.PurplePrimary
@@ -88,6 +90,7 @@ fun SchedulesScreen(
     onToggleRule: (Int, Boolean) -> Unit,
     onSaveRule: (ScheduleRuleEntity) -> Unit,
     onDeleteRule: (ScheduleRuleEntity) -> Unit,
+    onResetDefaults: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
@@ -103,18 +106,54 @@ fun SchedulesScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 item {
-                    Column {
-                        Text(
-                            text = "Focus Schedules",
-                            color = TextPrimary,
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "Automatic app locking during study, work, or sleep hours",
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Focus Schedules",
+                                color = TextPrimary,
+                                fontSize = 26.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Automatic app locking during study, work, or sleep hours",
+                                color = TextSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
+                        if (onResetDefaults != null) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = GlassSurfaceLow,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderMedium),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { onResetDefaults() }
+                                    .testTag("reset_schedules_defaults_btn")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Sync DB Rules",
+                                        tint = PurpleLight,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Sync Defaults",
+                                        color = PurpleLight,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -138,7 +177,7 @@ fun SchedulesScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(CircleShape)
-                                        .background(if (activeCount > 0) PurplePrimary else Color(0x331E293B)),
+                                        .background(if (activeCount > 0) PurplePrimary else GlassSurfaceMedium),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -647,7 +686,8 @@ fun SchedulesScreen(
                                             Text(
                                                 text = "Locks apps marked as Distracting",
                                                 color = TextSecondary,
-                                                fontSize = 10.5.sp
+                                                fontSize = 10.5.sp,
+                                                lineHeight = 16.sp
                                             )
                                         }
                                     }
@@ -689,7 +729,8 @@ fun SchedulesScreen(
                                             Text(
                                                 text = "Locks all apps except Essential whitelist",
                                                 color = TextSecondary,
-                                                fontSize = 10.5.sp
+                                                fontSize = 10.5.sp,
+                                                lineHeight = 16.sp
                                             )
                                         }
                                     }
@@ -699,7 +740,7 @@ fun SchedulesScreen(
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    LiquidGlassDialogButton(
                         onClick = {
                             val daysString = allWeekDays.filter { it in selectedDays }.joinToString(",")
                             val newRule = ScheduleRuleEntity(
@@ -717,17 +758,19 @@ fun SchedulesScreen(
                             onSaveRule(newRule)
                             showAddDialog = false
                             editingRule = null
-                        }
+                        },
+                        accentColor = PurpleLight
                     ) {
                         Text("Save Rule", color = PurpleLight, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(
+                    LiquidGlassDialogButton(
                         onClick = {
                             showAddDialog = false
                             editingRule = null
-                        }
+                        },
+                        accentColor = TextSecondary
                     ) {
                         Text("Cancel", color = TextSecondary)
                     }
@@ -836,18 +879,20 @@ private fun RoundClockTimePickerDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            LiquidGlassDialogButton(
                 onClick = {
                     onConfirm(timePickerState.hour, timePickerState.minute)
                 },
+                accentColor = PurpleLight,
                 modifier = Modifier.testTag("confirm_time_picker_btn")
             ) {
                 Text("Set Time", color = PurpleLight, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(
+            LiquidGlassDialogButton(
                 onClick = onDismiss,
+                accentColor = TextSecondary,
                 modifier = Modifier.testTag("cancel_time_picker_btn")
             ) {
                 Text("Cancel", color = TextSecondary)

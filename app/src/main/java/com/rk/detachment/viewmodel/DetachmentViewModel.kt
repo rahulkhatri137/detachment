@@ -113,6 +113,10 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         checkPermissionsAndRefresh()
 
         viewModelScope.launch {
+            AppDatabase.syncDefaultSchedulesIfNeeded(database)
+        }
+
+        viewModelScope.launch {
             repository.allApps.collect { apps ->
                 val filtered = apps.filter { !AppManagerHelper.isLauncherOrSystemPackage(it.packageName, emptySet(), application) }
                 _uiState.value = _uiState.value.copy(allApps = filtered)
@@ -473,6 +477,13 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.deleteRule(rule)
             showMessage("Deleted schedule rule")
+        }
+    }
+
+    fun resetSchedulesToDefaults() {
+        viewModelScope.launch {
+            repository.resetSchedulesToDefaults()
+            showMessage("Focus schedules reset to default database rules")
         }
     }
 

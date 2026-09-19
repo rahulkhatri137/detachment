@@ -1,5 +1,6 @@
 package com.rk.detachment.data.repository
 
+import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.dao.AppLimitDao
 import com.rk.detachment.data.local.dao.AppSettingsDao
 import com.rk.detachment.data.local.dao.PomodoroDao
@@ -142,6 +143,12 @@ class DetachmentRepository(
 
     suspend fun toggleRule(id: Int, isEnabled: Boolean) {
         scheduleRuleDao.toggleRule(id, isEnabled)
+    }
+
+    suspend fun resetSchedulesToDefaults() {
+        scheduleRuleDao.deleteAllRules()
+        scheduleRuleDao.insertRules(AppDatabase.DEFAULT_SCHEDULES)
+        appSettingsDao.setSetting(AppSettingsEntity("key_schedules_schema_version", "2"))
     }
 
     suspend fun savePomodoroSession(durationMinutes: Int, tag: String, distractionsBlocked: Int) {

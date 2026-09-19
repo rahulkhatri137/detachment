@@ -28,10 +28,10 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -55,7 +55,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -78,6 +77,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.CategoryBadge
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.PasscodeUnlockDialog
 import com.rk.detachment.ui.components.RadialGlassBackground
@@ -446,14 +446,14 @@ fun AppLimitsScreen(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF2563EB).copy(alpha = 0.2f))
-                                        .border(1.dp, Color(0xFF2563EB).copy(alpha = 0.5f), CircleShape),
+                                        .background(PurplePrimary.copy(alpha = 0.2f))
+                                        .border(1.dp, PurplePrimary.copy(alpha = 0.5f), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.FlashOn,
+                                        imageVector = Icons.Default.NotificationsActive,
                                         contentDescription = null,
-                                        tint = Color(0xFF60A5FA),
+                                        tint = PurpleLight,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -825,46 +825,72 @@ fun AppLimitsScreen(
                             colors = SliderDefaults.colors(
                                 thumbColor = PurplePrimary,
                                 activeTrackColor = PurplePrimary,
-                                inactiveTrackColor = Color(0x33FFFFFF)
+                                inactiveTrackColor = GlassSurfaceMedium
                             )
                         )
 
                         Text("Quick Presets:", color = TextSecondary, fontSize = 12.sp)
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             quickPresets.take(6).forEach { min ->
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (currentLimit == min) PurplePrimary else Color(0x22FFFFFF),
-                                    modifier = Modifier.clickable { currentLimit = min }
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { currentLimit = min }
                                 ) {
-                                    Text(
-                                        text = if (min == 0) "Off" else "${min}m",
-                                        color = if (currentLimit == min) Color.White else TextPrimary,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                                    )
+                                    Box(
+                                        modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = if (min == 0) "Off" else "${min}m",
+                                            color = if (currentLimit == min) Color.White else TextPrimary,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1,
+                                            softWrap = false
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 confirmButton = {
-                    TextButton(
+                    LiquidGlassDialogButton(
                         onClick = {
                             onUpdateLimit(app.packageName, currentLimit)
                             editingApp = null
-                        }
+                        },
+                        accentColor = PurpleLight
                     ) {
                         Text("Save Limit", color = PurpleLight, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { editingApp = null }) {
-                        Text("Cancel", color = TextSecondary)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        LiquidGlassDialogButton(
+                            onClick = {
+                                onUpdateLimit(app.packageName, 0)
+                                editingApp = null
+                            },
+                            accentColor = RoseAccent
+                        ) {
+                            Text("Reset Limit", color = RoseAccent, fontWeight = FontWeight.SemiBold)
+                        }
+                        LiquidGlassDialogButton(
+                            onClick = { editingApp = null },
+                            accentColor = TextSecondary
+                        ) {
+                            Text("Cancel", color = TextSecondary)
+                        }
                     }
                 }
             )
@@ -969,7 +995,7 @@ fun AppLimitsScreen(
                                             modifier = Modifier
                                                 .size(34.dp)
                                                 .clip(CircleShape)
-                                                .background(if (appAuthToggle) PurplePrimary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)),
+                                                .background(if (appAuthToggle) PurplePrimary.copy(alpha = 0.35f) else GlassSurfaceLow),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
@@ -990,7 +1016,8 @@ fun AppLimitsScreen(
                                             Text(
                                                 text = if (appAuthToggle) "Require PIN" else "No PIN required",
                                                 color = if (appAuthToggle) PurpleLight else TextSecondary,
-                                                fontSize = 11.sp
+                                                fontSize = 11.sp,
+                                                lineHeight = 16.sp
                                             )
                                         }
                                     }
@@ -1007,12 +1034,13 @@ fun AppLimitsScreen(
                                 text = "Set New Master PIN (Leave blank to keep current)",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
+                                lineHeight = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )
 
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = Color.White.copy(alpha = 0.06f),
+                                color = GlassSurfaceLow,
                                 border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderMedium)
                             ) {
                                 Row(
@@ -1115,7 +1143,7 @@ fun AppLimitsScreen(
                 },
                 confirmButton = {
                     if (!isCurrentPinVerified) {
-                        TextButton(
+                        LiquidGlassDialogButton(
                             onClick = {
                                 if (onVerifyPin(currentPinInput)) {
                                     isCurrentPinVerified = true
@@ -1125,6 +1153,7 @@ fun AppLimitsScreen(
                                 }
                             },
                             enabled = currentPinInput.length >= 4,
+                            accentColor = PurpleLight,
                             modifier = Modifier.testTag("verify_current_pin_btn")
                         ) {
                             Text("Verify PIN", color = PurpleLight, fontWeight = FontWeight.Bold)
@@ -1133,7 +1162,7 @@ fun AppLimitsScreen(
                         val isOnlyToggleChange = newPinInput.isEmpty() && confirmPinInput.isEmpty()
                         val isValidPinChange = newPinInput.length == selectedPinLength && confirmPinInput.length == selectedPinLength
 
-                        TextButton(
+                        LiquidGlassDialogButton(
                             onClick = {
                                 if (isOnlyToggleChange) {
                                     onSetAppAuthEnabled(appAuthToggle)
@@ -1149,6 +1178,7 @@ fun AppLimitsScreen(
                                 }
                             },
                             enabled = isOnlyToggleChange || isValidPinChange,
+                            accentColor = PurpleLight,
                             modifier = Modifier.testTag("save_new_pin_btn")
                         ) {
                             Text("Save Changes", color = PurpleLight, fontWeight = FontWeight.Bold)
@@ -1156,7 +1186,10 @@ fun AppLimitsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showChangePinDialog = false }) {
+                    LiquidGlassDialogButton(
+                        onClick = { showChangePinDialog = false },
+                        accentColor = TextSecondary
+                    ) {
                         Text("Cancel", color = TextSecondary)
                     }
                 }
@@ -1234,7 +1267,8 @@ fun EditCategoriesDialog(
                         Text(
                             text = "Reassign category for any app",
                             color = EmeraldAccent,
-                            fontSize = 11.5.sp
+                            fontSize = 11.5.sp,
+                            lineHeight = 16.sp
                         )
                     }
                 }
@@ -1392,9 +1426,9 @@ fun EditCategoriesDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            LiquidGlassDialogButton(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                accentColor = EmeraldAccent
             ) {
                 Text("Done", color = EmeraldAccent, fontWeight = FontWeight.Bold)
             }

@@ -97,6 +97,8 @@ import com.rk.detachment.ui.theme.AmberLight
 import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.EmeraldLight
+import com.rk.detachment.ui.theme.FrostedBackground
+import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
@@ -346,10 +348,10 @@ fun RhythmicConsciousnessWebCard(
         else -> RoseAccent
     }
 
-    val blueColor = Color(0xFF0284C7)
-    val cyanColor = Color(0xFF06B6D4)
-    val emeraldColor = Color(0xFF10B981)
-    val mintColor = Color(0xFF34D399)
+    val blueColor = PurpleLight
+    val cyanColor = CyanAccent
+    val emeraldColor = EmeraldAccent
+    val mintColor = EmeraldLight
 
     FrostedGlassCard(
         modifier = modifier,
@@ -479,8 +481,8 @@ fun RhythmicConsciousnessWebCard(
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFF0F172A),
-                                Color(0xFF080D1A)
+                                FrostedBackground,
+                                FrostedBackgroundDarker
                             ),
                             center = centerOffset,
                             radius = centerHoleRadius

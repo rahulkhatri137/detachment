@@ -23,8 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.HourglassBottom
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -298,7 +298,7 @@ fun DistractionShieldScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.FlashOn,
+                                imageVector = Icons.Default.Shield,
                                 contentDescription = null,
                                 tint = AmberAccent,
                                 modifier = Modifier.size(24.dp)

@@ -67,8 +67,11 @@ import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
+import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
+import com.rk.detachment.ui.theme.GlassSurfaceLow
+import com.rk.detachment.ui.theme.GlassSurfaceMedium
 import com.rk.detachment.ui.theme.PurpleDark
 import com.rk.detachment.ui.theme.PurpleLight
 import com.rk.detachment.ui.theme.PurplePrimary
@@ -112,7 +115,7 @@ fun PasscodeUnlockDialog(
                     .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
                     .shadow(32.dp, RoundedCornerShape(32.dp), spotColor = if (isError) RoseAccent else if (isSuccess) EmeraldAccent else PurplePrimary),
                 shape = RoundedCornerShape(32.dp),
-                color = Color(0xFF0F1424),
+                color = FrostedBackgroundDarker,
                 border = androidx.compose.foundation.BorderStroke(
                     1.8.dp,
                     Brush.verticalGradient(
@@ -155,7 +158,7 @@ fun PasscodeUnlockDialog(
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
-                                color = Color.White.copy(alpha = 0.06f),
+                                color = GlassSurfaceLow,
                                 border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderMedium)
                             ) {
                                 Row(
@@ -200,8 +203,8 @@ fun PasscodeUnlockDialog(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.08f))
-                                    .border(1.dp, Color.White.copy(alpha = 0.12f), CircleShape)
+                                    .background(GlassSurfaceMedium)
+                                    .border(1.dp, GlassBorderLow, CircleShape)
                                     .testTag("close_passcode_dialog")
                             ) {
                                 Icon(
@@ -262,6 +265,7 @@ fun PasscodeUnlockDialog(
                             text = "Enter master PIN for $selectedMinutes-min pass",
                             color = PurpleLight.copy(alpha = 0.9f),
                             fontSize = 13.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center
                         )

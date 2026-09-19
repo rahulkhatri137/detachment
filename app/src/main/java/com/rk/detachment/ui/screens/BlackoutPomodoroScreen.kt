@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -45,7 +44,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -71,6 +69,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassButton
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.GlowingProgressRing
 import com.rk.detachment.ui.components.RadialGlassBackground
@@ -81,6 +80,7 @@ import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
+import com.rk.detachment.ui.theme.GlassSurfaceMedium
 import com.rk.detachment.ui.theme.PurpleLight
 import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
@@ -132,21 +132,26 @@ fun BlackoutPomodoroScreen(
                 text = {
                     Text(
                         "Exiting now will end your Detachment blackout session early and unlock all apps.",
-                        color = TextSecondary
+                        color = TextSecondary,
+                        lineHeight = 16.sp
                     )
                 },
                 confirmButton = {
-                    TextButton(
+                    LiquidGlassDialogButton(
                         onClick = {
                             showExitConfirmDialog = false
                             onStopBlackout()
-                        }
+                        },
+                        accentColor = RoseAccent
                     ) {
                         Text("Exit Blackout", color = RoseAccent, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showExitConfirmDialog = false }) {
+                    LiquidGlassDialogButton(
+                        onClick = { showExitConfirmDialog = false },
+                        accentColor = PurpleLight
+                    ) {
                         Text("Keep Focusing", color = PurpleLight)
                     }
                 }
@@ -269,7 +274,7 @@ fun BlackoutPomodoroScreen(
                 item(key = "start_button") {
                     FrostedGlassButton(
                         text = "Ignite Blackout",
-                        icon = Icons.Default.FlashOn,
+                        icon = Icons.Default.PlayArrow,
                         onClick = {
                             onStartBlackout(selectedDurationMinutes, selectedTag)
                         },
@@ -479,7 +484,8 @@ private fun EssentialAppsDialog(
                     Text(
                         text = "Permitted during Pomodoro Blackout",
                         color = TextSecondary,
-                        fontSize = 11.sp
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp
                     )
                 }
                 FrostedBadge(
@@ -601,8 +607,9 @@ private fun EssentialAppsDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            LiquidGlassDialogButton(
                 onClick = onDismiss,
+                accentColor = PurpleLight,
                 modifier = Modifier.testTag("done_essential_apps_btn")
             ) {
                 Text("Done", color = PurpleLight, fontWeight = FontWeight.Bold)
@@ -650,7 +657,8 @@ private fun DistractingAppsDialog(
                     Text(
                         text = "Designated Distracting Apps",
                         color = TextSecondary,
-                        fontSize = 11.sp
+                        fontSize = 11.sp,
+                        lineHeight = 16.sp
                     )
                 }
                 FrostedBadge(
@@ -762,8 +770,9 @@ private fun DistractingAppsDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            LiquidGlassDialogButton(
                 onClick = onDismiss,
+                accentColor = AmberAccent,
                 modifier = Modifier.testTag("done_distracting_apps_btn")
             ) {
                 Text("Done", color = AmberAccent, fontWeight = FontWeight.Bold)
@@ -807,7 +816,7 @@ fun ActiveBlackoutCanvas(
     if (showExitConfirmation) {
         AlertDialog(
             onDismissRequest = { showExitConfirmation = false },
-            containerColor = Color(0xFF131722),
+            containerColor = FrostedBackgroundDarker,
             title = {
                 Text(
                     text = "End Blackout Session?",
@@ -820,15 +829,17 @@ fun ActiveBlackoutCanvas(
                 Text(
                     text = "Are you sure you want to end this focus session early?",
                     color = TextSecondary,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    lineHeight = 16.sp
                 )
             },
             confirmButton = {
-                TextButton(
+                LiquidGlassDialogButton(
                     onClick = {
                         showExitConfirmation = false
                         onRequestStop()
                     },
+                    accentColor = RoseAccent,
                     modifier = Modifier.testTag("confirm_exit_blackout_btn")
                 ) {
                     Text(
@@ -839,8 +850,9 @@ fun ActiveBlackoutCanvas(
                 }
             },
             dismissButton = {
-                TextButton(
+                LiquidGlassDialogButton(
                     onClick = { showExitConfirmation = false },
+                    accentColor = PurpleLight,
                     modifier = Modifier.testTag("cancel_exit_blackout_btn")
                 ) {
                     Text(
@@ -954,7 +966,7 @@ fun ActiveBlackoutCanvas(
                     if (isPomodoroRunning) {
                         Surface(
                             shape = CircleShape,
-                            color = Color(0x331E293B),
+                            color = GlassSurfaceMedium,
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(CircleShape)

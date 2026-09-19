@@ -28,4 +28,10 @@ interface ScheduleRuleDao {
 
     @Query("UPDATE schedule_rules SET isEnabled = :isEnabled WHERE id = :id")
     suspend fun toggleRule(id: Int, isEnabled: Boolean)
+
+    @Query("DELETE FROM schedule_rules")
+    suspend fun deleteAllRules()
+
+    @Query("SELECT COUNT(*) FROM schedule_rules")
+    suspend fun getRulesCount(): Int
 }

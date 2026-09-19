@@ -28,7 +28,14 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
+import com.rk.detachment.ui.theme.GlassPillBackground
+import com.rk.detachment.ui.theme.GlassPillBadgeBg
+import com.rk.detachment.ui.theme.GlassPillBorder
+import com.rk.detachment.ui.theme.GlassPillSurface
+import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.TextPrimary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -393,8 +400,8 @@ object HeadsUpNotchPillManager {
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 22 * density
-                setColor(0xBF0F172A.toInt())
-                setStroke((1 * density).toInt(), 0x55FFFFFF.toInt())
+                setColor(GlassPillBackground.toArgb())
+                setStroke((1 * density).toInt(), PurplePrimary.toArgb())
             }
             background = bg
             elevation = 18 * density
@@ -407,8 +414,8 @@ object HeadsUpNotchPillManager {
             }
             val circleBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(0x1AFFFFFF.toInt())
-                setStroke((1 * density).toInt(), 0x40FFFFFF.toInt())
+                setColor(GlassPillSurface.toArgb())
+                setStroke((1 * density).toInt(), GlassPillBorder.toArgb())
             }
             background = circleBg
             outlineProvider = object : ViewOutlineProvider() {
@@ -453,15 +460,15 @@ object HeadsUpNotchPillManager {
             val capsuleBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 14 * density
-                setColor(0x22FFFFFF.toInt())
-                setStroke((1 * density).toInt(), 0x4DFFFFFF.toInt())
+                setColor(GlassPillBadgeBg.toArgb())
+                setStroke((1 * density).toInt(), PurplePrimary.toArgb())
             }
             background = capsuleBg
         }
 
         val timeText = TextView(context).apply {
             text = formatMinutes(minutesUsed)
-            setTextColor(0xFFFFFFFF.toInt())
+            setTextColor(TextPrimary.toArgb())
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
