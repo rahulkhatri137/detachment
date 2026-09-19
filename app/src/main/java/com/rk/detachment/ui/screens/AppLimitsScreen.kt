@@ -1,5 +1,7 @@
 package com.rk.detachment.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -160,7 +162,8 @@ fun AppLimitsScreen(
                         Text(
                             text = "${uiState.allApps.size} Installed Apps",
                             color = PurpleLight,
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
                         )
                     }
 
@@ -252,7 +255,8 @@ fun AppLimitsScreen(
                                 Text(
                                     text = "Enable Usage Access to see live screen time for your installed apps.",
                                     color = TextSecondary,
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
@@ -289,7 +293,7 @@ fun AppLimitsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -335,7 +339,7 @@ fun AppLimitsScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
@@ -431,7 +435,7 @@ fun AppLimitsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -468,7 +472,8 @@ fun AppLimitsScreen(
                                     Text(
                                         text = "Floating 15-min screentime awareness reminders",
                                         color = TextSecondary,
-                                        fontSize = 11.sp
+                                        fontSize = 11.sp,
+                                        lineHeight = 16.sp
                                     )
                                 }
                             }
@@ -582,16 +587,29 @@ fun AppLimitsScreen(
 
             items(filteredApps, key = { it.packageName }) { app ->
                 val isLocked = app.isCurrentlyLocked()
+                val isShieldActive = app.isShieldActive
                 val isTempUnlocked = app.isTemporaryUnlocked()
                 val isExceeded = app.isLimitExceeded
+
+                val targetBorderColor = when {
+                    isLocked -> RoseAccent.copy(alpha = 0.50f)
+                    isShieldActive -> AmberAccent.copy(alpha = 0.50f)
+                    else -> GlassBorderLow
+                }
+                val animatedCardBorderColor by animateColorAsState(
+                    targetValue = targetBorderColor,
+                    animationSpec = tween(durationMillis = 350),
+                    label = "app_limit_card_border"
+                )
 
                 FrostedGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("limit_card_${app.packageName.replace(".", "_")}"),
-                    backgroundColor = GlassSurfaceHigh
+                    backgroundColor = GlassSurfaceHigh,
+                    borderColor = animatedCardBorderColor
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
+                    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
@@ -601,6 +619,7 @@ fun AppLimitsScreen(
                                 appName = app.appName,
                                 size = 44.dp,
                                 isLocked = isLocked,
+                                isShieldActive = isShieldActive,
                                 cornerRadius = 12.dp
                             )
 
@@ -793,6 +812,8 @@ fun AppLimitsScreen(
 
             AlertDialog(
                 onDismissRequest = { editingApp = null },
+                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = FrostedBackgroundDarker,
                 title = {
                     Text(
@@ -861,18 +882,8 @@ fun AppLimitsScreen(
                     }
                 },
                 confirmButton = {
-                    LiquidGlassDialogButton(
-                        onClick = {
-                            onUpdateLimit(app.packageName, currentLimit)
-                            editingApp = null
-                        },
-                        accentColor = PurpleLight
-                    ) {
-                        Text("Save Limit", color = PurpleLight, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -881,18 +892,34 @@ fun AppLimitsScreen(
                                 onUpdateLimit(app.packageName, 0)
                                 editingApp = null
                             },
-                            accentColor = RoseAccent
+                            accentColor = RoseAccent,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                         ) {
-                            Text("Reset Limit", color = RoseAccent, fontWeight = FontWeight.SemiBold)
+                            Text("Reset", color = RoseAccent, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                         }
                         LiquidGlassDialogButton(
                             onClick = { editingApp = null },
-                            accentColor = TextSecondary
+                            accentColor = TextSecondary,
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
                         ) {
-                            Text("Cancel", color = TextSecondary)
+                            Text("Cancel", color = TextSecondary, fontSize = 16.sp, maxLines = 1)
+                        }
+                        LiquidGlassDialogButton(
+                            onClick = {
+                                onUpdateLimit(app.packageName, currentLimit)
+                                editingApp = null
+                            },
+                            accentColor = PurpleLight,
+                            modifier = Modifier.weight(1.2f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+                        ) {
+                            Text("Save Limit", color = PurpleLight, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
                         }
                     }
-                }
+                },
+                dismissButton = null
             )
         }
 
@@ -921,6 +948,8 @@ fun AppLimitsScreen(
 
             AlertDialog(
                 onDismissRequest = { showChangePinDialog = false },
+                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = FrostedBackgroundDarker,
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1232,7 +1261,8 @@ fun EditCategoriesDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp),
+            .padding(vertical = 16.dp)
+            .border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(24.dp)),
         containerColor = FrostedBackgroundDarker,
         shape = RoundedCornerShape(24.dp),
         title = {

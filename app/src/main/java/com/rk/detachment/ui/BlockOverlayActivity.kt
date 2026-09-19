@@ -527,12 +527,14 @@ fun RealLockScreenView(
                         Text(
                             text = "Today's Usage: ${usedMinutes}m",
                             color = TextSecondary,
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
                         )
                         Text(
                             text = "Daily Limit: ${limitMinutes}m",
                             color = PurpleLight,
                             fontSize = 12.sp,
+                            lineHeight = 16.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -749,7 +751,8 @@ fun RealFrictionDelayView(
         Text(
             text = "Detachment Distraction Shield for $appName",
             color = PurpleLight,
-            fontSize = 13.sp
+            fontSize = 13.sp,
+            lineHeight = 16.sp
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -822,6 +825,7 @@ fun RealFrictionDelayView(
                     text = "\"${quotes[quoteIndex]}\"",
                     color = TextSecondary,
                     fontSize = 12.sp,
+                    lineHeight = 16.sp,
                     textAlign = TextAlign.Center
                 )
             }

@@ -2,6 +2,7 @@ package com.rk.detachment.ui.screens
 
 import android.app.Activity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -100,13 +102,13 @@ fun BlackoutPomodoroScreen(
     onOpenEssentialApp: (AppLimitEntity) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedDurationMinutes by remember { mutableIntStateOf(25) }
+    var selectedDurationMinutes by remember { mutableIntStateOf(30) }
     var selectedTag by remember { mutableStateOf("Deep Work") }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showEssentialAppsDialog by remember { mutableStateOf(false) }
     var showDistractingAppsDialog by remember { mutableStateOf(false) }
 
-    val durations = listOf(15, 25, 45, 60, 90)
+    val durations = listOf(15, 30, 45, 60, 90)
     val tags = listOf("Deep Work", "Study", "Reading", "Meditation", "Code")
 
     if (uiState.isBlackoutActive) {
@@ -125,6 +127,8 @@ fun BlackoutPomodoroScreen(
         if (showExitConfirmDialog) {
             AlertDialog(
                 onDismissRequest = { showExitConfirmDialog = false },
+                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = FrostedBackgroundDarker,
                 title = {
                     Text("Exit Pomodoro Blackout?", color = TextPrimary, fontWeight = FontWeight.Bold)
@@ -177,7 +181,8 @@ fun BlackoutPomodoroScreen(
                         Text(
                             text = "Pitch black deep focus mode with max 10 essential apps",
                             color = TextSecondary,
-                            fontSize = 12.sp
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
                         )
                     }
                 }
@@ -188,7 +193,7 @@ fun BlackoutPomodoroScreen(
                             Text(
                                 text = "FOCUS DURATION",
                                 color = TextSecondary,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -235,7 +240,7 @@ fun BlackoutPomodoroScreen(
                             Text(
                                 text = "SESSION INTENTION",
                                 color = TextSecondary,
-                                fontSize = 11.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -274,7 +279,7 @@ fun BlackoutPomodoroScreen(
                 item(key = "start_button") {
                     FrostedGlassButton(
                         text = "Ignite Blackout",
-                        icon = Icons.Default.PlayArrow,
+                        icon = Icons.Default.FlashOn,
                         onClick = {
                             onStartBlackout(selectedDurationMinutes, selectedTag)
                         },
@@ -331,7 +336,8 @@ fun BlackoutPomodoroScreen(
                                     Text(
                                         text = "$essentialCount of 10 Permitted Apps",
                                         color = if (essentialCount > 0) EmeraldAccent else TextSecondary,
-                                        fontSize = 12.sp
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp
                                     )
                                 }
                             }
@@ -401,7 +407,8 @@ fun BlackoutPomodoroScreen(
                                     Text(
                                         text = "$distractingCount Marked as Distracting",
                                         color = if (distractingCount > 0) AmberAccent else TextSecondary,
-                                        fontSize = 12.sp
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp
                                     )
                                 }
                             }
@@ -467,6 +474,8 @@ private fun EssentialAppsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         containerColor = FrostedBackgroundDarker,
         title = {
             Row(
@@ -554,7 +563,7 @@ private fun EssentialAppsDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
@@ -640,6 +649,8 @@ private fun DistractingAppsDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         containerColor = FrostedBackgroundDarker,
         title = {
             Row(
@@ -812,58 +823,6 @@ fun ActiveBlackoutCanvas(
     val seconds = remainingSecs % 60
 
     var showExitConfirmation by remember { mutableStateOf(false) }
-
-    if (showExitConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showExitConfirmation = false },
-            containerColor = FrostedBackgroundDarker,
-            title = {
-                Text(
-                    text = "End Blackout Session?",
-                    color = TextPrimary,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "Are you sure you want to end this focus session early?",
-                    color = TextSecondary,
-                    fontSize = 14.sp,
-                    lineHeight = 16.sp
-                )
-            },
-            confirmButton = {
-                LiquidGlassDialogButton(
-                    onClick = {
-                        showExitConfirmation = false
-                        onRequestStop()
-                    },
-                    accentColor = RoseAccent,
-                    modifier = Modifier.testTag("confirm_exit_blackout_btn")
-                ) {
-                    Text(
-                        text = "End Session",
-                        color = RoseAccent,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            },
-            dismissButton = {
-                LiquidGlassDialogButton(
-                    onClick = { showExitConfirmation = false },
-                    accentColor = PurpleLight,
-                    modifier = Modifier.testTag("cancel_exit_blackout_btn")
-                ) {
-                    Text(
-                        text = "Keep Focusing",
-                        color = PurpleLight
-                    )
-                }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
 
     Box(
         modifier = Modifier
@@ -1080,6 +1039,79 @@ fun ActiveBlackoutCanvas(
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showExitConfirmation) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.85f))
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) { },
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.88f)
+                        .border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+                    shape = RoundedCornerShape(20.dp),
+                    color = FrostedBackgroundDarker,
+                    tonalElevation = 8.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "End Blackout Session?",
+                            color = TextPrimary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "Are you sure you want to end this focus session early?",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            lineHeight = 18.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)
+                        ) {
+                            LiquidGlassDialogButton(
+                                onClick = { showExitConfirmation = false },
+                                accentColor = PurpleLight,
+                                modifier = Modifier.testTag("cancel_exit_blackout_btn")
+                            ) {
+                                Text(
+                                    text = "Keep Focusing",
+                                    color = PurpleLight
+                                )
+                            }
+                            LiquidGlassDialogButton(
+                                onClick = {
+                                    showExitConfirmation = false
+                                    onRequestStop()
+                                },
+                                accentColor = RoseAccent,
+                                modifier = Modifier.testTag("confirm_exit_blackout_btn")
+                            ) {
+                                Text(
+                                    text = "End Session",
+                                    color = RoseAccent,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

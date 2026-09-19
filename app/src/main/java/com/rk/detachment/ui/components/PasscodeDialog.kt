@@ -430,8 +430,8 @@ fun KeypadButton(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.88f else 1.0f,
-        animationSpec = spring(dampingRatio = 0.4f, stiffness = 600f),
+        targetValue = if (isPressed) 0.92f else 1.0f,
+        animationSpec = spring(dampingRatio = 0.5f, stiffness = 500f),
         label = "keypad_scale_$label"
     )
 
@@ -439,33 +439,62 @@ fun KeypadButton(
     val isClear = label == "C"
 
     val backgroundBrush = when {
-        isPressed -> Brush.radialGradient(
-            listOf(PurplePrimary, CyanAccent)
-        )
-        isDel -> Brush.linearGradient(
-            listOf(RoseAccent.copy(alpha = 0.22f), Color(0xFF4C0519).copy(alpha = 0.4f))
-        )
-        isClear -> Brush.linearGradient(
-            listOf(AmberAccent.copy(alpha = 0.22f), Color(0xFF451A03).copy(alpha = 0.4f))
+        isDel -> if (isPressed) {
+            Brush.verticalGradient(
+                listOf(RoseAccent.copy(alpha = 0.35f), RoseAccent.copy(alpha = 0.18f))
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(RoseAccent.copy(alpha = 0.18f), RoseAccent.copy(alpha = 0.06f))
+            )
+        }
+        isClear -> if (isPressed) {
+            Brush.verticalGradient(
+                listOf(AmberAccent.copy(alpha = 0.35f), AmberAccent.copy(alpha = 0.18f))
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(AmberAccent.copy(alpha = 0.18f), AmberAccent.copy(alpha = 0.06f))
+            )
+        }
+        isPressed -> Brush.verticalGradient(
+            listOf(PurplePrimary.copy(alpha = 0.45f), CyanAccent.copy(alpha = 0.25f))
         )
         else -> Brush.verticalGradient(
             listOf(
-                Color.White.copy(alpha = 0.12f),
+                Color.White.copy(alpha = 0.16f),
+                GlassSurfaceHigh,
                 Color.White.copy(alpha = 0.04f)
             )
         )
     }
 
-    val borderColor = when {
-        isPressed -> PurpleLight
-        isDel -> RoseAccent.copy(alpha = 0.6f)
-        isClear -> AmberAccent.copy(alpha = 0.6f)
-        else -> GlassBorderMedium.copy(alpha = 0.8f)
+    val borderBrush = when {
+        isDel -> Brush.verticalGradient(
+            listOf(
+                RoseAccent.copy(alpha = if (isPressed) 0.90f else 0.65f),
+                RoseAccent.copy(alpha = if (isPressed) 0.50f else 0.25f)
+            )
+        )
+        isClear -> Brush.verticalGradient(
+            listOf(
+                AmberAccent.copy(alpha = if (isPressed) 0.90f else 0.65f),
+                AmberAccent.copy(alpha = if (isPressed) 0.50f else 0.25f)
+            )
+        )
+        else -> Brush.verticalGradient(
+            listOf(
+                Color.White.copy(alpha = if (isPressed) 0.90f else 0.65f),
+                GlassBorderHigh,
+                Color.White.copy(alpha = if (isPressed) 0.40f else 0.15f)
+            )
+        )
     }
 
     val textColor = when {
         isDel -> RoseAccent
         isClear -> AmberAccent
+        isPressed -> Color.White
         else -> TextPrimary
     }
 
@@ -482,7 +511,7 @@ fun KeypadButton(
             .testTag("keypad_btn_$label"),
         shape = CircleShape,
         color = Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.4.dp, borderColor)
+        border = androidx.compose.foundation.BorderStroke(1.5.dp, borderBrush)
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -490,6 +519,20 @@ fun KeypadButton(
                 .fillMaxSize()
                 .background(backgroundBrush)
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = if (isPressed) 0.22f else 0.09f),
+                                Color.Transparent
+                            ),
+                            radius = 120f
+                        )
+                    )
+            )
+
             if (isDel) {
                 Icon(
                     imageVector = Icons.Default.Backspace,

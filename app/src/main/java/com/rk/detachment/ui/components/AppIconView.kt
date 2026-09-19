@@ -1,6 +1,8 @@
 package com.rk.detachment.ui.components
 
 import android.graphics.Bitmap
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +30,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rk.detachment.ui.theme.AmberAccent
+import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
@@ -76,6 +80,7 @@ fun AppIconView(
     modifier: Modifier = Modifier,
     size: Dp = 46.dp,
     isLocked: Boolean = false,
+    isShieldActive: Boolean = false,
     cornerRadius: Dp = 14.dp,
     shape: Shape = remember { CircularPetalShape(petalCount = 6, petalDepth = 0.08f) }
 ) {
@@ -93,19 +98,34 @@ fun AppIconView(
         }
     }
 
-    val borderColor = remember(isLocked) {
-        if (isLocked) RoseAccent.copy(alpha = 0.6f) else GlassBorderMedium
+    val targetBorderColor = when {
+        isLocked -> RoseAccent.copy(alpha = 0.85f)
+        isShieldActive -> AmberAccent.copy(alpha = 0.85f)
+        else -> GlassBorderHigh
     }
-    val fallbackBgColor = remember(isLocked) {
-        if (isLocked) RoseAccent.copy(alpha = 0.2f) else PurplePrimary.copy(alpha = 0.2f)
+    val animatedBorderColor by animateColorAsState(
+        targetValue = targetBorderColor,
+        animationSpec = tween(durationMillis = 350),
+        label = "app_icon_border_color"
+    )
+
+    val targetFallbackBg = when {
+        isLocked -> RoseAccent.copy(alpha = 0.2f)
+        isShieldActive -> AmberAccent.copy(alpha = 0.2f)
+        else -> PurplePrimary.copy(alpha = 0.2f)
     }
+    val animatedFallbackBg by animateColorAsState(
+        targetValue = targetFallbackBg,
+        animationSpec = tween(durationMillis = 350),
+        label = "app_icon_bg_color"
+    )
 
     Box(
         modifier = modifier
             .size(size)
             .clip(shape)
-            .background(fallbackBgColor)
-            .border(1.dp, borderColor, shape),
+            .background(animatedFallbackBg)
+            .border(2.dp, animatedBorderColor, shape),
         contentAlignment = Alignment.Center
     ) {
         val currentBitmap = bitmap

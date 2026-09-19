@@ -138,6 +138,7 @@ fun AppLaunchSecurityScreen(
                     text = "Enter Master PIN to access Detachment",
                     color = TextSecondary,
                     fontSize = 14.sp,
+                    lineHeight = 16.sp,
                     textAlign = TextAlign.Center
                 )
 

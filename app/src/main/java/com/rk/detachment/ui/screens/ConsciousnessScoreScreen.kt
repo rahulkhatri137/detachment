@@ -136,7 +136,7 @@ fun ConsciousnessScoreScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             contentPadding = PaddingValues(top = 14.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -362,7 +362,7 @@ fun RhythmicConsciousnessWebCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
@@ -540,14 +540,15 @@ fun RhythmicConsciousnessWebCard(
                 color = TextSecondary,
                 fontSize = 12.5.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp),
+                lineHeight = 16.sp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -613,7 +614,7 @@ private fun RadarPill(
             .clip(RoundedCornerShape(10.dp))
             .background(GlassSurfaceLow)
             .border(0.5.dp, color.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
-            .padding(horizontal = 6.dp, vertical = 6.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -653,7 +654,7 @@ fun UnlocksBreakdownCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -675,7 +676,7 @@ fun UnlocksBreakdownCard(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Column {
                         Text(
                             text = "Daily Device Unlocks",
@@ -699,7 +700,7 @@ fun UnlocksBreakdownCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Row(
                 modifier = Modifier
@@ -722,7 +723,7 @@ fun UnlocksBreakdownCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -782,7 +783,7 @@ fun StatTile(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -803,28 +804,32 @@ fun StatTile(
                         modifier = Modifier.size(17.dp)
                     )
                 }
+                Spacer(modifier = Modifier.width(15.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = value,
+                        color = TextPrimary,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = value,
-                color = TextPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black
-            )
+            Spacer(modifier = Modifier.height(5.dp))
 
             Text(
                 text = title,
                 color = TextSecondary,
                 fontSize = 11.5.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                lineHeight = 12.sp
             )
 
             Text(
                 text = subtitle,
                 color = TextMuted,
-                fontSize = 9.5.sp
+                fontSize = 9.5.sp,
+                lineHeight = 12.sp
             )
         }
     }
@@ -854,7 +859,7 @@ fun HabitLoopSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -885,7 +890,8 @@ fun HabitLoopSection(
                     Text(
                         text = "Repetitive impulsive open & close cycles",
                         color = TextSecondary,
-                        fontSize = 10.5.sp
+                        fontSize = 10.5.sp,
+                        lineHeight = 16.sp
                     )
                 }
             }
@@ -902,7 +908,7 @@ fun HabitLoopSection(
                     .clip(RoundedCornerShape(10.dp))
                     .background(bannerBg)
                     .border(1.dp, bannerBorder, RoundedCornerShape(10.dp))
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -938,7 +944,7 @@ fun HabitLoopSection(
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             if (!hasLoops) {
                 Box(
@@ -946,13 +952,13 @@ fun HabitLoopSection(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
                         .background(GlassSurfaceLow)
-                        .padding(10.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = "✨ You are opening apps with mindful intention rather than muscle-memory reflex.",
                         color = TextSecondary,
                         fontSize = 11.sp,
-                        lineHeight = 15.sp
+                        lineHeight = 16.sp
                     )
                 }
             } else {
@@ -990,7 +996,7 @@ fun HabitLoopItemRow(
             .clip(RoundedCornerShape(10.dp))
             .background(GlassSurfaceLow)
             .border(1.dp, severityColor.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 7.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -1109,7 +1115,7 @@ fun YouVsYouSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1145,7 +1151,8 @@ fun YouVsYouSection(
                         Text(
                             text = "Yesterday vs Today Progress",
                             color = TextSecondary,
-                            fontSize = 11.sp
+                            fontSize = 11.sp,
+                            lineHeight = 16.sp
                         )
                     }
                 }
@@ -1188,7 +1195,7 @@ fun YouVsYouSection(
                 unit = "pts"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             ComparisonMetricRow(
                 title = "Total Screen Time",
@@ -1199,7 +1206,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             ComparisonMetricRow(
                 title = "Total Pickups",
@@ -1210,7 +1217,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             ComparisonMetricRow(
                 title = "Habitual Unlocks",
@@ -1221,7 +1228,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             ComparisonMetricRow(
                 title = "Longest Phone-Free Block",
@@ -1232,7 +1239,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             ComparisonMetricRow(
                 title = "Mindless Bounce Sessions",
@@ -1243,7 +1250,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Box(
                 modifier = Modifier
@@ -1283,7 +1290,7 @@ fun ComparisonMetricRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(GlassSurfaceLow)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

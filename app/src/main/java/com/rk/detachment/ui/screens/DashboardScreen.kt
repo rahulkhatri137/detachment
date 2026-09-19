@@ -1,5 +1,7 @@
 package com.rk.detachment.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +38,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -175,7 +178,8 @@ fun DashboardScreen(
                             Text(
                                 text = "To physically block real apps on your phone and track exact screen time, enable these Android permissions:",
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -222,7 +226,7 @@ fun DashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(18.dp),
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         GlowingProgressRing(
@@ -388,17 +392,18 @@ fun DashboardScreen(
                         borderColor = GlassBorderMedium,
                         onClick = onNavigateToBlackout
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(34.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
                                     .background(PurplePrimary.copy(alpha = 0.20f))
-                                    .border(1.dp, PurplePrimary.copy(alpha = 0.40f), CircleShape),
+                                    .border(1.dp, PurplePrimary.copy(alpha = 0.35f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -409,20 +414,26 @@ fun DashboardScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
 
-                            Text(
-                                text = "Pomodoro Blackout",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (uiState.isBlackoutActive) "Active" else "Max 10 Apps",
-                                color = if (uiState.isBlackoutActive) EmeraldAccent else TextSecondary,
-                                fontSize = 11.sp
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Blackout",
+                                    color = TextPrimary,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = if (uiState.isBlackoutActive) "Active" else "Max 10 Apps",
+                                    color = if (uiState.isBlackoutActive) EmeraldAccent else TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
 
@@ -435,14 +446,15 @@ fun DashboardScreen(
                         borderColor = GlassBorderMedium,
                         onClick = onNavigateToSchedules
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(34.dp)
+                                    .size(36.dp)
                                     .clip(CircleShape)
                                     .background(AmberAccent.copy(alpha = 0.15f))
                                     .border(1.dp, AmberAccent.copy(alpha = 0.35f), CircleShape),
@@ -456,20 +468,26 @@ fun DashboardScreen(
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
 
-                            Text(
-                                text = "Focus Schedules",
-                                color = TextPrimary,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${uiState.activeSchedules.size} rules active",
-                                color = if (uiState.activeSchedules.isNotEmpty()) PurpleSoft else TextSecondary,
-                                fontSize = 11.sp
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Schedules",
+                                    color = TextPrimary,
+                                    fontSize = 13.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = "${uiState.activeSchedules.size} rules active",
+                                    color = if (uiState.activeSchedules.isNotEmpty()) PurpleSoft else TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 15.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                 }
@@ -488,7 +506,7 @@ fun DashboardScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -524,7 +542,8 @@ fun DashboardScreen(
                                 Text(
                                     text = "${uiState.shieldActiveApps.size} apps delayed for mindful pause",
                                     color = TextSecondary,
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
                                 )
                             }
                         }
@@ -601,7 +620,8 @@ private fun PermissionRow(
             Text(
                 text = description,
                 color = TextSecondary,
-                fontSize = 10.sp
+                fontSize = 10.sp,
+                lineHeight = 16.sp
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -627,10 +647,22 @@ fun AppUsageGlassTile(
     onOpenApp: () -> Unit
 ) {
     val isLocked = app.isCurrentlyLocked()
+    val isShieldActive = app.isShieldActive
     val isTempUnlocked = app.isTemporaryUnlocked()
     val limit = app.dailyLimitMinutes
     val used = app.usedTodayMinutes
     val usagePercent = if (limit > 0) (used.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
+
+    val targetBorderColor = when {
+        isLocked -> RoseAccent.copy(alpha = 0.50f)
+        isShieldActive -> AmberAccent.copy(alpha = 0.50f)
+        else -> GlassBorderLow
+    }
+    val animatedBorderColor by animateColorAsState(
+        targetValue = targetBorderColor,
+        animationSpec = tween(durationMillis = 350),
+        label = "dashboard_app_tile_border"
+    )
 
     FrostedGlassCard(
         modifier = Modifier
@@ -639,12 +671,12 @@ fun AppUsageGlassTile(
             .testTag("app_tile_${app.packageName.replace(".", "_")}"),
         cornerRadius = 18.dp,
         backgroundColor = GlassSurfaceLow,
-        borderColor = if (isLocked) RoseAccent.copy(alpha = 0.35f) else GlassBorderLow
+        borderColor = animatedBorderColor
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppIconView(
@@ -652,6 +684,7 @@ fun AppUsageGlassTile(
                 appName = app.appName,
                 size = 40.dp,
                 isLocked = isLocked,
+                isShieldActive = isShieldActive,
                 cornerRadius = 10.dp
             )
 
@@ -676,7 +709,8 @@ fun AppUsageGlassTile(
                         text = "${used}m ${if (limit > 0) "/ ${limit}m" else ""}",
                         color = if (isLocked) RoseAccent else TextSecondary,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
+                        lineHeight = 16.sp
                     )
                 }
 
@@ -704,10 +738,10 @@ fun AppUsageGlassTile(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         if (app.isEssential) {
-                            Text("Essential", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Essential", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
                         }
                         if (app.isShieldActive) {
-                            Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
                         }
                     }
 
@@ -715,7 +749,7 @@ fun AppUsageGlassTile(
                         val remainingGraceMinutes = (app.remainingUnlockSeconds() / 60).coerceAtLeast(1)
                         Text("${remainingGraceMinutes}m Pause", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     } else if (isLocked) {
-                        Text("Locked", color = RoseAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("Locked", color = RoseAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
                     }
                 }
             }
@@ -739,4 +773,3 @@ fun AppUsageGlassTile(
         }
     }
 }
-

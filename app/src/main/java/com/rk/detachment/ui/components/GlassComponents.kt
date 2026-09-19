@@ -407,7 +407,7 @@ fun CategoryBadge(
             fontSize = 8.5.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 0.4.sp,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.5.dp)
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
         )
     }
 }

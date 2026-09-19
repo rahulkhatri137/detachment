@@ -1,5 +1,7 @@
 package com.rk.detachment.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,7 +57,9 @@ import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
+import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
+import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
 import com.rk.detachment.viewmodel.DetachmentUiState
@@ -90,7 +94,8 @@ fun DistractionShieldScreen(
                     Text(
                         text = "Adds mindful friction delay and quotes before opening shielded apps",
                         color = TextSecondary,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
                     )
                 }
             }
@@ -114,7 +119,7 @@ fun DistractionShieldScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -139,7 +144,8 @@ fun DistractionShieldScreen(
                                     Text(
                                         text = "Pause before opening shielded apps",
                                         color = TextSecondary,
-                                        fontSize = 11.sp
+                                        fontSize = 11.sp,
+                                        lineHeight = 16.sp
                                     )
                                 }
                             }
@@ -254,7 +260,7 @@ fun DistractionShieldScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -285,7 +291,8 @@ fun DistractionShieldScreen(
                             Text(
                                 text = "Every ${currentDelay}s delay gives your mind space to choose with intention",
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
                             )
                         }
 
@@ -335,12 +342,12 @@ fun DistractionShieldScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(start = 6.dp, end = 2.dp, top = 2.dp, bottom = 2.dp)
+                            modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 2.dp, bottom = 2.dp)
                         ) {
                             Text(
                                 text = "Delay Distracting Apps",
                                 color = if (uiState.isDelayForDistractingApps) AmberAccent else TextSecondary,
-                                fontSize = 9.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.4.sp
                             )
@@ -366,17 +373,30 @@ fun DistractionShieldScreen(
             items(uiState.allApps, key = { it.packageName }) { app ->
                 val isFromDistracting = uiState.isDelayForDistractingApps && app.isDistracting
                 val isShieldActive = app.isShieldActive || isFromDistracting
+                val isLocked = app.isCurrentlyLocked()
+
+                val targetBorderColor = when {
+                    isLocked -> RoseAccent.copy(alpha = 0.50f)
+                    isShieldActive -> AmberAccent.copy(alpha = 0.50f)
+                    else -> GlassBorderLow
+                }
+                val animatedCardBorderColor by animateColorAsState(
+                    targetValue = targetBorderColor,
+                    animationSpec = tween(durationMillis = 350),
+                    label = "shield_row_border"
+                )
 
                 FrostedGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("distraction_row_${app.packageName.replace(".", "_")}"),
-                    backgroundColor = GlassSurfaceHigh
+                    backgroundColor = GlassSurfaceHigh,
+                    borderColor = animatedCardBorderColor
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -388,6 +408,8 @@ fun DistractionShieldScreen(
                                 packageName = app.packageName,
                                 appName = app.appName,
                                 size = 42.dp,
+                                isLocked = isLocked,
+                                isShieldActive = isShieldActive,
                                 cornerRadius = 12.dp
                             )
 
@@ -402,9 +424,9 @@ fun DistractionShieldScreen(
                                 )
                                 Text(
                                     text = if (isShieldActive) {
-                                        if (isFromDistracting && !app.isShieldActive) "${currentDelay}s Delay (Blackout Distracting)"
-                                        else "${currentDelay}s Mindful Friction Delay"
-                                    } else "Instant direct launch",
+                                        if (isFromDistracting && !app.isShieldActive) "Delayed (Blackout Distracting)"
+                                        else "Friction Delay"
+                                    } else "Instant launch",
                                     color = if (isShieldActive) AmberAccent else TextSecondary,
                                     fontSize = 12.sp
                                 )

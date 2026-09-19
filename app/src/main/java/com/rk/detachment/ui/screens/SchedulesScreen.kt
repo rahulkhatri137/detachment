@@ -119,9 +119,10 @@ fun SchedulesScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Automatic app locking during study, work, or sleep hours",
+                                text = "Automatic app locking during study, work and sleep hours",
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
                             )
                         }
                         if (onResetDefaults != null) {
@@ -146,7 +147,7 @@ fun SchedulesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Sync Defaults",
+                                        text = "Reset",
                                         color = PurpleLight,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold
@@ -167,7 +168,7 @@ fun SchedulesScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -196,9 +197,10 @@ fun SchedulesScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = if (activeCount > 0) "Automatically enforcing app block rules" else "Schedules will trigger automatically based on time",
+                                        text = if (activeCount > 0) "Automatically enforcing app block rules" else "Schedules will trigger based on time",
                                         color = TextSecondary,
-                                        fontSize = 12.sp
+                                        fontSize = 12.sp,
+                                        lineHeight = 16.sp
                                     )
                                 }
                             }
@@ -245,7 +247,7 @@ fun SchedulesScreen(
                         borderColor = if (isRuleActiveNow) PurpleLight else GlassBorderMedium,
                         backgroundColor = if (isRuleActiveNow) PurplePrimary.copy(alpha = 0.25f) else GlassSurfaceHigh
                     ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
+                        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -435,6 +437,8 @@ fun SchedulesScreen(
                     showAddDialog = false
                     editingRule = null
                 },
+                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
                 containerColor = FrostedBackgroundDarker,
                 title = {
                     Text(
@@ -446,7 +450,7 @@ fun SchedulesScreen(
                 },
                 text = {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(rememberScrollState())
@@ -492,6 +496,7 @@ fun SchedulesScreen(
                                 text = "Active Days:",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
+                                lineHeight = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )
 
@@ -541,6 +546,7 @@ fun SchedulesScreen(
                                 text = "Time Range (Tap to select with clock):",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
+                                lineHeight = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )
 
@@ -644,7 +650,13 @@ fun SchedulesScreen(
                         }
 
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Apps to Lock:", color = TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text(
+                                text = "Apps to Lock:",
+                                color = TextSecondary,
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                             
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -834,6 +846,8 @@ private fun RoundClockTimePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
         containerColor = FrostedBackgroundDarker,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
