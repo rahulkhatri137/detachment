@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
-import com.rk.detachment.ui.theme.IndigoDark
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleDark
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -99,7 +99,7 @@ fun AppLaunchSecurityScreen(
                             Brush.linearGradient(
                                 colors = if (isSuccess) listOf(EmeraldAccent.copy(alpha = 0.4f), Color(0xFF064E3B))
                                 else if (isError) listOf(RoseAccent.copy(alpha = 0.4f), Color(0xFF881337))
-                                else listOf(IndigoPrimary.copy(alpha = 0.5f), IndigoDark.copy(alpha = 0.35f))
+                                else listOf(PurplePrimary.copy(alpha = 0.5f), PurpleDark.copy(alpha = 0.35f))
                             )
                         )
                         .border(
@@ -107,7 +107,7 @@ fun AppLaunchSecurityScreen(
                             Brush.sweepGradient(
                                 if (isSuccess) listOf(EmeraldAccent, CyanAccent, EmeraldAccent)
                                 else if (isError) listOf(RoseAccent, CyanAccent, RoseAccent)
-                                else listOf(IndigoLight, CyanAccent, IndigoPrimary, IndigoLight)
+                                else listOf(PurpleLight, CyanAccent, PurplePrimary, PurpleLight)
                             ),
                             CircleShape
                         ),
@@ -158,7 +158,7 @@ fun AppLaunchSecurityScreen(
                         val dotBrush = when {
                             isSuccess -> Brush.radialGradient(listOf(EmeraldAccent, Color(0xFF059669)))
                             isError -> Brush.radialGradient(listOf(RoseAccent, Color(0xFFE11D48)))
-                            isFilled -> Brush.radialGradient(listOf(CyanAccent, IndigoPrimary))
+                            isFilled -> Brush.radialGradient(listOf(CyanAccent, PurplePrimary))
                             else -> Brush.radialGradient(
                                 listOf(
                                     Color.White.copy(alpha = 0.15f),

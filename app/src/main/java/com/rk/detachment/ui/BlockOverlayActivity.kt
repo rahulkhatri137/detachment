@@ -86,8 +86,8 @@ import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -489,15 +489,23 @@ fun RealLockScreenView(
 
                 FrostedBadge(
                     text = category,
-                    color = IndigoLight
+                    color = PurpleLight
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = RoseAccent.copy(alpha = 0.15f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, RoseAccent.copy(alpha = 0.4f)),
+                    color = RoseAccent.copy(alpha = 0.12f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                RoseAccent.copy(alpha = 0.55f),
+                                RoseAccent.copy(alpha = 0.18f)
+                            )
+                        )
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
@@ -523,7 +531,7 @@ fun RealLockScreenView(
                         )
                         Text(
                             text = "Daily Limit: ${limitMinutes}m",
-                            color = IndigoLight,
+                            color = PurpleLight,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -547,7 +555,7 @@ fun RealLockScreenView(
 
         Button(
             onClick = onClose,
-            colors = ButtonDefaults.buttonColors(containerColor = IndigoPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -740,7 +748,7 @@ fun RealFrictionDelayView(
 
         Text(
             text = "Detachment Distraction Shield for $appName",
-            color = IndigoLight,
+            color = PurpleLight,
             fontSize = 13.sp
         )
 
@@ -805,7 +813,7 @@ fun RealFrictionDelayView(
             ) {
                 Text(
                     text = breathPhase,
-                    color = IndigoLight,
+                    color = PurpleLight,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -823,7 +831,7 @@ fun RealFrictionDelayView(
 
         Button(
             onClick = onClose,
-            colors = ButtonDefaults.buttonColors(containerColor = IndigoPrimary),
+            colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()

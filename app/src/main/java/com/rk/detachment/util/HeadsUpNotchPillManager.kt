@@ -393,11 +393,11 @@ object HeadsUpNotchPillManager {
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 22 * density
-                setColor(0xD90F172A.toInt())
-                setStroke((1 * density).toInt(), 0x33818CF8.toInt())
+                setColor(0xBF0F172A.toInt())
+                setStroke((1 * density).toInt(), 0x55FFFFFF.toInt())
             }
             background = bg
-            elevation = 16 * density
+            elevation = 18 * density
         }
 
         val iconContainer = FrameLayout(context).apply {
@@ -407,8 +407,8 @@ object HeadsUpNotchPillManager {
             }
             val circleBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(0x2E6366F1.toInt())
-                setStroke((1 * density).toInt(), 0x44818CF8.toInt())
+                setColor(0x1AFFFFFF.toInt())
+                setStroke((1 * density).toInt(), 0x40FFFFFF.toInt())
             }
             background = circleBg
             outlineProvider = object : ViewOutlineProvider() {
@@ -453,15 +453,15 @@ object HeadsUpNotchPillManager {
             val capsuleBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 14 * density
-                setColor(0x33818CF8.toInt())
-                setStroke((1 * density).toInt(), 0x4D818CF8.toInt())
+                setColor(0x22FFFFFF.toInt())
+                setStroke((1 * density).toInt(), 0x4DFFFFFF.toInt())
             }
             background = capsuleBg
         }
 
         val timeText = TextView(context).apply {
             text = formatMinutes(minutesUsed)
-            setTextColor(0xFFF8FAFC.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER

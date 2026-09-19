@@ -78,6 +78,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.CategoryBadge
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.PasscodeUnlockDialog
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
@@ -90,8 +91,8 @@ import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -158,7 +159,7 @@ fun AppLimitsScreen(
                         )
                         Text(
                             text = "${uiState.allApps.size} Installed Apps",
-                            color = IndigoLight,
+                            color = PurpleLight,
                             fontSize = 12.sp
                         )
                     }
@@ -178,7 +179,7 @@ fun AppLimitsScreen(
                             if (uiState.isSyncingApps) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(12.dp),
-                                    color = IndigoLight,
+                                    color = PurpleLight,
                                     strokeWidth = 2.dp
                                 )
                             } else {
@@ -193,8 +194,8 @@ fun AppLimitsScreen(
 
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = IndigoPrimary.copy(alpha = 0.2f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.5f)),
+                            color = PurplePrimary.copy(alpha = 0.2f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.5f)),
                             modifier = Modifier
                                 .clickable { showChangePinDialog = true }
                                 .testTag("change_pin_btn")
@@ -206,13 +207,13 @@ fun AppLimitsScreen(
                                 Icon(
                                     imageVector = Icons.Default.Lock,
                                     contentDescription = "Security PIN",
-                                    tint = IndigoLight,
+                                    tint = PurpleLight,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
                                     text = "PIN",
-                                    color = IndigoLight,
+                                    color = PurpleLight,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -283,7 +284,7 @@ fun AppLimitsScreen(
                         .fillMaxWidth()
                         .testTag("unlock_selector_card"),
                     backgroundColor = GlassSurfaceHigh,
-                    borderColor = IndigoLight.copy(alpha = 0.5f)
+                    borderColor = PurpleLight.copy(alpha = 0.5f)
                 ) {
                     Column(
                         modifier = Modifier
@@ -299,7 +300,7 @@ fun AppLimitsScreen(
                                 Icon(
                                     imageVector = Icons.Default.LockClock,
                                     contentDescription = null,
-                                    tint = IndigoLight,
+                                    tint = PurpleLight,
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -325,7 +326,7 @@ fun AppLimitsScreen(
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = FrostedBackgroundDarker,
-                                border = androidx.compose.foundation.BorderStroke(1.dp, IndigoLight.copy(alpha = 0.4f)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PurpleLight.copy(alpha = 0.4f)),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { dropdownExpanded = true }
@@ -343,12 +344,12 @@ fun AppLimitsScreen(
                                             modifier = Modifier
                                                 .size(28.dp)
                                                 .clip(CircleShape)
-                                                .background(IndigoPrimary.copy(alpha = 0.25f)),
+                                                .background(PurplePrimary.copy(alpha = 0.25f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Text(
                                                 text = "${currentUnlockMinutes}m",
-                                                color = IndigoLight,
+                                                color = PurpleLight,
                                                 fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -366,7 +367,7 @@ fun AppLimitsScreen(
                                     Icon(
                                         imageVector = Icons.Default.ArrowDropDown,
                                         contentDescription = "Select unlock period",
-                                        tint = IndigoLight,
+                                        tint = PurpleLight,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -391,7 +392,7 @@ fun AppLimitsScreen(
                                             ) {
                                                 Text(
                                                     text = label,
-                                                    color = if (isSelected) IndigoLight else TextPrimary,
+                                                    color = if (isSelected) PurpleLight else TextPrimary,
                                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                                     fontSize = 13.sp
                                                 )
@@ -400,7 +401,7 @@ fun AppLimitsScreen(
                                                     Icon(
                                                         imageVector = Icons.Default.Check,
                                                         contentDescription = null,
-                                                        tint = IndigoLight,
+                                                        tint = PurpleLight,
                                                         modifier = Modifier.size(16.dp)
                                                     )
                                                 }
@@ -472,16 +473,11 @@ fun AppLimitsScreen(
                                 }
                             }
 
-                            Switch(
+                            LiquidGlassSwitch(
                                 checked = uiState.isHeadsUpPillEnabled,
                                 onCheckedChange = { onToggleHeadsUpPill(it) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color(0xFF3B82F6),
-                                    checkedTrackColor = Color(0xFF2563EB).copy(alpha = 0.45f),
-                                    uncheckedThumbColor = TextSecondary,
-                                    uncheckedTrackColor = Color(0x331E293B)
-                                ),
-                                modifier = Modifier.testTag("heads_up_pill_switch")
+                                activeColor = PurplePrimary,
+                                testTag = "heads_up_pill_switch"
                             )
                         }
                     }
@@ -500,7 +496,7 @@ fun AppLimitsScreen(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = IndigoLight
+                            tint = PurpleLight
                         )
                     },
                     trailingIcon = {
@@ -514,7 +510,7 @@ fun AppLimitsScreen(
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = GlassSurfaceMedium,
                         unfocusedContainerColor = GlassSurfaceMedium,
-                        focusedBorderColor = IndigoLight,
+                        focusedBorderColor = PurpleLight,
                         unfocusedBorderColor = GlassBorderMedium,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
@@ -565,10 +561,10 @@ fun AppLimitsScreen(
                         val isSelected = selectedCategory == cat
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) IndigoPrimary else GlassSurfaceLow,
+                            color = if (isSelected) PurplePrimary else GlassSurfaceLow,
                             border = androidx.compose.foundation.BorderStroke(
                                 1.dp,
-                                if (isSelected) IndigoPrimary else GlassBorderLow
+                                if (isSelected) PurplePrimary else GlassBorderLow
                             ),
                             modifier = Modifier.clickable { selectedCategory = cat }
                         ) {
@@ -624,7 +620,7 @@ fun AppLimitsScreen(
                                     )
                                     CategoryBadge(
                                         text = app.category,
-                                        color = IndigoLight
+                                        color = PurpleLight
                                     )
                                 }
 
@@ -646,17 +642,12 @@ fun AppLimitsScreen(
                                 }
                             }
 
-                            Switch(
+                            LiquidGlassSwitch(
                                 checked = isLocked,
                                 onCheckedChange = { checked ->
                                     onToggleLock(app.packageName, checked)
                                 },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = RoseAccent,
-                                    checkedTrackColor = RoseAccent.copy(alpha = 0.35f),
-                                    uncheckedThumbColor = TextSecondary,
-                                    uncheckedTrackColor = Color(0x331E293B)
-                                )
+                                activeColor = RoseAccent
                             )
                         }
 
@@ -669,7 +660,7 @@ fun AppLimitsScreen(
                                     .fillMaxWidth()
                                     .height(4.dp)
                                     .clip(RoundedCornerShape(2.dp)),
-                                color = if (isExceeded) RoseAccent else IndigoPrimary,
+                                color = if (isExceeded) RoseAccent else PurplePrimary,
                                 trackColor = Color(0x22FFFFFF)
                             )
                         }
@@ -765,8 +756,8 @@ fun AppLimitsScreen(
 
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = IndigoPrimary.copy(alpha = 0.25f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.4f)),
+                                color = PurplePrimary.copy(alpha = 0.25f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.4f)),
                                 modifier = Modifier
                                     .clickable { onLaunchApp(app) }
                                     .testTag("launch_app_${app.packageName.replace(".", "_")}")
@@ -778,13 +769,13 @@ fun AppLimitsScreen(
                                     Icon(
                                         imageVector = Icons.Default.OpenInNew,
                                         contentDescription = null,
-                                        tint = IndigoLight,
+                                        tint = PurpleLight,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "Launch",
-                                        color = IndigoLight,
+                                        color = PurpleLight,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -821,7 +812,7 @@ fun AppLimitsScreen(
 
                         Text(
                             text = if (currentLimit == 0) "No Limit"  else "$currentLimit minutes per day",
-                            color = IndigoLight,
+                            color = PurpleLight,
                             fontSize = 19.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -832,8 +823,8 @@ fun AppLimitsScreen(
                             valueRange = 0f..180f,
                             steps = 35,
                             colors = SliderDefaults.colors(
-                                thumbColor = IndigoPrimary,
-                                activeTrackColor = IndigoPrimary,
+                                thumbColor = PurplePrimary,
+                                activeTrackColor = PurplePrimary,
                                 inactiveTrackColor = Color(0x33FFFFFF)
                             )
                         )
@@ -846,7 +837,7 @@ fun AppLimitsScreen(
                             quickPresets.take(6).forEach { min ->
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (currentLimit == min) IndigoPrimary else Color(0x22FFFFFF),
+                                    color = if (currentLimit == min) PurplePrimary else Color(0x22FFFFFF),
                                     modifier = Modifier.clickable { currentLimit = min }
                                 ) {
                                     Text(
@@ -868,7 +859,7 @@ fun AppLimitsScreen(
                             editingApp = null
                         }
                     ) {
-                        Text("Save Limit", color = IndigoLight, fontWeight = FontWeight.Bold)
+                        Text("Save Limit", color = PurpleLight, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
@@ -910,7 +901,7 @@ fun AppLimitsScreen(
                         Icon(
                             imageVector = Icons.Default.Lock,
                             contentDescription = null,
-                            tint = IndigoLight,
+                            tint = PurpleLight,
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -946,7 +937,7 @@ fun AppLimitsScreen(
                                     .fillMaxWidth()
                                     .testTag("current_pin_input"),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = IndigoLight,
+                                    focusedBorderColor = PurpleLight,
                                     unfocusedBorderColor = GlassBorderMedium,
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary
@@ -958,7 +949,7 @@ fun AppLimitsScreen(
                                 color = Color.White.copy(alpha = 0.05f),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    if (appAuthToggle) IndigoLight.copy(alpha = 0.5f) else GlassBorderMedium
+                                    if (appAuthToggle) PurpleLight.copy(alpha = 0.5f) else GlassBorderMedium
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -978,7 +969,7 @@ fun AppLimitsScreen(
                                             modifier = Modifier
                                                 .size(34.dp)
                                                 .clip(CircleShape)
-                                                .background(if (appAuthToggle) IndigoPrimary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)),
+                                                .background(if (appAuthToggle) PurplePrimary.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.06f)),
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
@@ -998,22 +989,16 @@ fun AppLimitsScreen(
                                             )
                                             Text(
                                                 text = if (appAuthToggle) "Require PIN" else "No PIN required",
-                                                color = if (appAuthToggle) IndigoLight else TextSecondary,
+                                                color = if (appAuthToggle) PurpleLight else TextSecondary,
                                                 fontSize = 11.sp
                                             )
                                         }
                                     }
-                                    Switch(
+                                    LiquidGlassSwitch(
                                         checked = appAuthToggle,
                                         onCheckedChange = { appAuthToggle = it },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = IndigoPrimary,
-                                            uncheckedThumbColor = TextSecondary,
-                                            uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
-                                            uncheckedBorderColor = GlassBorderMedium
-                                        ),
-                                        modifier = Modifier.testTag("app_auth_toggle")
+                                        activeColor = PurplePrimary,
+                                        testTag = "app_auth_toggle"
                                     )
                                 }
                             }
@@ -1043,7 +1028,7 @@ fun AppLimitsScreen(
                                                     if (isSelected) {
                                                         Modifier.background(
                                                             Brush.horizontalGradient(
-                                                                listOf(IndigoPrimary, CyanAccent)
+                                                                listOf(PurplePrimary, CyanAccent)
                                                             )
                                                         )
                                                     } else {
@@ -1087,7 +1072,7 @@ fun AppLimitsScreen(
                                     .fillMaxWidth()
                                     .testTag("new_pin_input"),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = IndigoLight,
+                                    focusedBorderColor = PurpleLight,
                                     unfocusedBorderColor = GlassBorderMedium,
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary
@@ -1110,7 +1095,7 @@ fun AppLimitsScreen(
                                     .fillMaxWidth()
                                     .testTag("confirm_pin_input"),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = IndigoLight,
+                                    focusedBorderColor = PurpleLight,
                                     unfocusedBorderColor = GlassBorderMedium,
                                     focusedTextColor = TextPrimary,
                                     unfocusedTextColor = TextPrimary
@@ -1142,7 +1127,7 @@ fun AppLimitsScreen(
                             enabled = currentPinInput.length >= 4,
                             modifier = Modifier.testTag("verify_current_pin_btn")
                         ) {
-                            Text("Verify PIN", color = IndigoLight, fontWeight = FontWeight.Bold)
+                            Text("Verify PIN", color = PurpleLight, fontWeight = FontWeight.Bold)
                         }
                     } else {
                         val isOnlyToggleChange = newPinInput.isEmpty() && confirmPinInput.isEmpty()
@@ -1166,7 +1151,7 @@ fun AppLimitsScreen(
                             enabled = isOnlyToggleChange || isValidPinChange,
                             modifier = Modifier.testTag("save_new_pin_btn")
                         ) {
-                            Text("Save Changes", color = IndigoLight, fontWeight = FontWeight.Bold)
+                            Text("Save Changes", color = PurpleLight, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
