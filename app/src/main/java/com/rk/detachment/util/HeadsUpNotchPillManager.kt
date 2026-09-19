@@ -393,10 +393,11 @@ object HeadsUpNotchPillManager {
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 22 * density
-                setColor(0xFF2563EB.toInt())
+                setColor(0xD90F172A.toInt())
+                setStroke((1 * density).toInt(), 0x33818CF8.toInt())
             }
             background = bg
-            elevation = 12 * density
+            elevation = 16 * density
         }
 
         val iconContainer = FrameLayout(context).apply {
@@ -406,7 +407,8 @@ object HeadsUpNotchPillManager {
             }
             val circleBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(0xFF93C5FD.toInt())
+                setColor(0x2E6366F1.toInt())
+                setStroke((1 * density).toInt(), 0x44818CF8.toInt())
             }
             background = circleBg
             outlineProvider = object : ViewOutlineProvider() {
@@ -418,7 +420,7 @@ object HeadsUpNotchPillManager {
         }
 
         val iconView = ImageView(context).apply {
-            val iconSizePx = (24 * density).toInt()
+            val iconSizePx = (22 * density).toInt()
             layoutParams = FrameLayout.LayoutParams(iconSizePx, iconSizePx, Gravity.CENTER)
             scaleType = ImageView.ScaleType.FIT_CENTER
 
@@ -451,14 +453,15 @@ object HeadsUpNotchPillManager {
             val capsuleBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 14 * density
-                setColor(Color.WHITE)
+                setColor(0x33818CF8.toInt())
+                setStroke((1 * density).toInt(), 0x4D818CF8.toInt())
             }
             background = capsuleBg
         }
 
         val timeText = TextView(context).apply {
             text = formatMinutes(minutesUsed)
-            setTextColor(0xFF1D4ED8.toInt())
+            setTextColor(0xFFF8FAFC.toInt())
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER

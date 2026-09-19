@@ -614,7 +614,7 @@ object AppManagerHelper {
                 ApplicationInfo.CATEGORY_PRODUCTIVITY -> return "Productivity"
             }
         }
-        
+
         return "Productivity"
     }
 

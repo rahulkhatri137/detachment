@@ -12,7 +12,9 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -101,7 +103,7 @@ fun HeadsUpNotchPillContent(
 
     Surface(
         modifier = modifier
-            .shadow(elevation = 12.dp, shape = CircleShape)
+            .shadow(elevation = 16.dp, shape = CircleShape, spotColor = com.rk.detachment.ui.theme.IndigoPrimary.copy(alpha = 0.35f))
             .clip(CircleShape)
             .clickable(
                 interactionSource = interactionSource,
@@ -109,7 +111,8 @@ fun HeadsUpNotchPillContent(
                 onClick = onDismiss
             )
             .testTag("heads_up_notch_pill"),
-        color = Color(0xFF2563EB),
+        color = com.rk.detachment.ui.theme.GlassPillBackground,
+        border = BorderStroke(1.dp, com.rk.detachment.ui.theme.GlassPillBorder),
         shape = CircleShape
     ) {
         Row(
@@ -122,14 +125,15 @@ fun HeadsUpNotchPillContent(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF93C5FD)),
+                    .background(com.rk.detachment.ui.theme.IndigoPrimary.copy(alpha = 0.18f))
+                    .border(0.8.dp, com.rk.detachment.ui.theme.IndigoLight.copy(alpha = 0.35f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 AppIconView(
                     packageName = data.packageName,
                     appName = data.appName,
-                    size = 24.dp,
-                    cornerRadius = 12.dp
+                    size = 22.dp,
+                    cornerRadius = 11.dp
                 )
             }
 
@@ -137,7 +141,8 @@ fun HeadsUpNotchPillContent(
 
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White
+                color = com.rk.detachment.ui.theme.GlassPillBadgeBg,
+                border = BorderStroke(0.8.dp, com.rk.detachment.ui.theme.GlassPillBorder)
             ) {
                 Box(
                     modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp),
@@ -145,7 +150,7 @@ fun HeadsUpNotchPillContent(
                 ) {
                     Text(
                         text = formattedTime,
-                        color = Color(0xFF1D4ED8),
+                        color = com.rk.detachment.ui.theme.TextPrimary,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.3.sp

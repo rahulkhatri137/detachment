@@ -81,6 +81,7 @@ import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.DetachmentTheme
 import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
+import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
@@ -794,8 +795,8 @@ fun RealFrictionDelayView(
 
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = FrostedBackgroundDarker,
-            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderMedium),
+            color = GlassSurfaceHigh,
+            border = androidx.compose.foundation.BorderStroke(1.dp, GlassBorderHigh),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
