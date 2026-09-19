@@ -61,8 +61,8 @@ import com.rk.detachment.ui.theme.DetachmentTheme
 import com.rk.detachment.ui.theme.FrostedBackground
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderMedium
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.TextMuted
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -171,8 +171,8 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationBarItemDefaults.colors(
                                                 selectedIconColor = Color.White,
-                                                selectedTextColor = IndigoLight,
-                                                indicatorColor = IndigoPrimary.copy(alpha = 0.35f),
+                                                selectedTextColor = PurpleLight,
+                                                indicatorColor = PurplePrimary.copy(alpha = 0.35f),
                                                 unselectedIconColor = TextSecondary,
                                                 unselectedTextColor = TextMuted
                                             ),

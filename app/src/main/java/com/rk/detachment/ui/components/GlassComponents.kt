@@ -19,12 +19,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -50,10 +54,10 @@ import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoDark
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
-import com.rk.detachment.ui.theme.IndigoSoft
+import com.rk.detachment.ui.theme.PurpleDark
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.PurpleSoft
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextMuted
 import com.rk.detachment.ui.theme.TextPrimary
@@ -67,8 +71,8 @@ fun RadialGlassBackground(
 ) {
     val topOrbColors = remember {
         listOf(
-            IndigoPrimary.copy(alpha = 0.28f),
-            IndigoPrimary.copy(alpha = 0.12f),
+            PurplePrimary.copy(alpha = 0.28f),
+            PurplePrimary.copy(alpha = 0.12f),
             Color.Transparent
         )
     }
@@ -124,26 +128,79 @@ fun FrostedGlassCard(
     content: @Composable () -> Unit
 ) {
     val cardShape = remember(cornerRadius) { RoundedCornerShape(cornerRadius) }
-    val borderStroke = remember(borderColor) {
-        BorderStroke(
-            width = 1.dp,
-            color = borderColor
-        )
+    val borderBrush = remember(borderColor) {
+        if (borderColor == GlassBorderHigh || borderColor == GlassBorderMedium) {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.65f),
+                    Color.White.copy(alpha = 0.22f),
+                    Color.White.copy(alpha = 0.08f),
+                    Color.White.copy(alpha = 0.32f)
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    borderColor.copy(alpha = 0.70f),
+                    borderColor.copy(alpha = 0.30f),
+                    borderColor.copy(alpha = 0.15f),
+                    borderColor.copy(alpha = 0.40f)
+                )
+            )
+        }
     }
 
-    val cardModifier = if (onClick != null) {
+    val liquidBackgroundBrush = remember(backgroundColor) {
+        if (backgroundColor == GlassSurfaceHigh || backgroundColor == GlassSurfaceMedium || backgroundColor == GlassSurfaceLow) {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.13f),
+                    Color.White.copy(alpha = 0.04f),
+                    Color.White.copy(alpha = 0.02f),
+                    Color.White.copy(alpha = 0.06f)
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    backgroundColor.copy(alpha = 0.22f),
+                    backgroundColor.copy(alpha = 0.10f),
+                    backgroundColor.copy(alpha = 0.06f),
+                    backgroundColor.copy(alpha = 0.14f)
+                )
+            )
+        }
+    }
+
+    val baseModifier = if (onClick != null) {
         modifier
+            .shadow(elevation = 10.dp, shape = cardShape, spotColor = Color.Black.copy(alpha = 0.35f), ambientColor = Color.Black.copy(alpha = 0.2f))
             .clip(cardShape)
             .clickable(onClick = onClick)
     } else {
-        modifier.clip(cardShape)
+        modifier
+            .shadow(elevation = 10.dp, shape = cardShape, spotColor = Color.Black.copy(alpha = 0.35f), ambientColor = Color.Black.copy(alpha = 0.2f))
+            .clip(cardShape)
     }
 
-    Card(
-        modifier = cardModifier.border(borderStroke, shape = cardShape),
-        shape = cardShape,
-        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    Box(
+        modifier = baseModifier
+            .background(liquidBackgroundBrush)
+            .border(BorderStroke(1.dp, borderBrush), shape = cardShape)
     ) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.07f),
+                            Color.Transparent
+                        ),
+                        endY = 120f
+                    )
+                )
+        )
         content()
     }
 }
@@ -177,7 +234,7 @@ fun FrostedGlassButton(
     isPrimary: Boolean = true,
     testTag: String = "glass_button"
 ) {
-    val buttonColor = if (isPrimary) IndigoPrimary else GlassSurfaceLow
+    val buttonColor = if (isPrimary) PurplePrimary else GlassSurfaceLow
     val borderBrush = if (isPrimary) {
         Brush.verticalGradient(
             listOf(
@@ -204,8 +261,8 @@ fun FrostedGlassButton(
             .shadow(
                 elevation = if (isPrimary && enabled) 12.dp else 0.dp,
                 shape = RoundedCornerShape(16.dp),
-                spotColor = IndigoPrimary.copy(alpha = 0.45f),
-                ambientColor = IndigoPrimary.copy(alpha = 0.35f)
+                spotColor = PurplePrimary.copy(alpha = 0.45f),
+                ambientColor = PurplePrimary.copy(alpha = 0.35f)
             ),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
@@ -268,8 +325,8 @@ fun GlowingProgressRing(
     progress: Float,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 10.dp,
-    primaryColor: Color = IndigoPrimary,
-    secondaryColor: Color = IndigoLight,
+    primaryColor: Color = PurplePrimary,
+    secondaryColor: Color = PurpleLight,
     trackColor: Color = Color.White.copy(alpha = 0.08f),
     centerContent: @Composable () -> Unit
 ) {
@@ -323,7 +380,7 @@ fun GlowingProgressRing(
 fun CategoryBadge(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = IndigoLight
+    color: Color = PurpleLight
 ) {
     Surface(
         modifier = modifier,
@@ -346,9 +403,9 @@ fun CategoryBadge(
 fun FrostedBadge(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = IndigoSoft,
-    backgroundColor: Color = IndigoPrimary.copy(alpha = 0.20f),
-    borderColor: Color = IndigoPrimary.copy(alpha = 0.35f)
+    color: Color = PurpleSoft,
+    backgroundColor: Color = PurplePrimary.copy(alpha = 0.20f),
+    borderColor: Color = PurplePrimary.copy(alpha = 0.35f)
 ) {
     Surface(
         modifier = modifier,
@@ -371,7 +428,7 @@ fun FrostedBadge(
 fun VibrantBadge(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = IndigoLight
+    color: Color = PurpleLight
 ) {
     FrostedBadge(
         text = text,
@@ -428,10 +485,51 @@ fun FrostedHeader(
                 Icon(
                     imageVector = actionIcon,
                     contentDescription = null,
-                    tint = IndigoLight,
+                    tint = PurpleLight,
                     modifier = Modifier.size(22.dp)
                 )
             }
         }
     }
+}
+
+@Composable
+fun LiquidGlassSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    activeColor: Color = PurplePrimary,
+    enabled: Boolean = true,
+    testTag: String? = null
+) {
+    val switchModifier = if (testTag != null) modifier.testTag(testTag) else modifier
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        enabled = enabled,
+        modifier = switchModifier,
+        thumbContent = if (checked) {
+            {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = activeColor
+                )
+            }
+        } else null,
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = Color.White,
+            checkedTrackColor = activeColor,
+            checkedBorderColor = Color.Transparent,
+            checkedIconColor = activeColor,
+            uncheckedThumbColor = Color(0xFFCBD5E1),
+            uncheckedTrackColor = Color(0x28FFFFFF),
+            uncheckedBorderColor = Color(0x33FFFFFF),
+            disabledCheckedThumbColor = Color.White.copy(alpha = 0.5f),
+            disabledCheckedTrackColor = activeColor.copy(alpha = 0.4f),
+            disabledUncheckedThumbColor = Color(0xFF64748B),
+            disabledUncheckedTrackColor = Color(0x15FFFFFF)
+        )
+    )
 }

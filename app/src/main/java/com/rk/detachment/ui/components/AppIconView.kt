@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rk.detachment.ui.theme.GlassBorderMedium
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.util.AppManagerHelper
@@ -60,7 +60,7 @@ fun AppIconView(
         if (isLocked) RoseAccent.copy(alpha = 0.6f) else GlassBorderMedium
     }
     val fallbackBgColor = remember(isLocked) {
-        if (isLocked) RoseAccent.copy(alpha = 0.2f) else IndigoPrimary.copy(alpha = 0.2f)
+        if (isLocked) RoseAccent.copy(alpha = 0.2f) else PurplePrimary.copy(alpha = 0.2f)
     }
 
     Box(

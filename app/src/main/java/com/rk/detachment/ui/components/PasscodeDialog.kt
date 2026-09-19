@@ -69,9 +69,9 @@ import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
-import com.rk.detachment.ui.theme.IndigoDark
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleDark
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -110,15 +110,15 @@ fun PasscodeUnlockDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset { IntOffset(shakeOffset.value.roundToInt(), 0) }
-                    .shadow(32.dp, RoundedCornerShape(32.dp), spotColor = if (isError) RoseAccent else if (isSuccess) EmeraldAccent else IndigoPrimary),
+                    .shadow(32.dp, RoundedCornerShape(32.dp), spotColor = if (isError) RoseAccent else if (isSuccess) EmeraldAccent else PurplePrimary),
                 shape = RoundedCornerShape(32.dp),
                 color = Color(0xFF0F1424),
                 border = androidx.compose.foundation.BorderStroke(
                     1.8.dp,
                     Brush.verticalGradient(
                         listOf(
-                            if (isError) RoseAccent else if (isSuccess) EmeraldAccent else IndigoLight,
-                            IndigoDark.copy(alpha = 0.6f),
+                            if (isError) RoseAccent else if (isSuccess) EmeraldAccent else PurpleLight,
+                            PurpleDark.copy(alpha = 0.6f),
                             GlassBorderMedium
                         )
                     )
@@ -135,7 +135,7 @@ fun PasscodeUnlockDialog(
                                     colors = listOf(
                                         if (isError) RoseAccent.copy(alpha = 0.25f)
                                         else if (isSuccess) EmeraldAccent.copy(alpha = 0.25f)
-                                        else IndigoPrimary.copy(alpha = 0.35f),
+                                        else PurplePrimary.copy(alpha = 0.35f),
                                         Color.Transparent
                                     )
                                 )
@@ -172,7 +172,7 @@ fun PasscodeUnlockDialog(
                                                     if (isSelected) {
                                                         Modifier.background(
                                                             Brush.horizontalGradient(
-                                                                listOf(IndigoPrimary, CyanAccent)
+                                                                listOf(PurplePrimary, CyanAccent)
                                                             )
                                                         )
                                                     } else {
@@ -223,7 +223,7 @@ fun PasscodeUnlockDialog(
                                     Brush.linearGradient(
                                         colors = if (isSuccess) listOf(EmeraldAccent.copy(alpha = 0.35f), Color(0xFF064E3B))
                                         else if (isError) listOf(RoseAccent.copy(alpha = 0.35f), Color(0xFF881337))
-                                        else listOf(IndigoPrimary.copy(alpha = 0.45f), IndigoDark.copy(alpha = 0.3f))
+                                        else listOf(PurplePrimary.copy(alpha = 0.45f), PurpleDark.copy(alpha = 0.3f))
                                     )
                                 )
                                 .border(
@@ -231,7 +231,7 @@ fun PasscodeUnlockDialog(
                                     Brush.sweepGradient(
                                         if (isSuccess) listOf(EmeraldAccent, CyanAccent, EmeraldAccent)
                                         else if (isError) listOf(RoseAccent, AmberAccent, RoseAccent)
-                                        else listOf(IndigoLight, CyanAccent, IndigoPrimary, IndigoLight)
+                                        else listOf(PurpleLight, CyanAccent, PurplePrimary, PurpleLight)
                                     ),
                                     CircleShape
                                 ),
@@ -260,7 +260,7 @@ fun PasscodeUnlockDialog(
 
                         Text(
                             text = "Enter master PIN for $selectedMinutes-min pass",
-                            color = IndigoLight.copy(alpha = 0.9f),
+                            color = PurpleLight.copy(alpha = 0.9f),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center
@@ -282,7 +282,7 @@ fun PasscodeUnlockDialog(
                                 val dotBrush = when {
                                     isSuccess -> Brush.radialGradient(listOf(EmeraldAccent, Color(0xFF059669)))
                                     isError -> Brush.radialGradient(listOf(RoseAccent, Color(0xFFE11D48)))
-                                    isFilled -> Brush.radialGradient(listOf(CyanAccent, IndigoPrimary))
+                                    isFilled -> Brush.radialGradient(listOf(CyanAccent, PurplePrimary))
                                     else -> Brush.radialGradient(listOf(Color.White.copy(alpha = 0.12f), Color.White.copy(alpha = 0.05f)))
                                 }
                                 val dotBorderColor = when {
@@ -436,7 +436,7 @@ fun KeypadButton(
 
     val backgroundBrush = when {
         isPressed -> Brush.radialGradient(
-            listOf(IndigoPrimary, CyanAccent)
+            listOf(PurplePrimary, CyanAccent)
         )
         isDel -> Brush.linearGradient(
             listOf(RoseAccent.copy(alpha = 0.22f), Color(0xFF4C0519).copy(alpha = 0.4f))
@@ -453,7 +453,7 @@ fun KeypadButton(
     }
 
     val borderColor = when {
-        isPressed -> IndigoLight
+        isPressed -> PurpleLight
         isDel -> RoseAccent.copy(alpha = 0.6f)
         isClear -> AmberAccent.copy(alpha = 0.6f)
         else -> GlassBorderMedium.copy(alpha = 0.8f)

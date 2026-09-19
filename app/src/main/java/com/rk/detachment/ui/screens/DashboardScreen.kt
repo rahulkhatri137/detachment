@@ -60,9 +60,9 @@ import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
-import com.rk.detachment.ui.theme.IndigoSoft
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.PurpleSoft
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -138,7 +138,7 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.Shield,
                             contentDescription = "Shield Status",
-                            tint = IndigoLight,
+                            tint = PurpleLight,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -236,8 +236,8 @@ fun DashboardScreen(
                                 .clickable(onClick = onNavigateToConsciousness)
                                 .testTag("screentime_ring_button"),
                             strokeWidth = 10.dp,
-                            primaryColor = if (uiState.isBlackoutActive) IndigoPrimary else if (progress >= 1f) RoseAccent else IndigoPrimary,
-                            secondaryColor = if (uiState.isBlackoutActive) IndigoLight else if (progress >= 1f) AmberAccent else IndigoLight,
+                            primaryColor = if (uiState.isBlackoutActive) PurplePrimary else if (progress >= 1f) RoseAccent else PurplePrimary,
+                            secondaryColor = if (uiState.isBlackoutActive) PurpleLight else if (progress >= 1f) AmberAccent else PurpleLight,
                             trackColor = Color.White.copy(alpha = 0.06f)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -253,7 +253,7 @@ fun DashboardScreen(
                                     )
                                     Text(
                                         text = "BLACKOUT",
-                                        color = IndigoSoft,
+                                        color = PurpleSoft,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 1.8.sp
@@ -281,8 +281,8 @@ fun DashboardScreen(
 
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = IndigoPrimary.copy(alpha = 0.16f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.35f)),
+                            color = PurplePrimary.copy(alpha = 0.16f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.35f)),
                             modifier = Modifier
                                 .clip(RoundedCornerShape(20.dp))
                                 .clickable(onClick = onNavigateToConsciousness)
@@ -301,7 +301,7 @@ fun DashboardScreen(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Consciousness Score: ${uiState.consciousnessComparison.today.score}/100",
-                                    color = IndigoLight,
+                                    color = PurpleLight,
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -359,7 +359,7 @@ fun DashboardScreen(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = "${uiState.combinedFocusMinutes}m",
-                                    color = IndigoLight,
+                                    color = PurpleLight,
                                     fontSize = 17.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -397,14 +397,14 @@ fun DashboardScreen(
                                 modifier = Modifier
                                     .size(34.dp)
                                     .clip(CircleShape)
-                                    .background(IndigoPrimary.copy(alpha = 0.20f))
-                                    .border(1.dp, IndigoPrimary.copy(alpha = 0.40f), CircleShape),
+                                    .background(PurplePrimary.copy(alpha = 0.20f))
+                                    .border(1.dp, PurplePrimary.copy(alpha = 0.40f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Timer,
                                     contentDescription = null,
-                                    tint = IndigoSoft,
+                                    tint = PurpleSoft,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -467,7 +467,7 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "${uiState.activeSchedules.size} rules active",
-                                color = if (uiState.activeSchedules.isNotEmpty()) IndigoSoft else TextSecondary,
+                                color = if (uiState.activeSchedules.isNotEmpty()) PurpleSoft else TextSecondary,
                                 fontSize = 11.sp
                             )
                         }
@@ -549,7 +549,7 @@ fun DashboardScreen(
 
                     Text(
                         text = "View All (${uiState.allApps.size})",
-                        color = IndigoLight,
+                        color = PurpleLight,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier
@@ -609,7 +609,7 @@ private fun PermissionRow(
             Button(
                 onClick = onGrant,
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = IndigoPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = PurplePrimary),
                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                 modifier = Modifier.height(30.dp)
             ) {
@@ -691,7 +691,7 @@ fun AppUsageGlassTile(
                     color = when {
                         isLocked -> RoseAccent
                         usagePercent > 0.8f -> AmberAccent
-                        else -> IndigoPrimary
+                        else -> PurplePrimary
                     },
                     trackColor = Color.White.copy(alpha = 0.08f)
                 )
@@ -726,13 +726,13 @@ fun AppUsageGlassTile(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(IndigoPrimary.copy(alpha = 0.15f)),
+                    .background(PurplePrimary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.OpenInNew,
                     contentDescription = "Launch",
-                    tint = IndigoLight,
+                    tint = PurpleLight,
                     modifier = Modifier.size(16.dp)
                 )
             }

@@ -66,15 +66,16 @@ import androidx.compose.ui.unit.sp
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
-import com.rk.detachment.ui.theme.IndigoSoft
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.PurpleSoft
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -121,8 +122,8 @@ fun SchedulesScreen(
                 item {
                     FrostedGlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = if (activeCount > 0) IndigoPrimary.copy(alpha = 0.2f) else GlassSurfaceMedium,
-                        borderColor = if (activeCount > 0) IndigoLight else GlassBorderMedium
+                        backgroundColor = if (activeCount > 0) PurplePrimary.copy(alpha = 0.2f) else GlassSurfaceMedium,
+                        borderColor = if (activeCount > 0) PurpleLight else GlassBorderMedium
                     ) {
                         Column(
                             modifier = Modifier
@@ -137,7 +138,7 @@ fun SchedulesScreen(
                                     modifier = Modifier
                                         .size(42.dp)
                                         .clip(CircleShape)
-                                        .background(if (activeCount > 0) IndigoPrimary else Color(0x331E293B)),
+                                        .background(if (activeCount > 0) PurplePrimary else Color(0x331E293B)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -167,8 +168,8 @@ fun SchedulesScreen(
 
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = IndigoLight.copy(alpha = 0.12f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, IndigoLight.copy(alpha = 0.3f)),
+                                color = PurpleLight.copy(alpha = 0.12f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PurpleLight.copy(alpha = 0.3f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
@@ -178,7 +179,7 @@ fun SchedulesScreen(
                                     Icon(
                                         imageVector = Icons.Default.Info,
                                         contentDescription = null,
-                                        tint = IndigoLight,
+                                        tint = PurpleLight,
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -202,8 +203,8 @@ fun SchedulesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("schedule_card_${rule.id}"),
-                        borderColor = if (isRuleActiveNow) IndigoLight else GlassBorderMedium,
-                        backgroundColor = if (isRuleActiveNow) IndigoPrimary.copy(alpha = 0.25f) else GlassSurfaceHigh
+                        borderColor = if (isRuleActiveNow) PurpleLight else GlassBorderMedium,
+                        backgroundColor = if (isRuleActiveNow) PurplePrimary.copy(alpha = 0.25f) else GlassSurfaceHigh
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
                             Row(
@@ -218,8 +219,8 @@ fun SchedulesScreen(
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
                                                 when (rule.type) {
-                                                    "STUDY" -> IndigoPrimary.copy(alpha = 0.2f)
-                                                    "SLEEP" -> IndigoSoft.copy(alpha = 0.2f)
+                                                    "STUDY" -> PurplePrimary.copy(alpha = 0.2f)
+                                                    "SLEEP" -> PurpleSoft.copy(alpha = 0.2f)
                                                     else -> AmberAccent.copy(alpha = 0.2f)
                                                 }
                                             ),
@@ -233,8 +234,8 @@ fun SchedulesScreen(
                                             },
                                             contentDescription = null,
                                             tint = when (rule.type) {
-                                                "STUDY" -> IndigoLight
-                                                "SLEEP" -> IndigoSoft
+                                                "STUDY" -> PurpleLight
+                                                "SLEEP" -> PurpleSoft
                                                 else -> AmberAccent
                                             },
                                             modifier = Modifier.size(20.dp)
@@ -255,30 +256,25 @@ fun SchedulesScreen(
                                                 fontWeight = FontWeight.Bold
                                             )
                                             if (isRuleActiveNow) {
-                                                FrostedBadge(text = "ACTIVE", color = IndigoLight)
+                                                FrostedBadge(text = "ACTIVE", color = PurpleLight)
                                             }
                                         }
                                         Text(
                                             text = rule.formattedTimeRange(),
-                                            color = IndigoLight,
+                                            color = PurpleLight,
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.SemiBold
                                         )
                                     }
                                 }
 
-                                Switch(
+                                LiquidGlassSwitch(
                                     checked = rule.isEnabled,
                                     onCheckedChange = { checked ->
                                         onToggleRule(rule.id, checked)
                                     },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = IndigoLight,
-                                        checkedTrackColor = IndigoPrimary.copy(alpha = 0.5f),
-                                        uncheckedThumbColor = TextSecondary,
-                                        uncheckedTrackColor = Color(0x331E293B)
-                                    ),
-                                    modifier = Modifier.testTag("toggle_rule_${rule.id}")
+                                    activeColor = if (rule.type == "SLEEP") PurplePrimary else AmberAccent,
+                                    testTag = "toggle_rule_${rule.id}"
                                 )
                             }
 
@@ -298,12 +294,12 @@ fun SchedulesScreen(
                                                 .size(26.dp)
                                                 .clip(CircleShape)
                                                 .background(
-                                                    if (isDayActive) IndigoPrimary.copy(alpha = 0.3f)
+                                                    if (isDayActive) PurplePrimary.copy(alpha = 0.3f)
                                                     else Color(0x22FFFFFF)
                                                 )
                                                 .border(
                                                     1.dp,
-                                                    if (isDayActive) IndigoLight else Color.Transparent,
+                                                    if (isDayActive) PurpleLight else Color.Transparent,
                                                     CircleShape
                                                 ),
                                             contentAlignment = Alignment.Center
@@ -363,7 +359,7 @@ fun SchedulesScreen(
                     .align(Alignment.BottomEnd)
                     .padding(24.dp)
                     .testTag("add_schedule_fab"),
-                containerColor = IndigoPrimary,
+                containerColor = PurplePrimary,
                 contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Schedule")
@@ -422,7 +418,7 @@ fun SchedulesScreen(
                             label = { Text("Schedule Name", color = TextSecondary) },
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = IndigoLight,
+                                focusedBorderColor = PurpleLight,
                                 unfocusedBorderColor = GlassBorderMedium,
                                 focusedTextColor = TextPrimary,
                                 unfocusedTextColor = TextPrimary
@@ -438,7 +434,7 @@ fun SchedulesScreen(
                                 val isSelected = type == t
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (isSelected) IndigoPrimary else Color(0x22FFFFFF),
+                                    color = if (isSelected) PurplePrimary else Color(0x22FFFFFF),
                                     modifier = Modifier.clickable { type = t }
                                 ) {
                                     Text(
@@ -472,12 +468,12 @@ fun SchedulesScreen(
                                             .size(34.dp)
                                             .clip(CircleShape)
                                             .background(
-                                                if (isSelected) IndigoPrimary
+                                                if (isSelected) PurplePrimary
                                                 else Color(0x1AFFFFFF)
                                             )
                                             .border(
                                                 1.dp,
-                                                if (isSelected) IndigoLight else GlassBorderMedium,
+                                                if (isSelected) PurpleLight else GlassBorderMedium,
                                                 CircleShape
                                             )
                                             .clickable {
@@ -516,8 +512,8 @@ fun SchedulesScreen(
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = IndigoPrimary.copy(alpha = 0.15f),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, IndigoLight.copy(alpha = 0.5f)),
+                                    color = PurplePrimary.copy(alpha = 0.15f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PurpleLight.copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { showStartTimePicker = true }
@@ -533,14 +529,14 @@ fun SchedulesScreen(
                                         ) {
                                             Text(
                                                 text = "START",
-                                                color = IndigoLight,
+                                                color = PurpleLight,
                                                 fontSize = 10.5.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Icon(
                                                 imageVector = Icons.Default.AccessTime,
                                                 contentDescription = "Change Start Time",
-                                                tint = IndigoLight,
+                                                tint = PurpleLight,
                                                 modifier = Modifier.size(14.dp)
                                             )
                                         }
@@ -563,8 +559,8 @@ fun SchedulesScreen(
 
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = IndigoSoft.copy(alpha = 0.15f),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, IndigoSoft.copy(alpha = 0.5f)),
+                                    color = PurpleSoft.copy(alpha = 0.15f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, PurpleSoft.copy(alpha = 0.5f)),
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { showEndTimePicker = true }
@@ -580,14 +576,14 @@ fun SchedulesScreen(
                                         ) {
                                             Text(
                                                 text = "END",
-                                                color = IndigoSoft,
+                                                color = PurpleSoft,
                                                 fontSize = 10.5.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Icon(
                                                 imageVector = Icons.Default.AccessTime,
                                                 contentDescription = "Change End Time",
-                                                tint = IndigoSoft,
+                                                tint = PurpleSoft,
                                                 modifier = Modifier.size(14.dp)
                                             )
                                         }
@@ -617,10 +613,10 @@ fun SchedulesScreen(
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (blockedTarget == "DISTRACTING") IndigoPrimary.copy(alpha = 0.15f) else Color(0x0DFFFFFF),
+                                    color = if (blockedTarget == "DISTRACTING") PurplePrimary.copy(alpha = 0.15f) else Color(0x0DFFFFFF),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (blockedTarget == "DISTRACTING") IndigoLight.copy(alpha = 0.4f) else Color.Transparent
+                                        if (blockedTarget == "DISTRACTING") PurpleLight.copy(alpha = 0.4f) else Color.Transparent
                                     ),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -635,7 +631,7 @@ fun SchedulesScreen(
                                             selected = blockedTarget == "DISTRACTING",
                                             onClick = { blockedTarget = "DISTRACTING" },
                                             colors = RadioButtonDefaults.colors(
-                                                selectedColor = IndigoLight,
+                                                selectedColor = PurpleLight,
                                                 unselectedColor = TextSecondary
                                             ),
                                             modifier = Modifier.size(24.dp)
@@ -659,10 +655,10 @@ fun SchedulesScreen(
 
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = if (blockedTarget == "ALL_NON_ESSENTIAL") IndigoPrimary.copy(alpha = 0.15f) else Color(0x0DFFFFFF),
+                                    color = if (blockedTarget == "ALL_NON_ESSENTIAL") PurplePrimary.copy(alpha = 0.15f) else Color(0x0DFFFFFF),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (blockedTarget == "ALL_NON_ESSENTIAL") IndigoLight.copy(alpha = 0.4f) else Color.Transparent
+                                        if (blockedTarget == "ALL_NON_ESSENTIAL") PurpleLight.copy(alpha = 0.4f) else Color.Transparent
                                     ),
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -677,7 +673,7 @@ fun SchedulesScreen(
                                             selected = blockedTarget == "ALL_NON_ESSENTIAL",
                                             onClick = { blockedTarget = "ALL_NON_ESSENTIAL" },
                                             colors = RadioButtonDefaults.colors(
-                                                selectedColor = IndigoPrimary,
+                                                selectedColor = PurplePrimary,
                                                 unselectedColor = TextSecondary
                                             ),
                                             modifier = Modifier.size(24.dp)
@@ -723,7 +719,7 @@ fun SchedulesScreen(
                             editingRule = null
                         }
                     ) {
-                        Text("Save Rule", color = IndigoLight, fontWeight = FontWeight.Bold)
+                        Text("Save Rule", color = PurpleLight, fontWeight = FontWeight.Bold)
                     }
                 },
                 dismissButton = {
@@ -801,7 +797,7 @@ private fun RoundClockTimePickerDialog(
                 Icon(
                     imageVector = Icons.Default.AccessTime,
                     contentDescription = null,
-                    tint = IndigoLight,
+                    tint = PurpleLight,
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -824,16 +820,16 @@ private fun RoundClockTimePickerDialog(
                         clockDialColor = GlassSurfaceHigh,
                         clockDialSelectedContentColor = Color.White,
                         clockDialUnselectedContentColor = TextPrimary,
-                        selectorColor = IndigoPrimary,
+                        selectorColor = PurplePrimary,
                         containerColor = Color.Transparent,
-                        periodSelectorBorderColor = IndigoLight.copy(alpha = 0.5f),
-                        periodSelectorSelectedContainerColor = IndigoPrimary,
+                        periodSelectorBorderColor = PurpleLight.copy(alpha = 0.5f),
+                        periodSelectorSelectedContainerColor = PurplePrimary,
                         periodSelectorUnselectedContainerColor = GlassSurfaceMedium,
                         periodSelectorSelectedContentColor = Color.White,
                         periodSelectorUnselectedContentColor = TextSecondary,
-                        timeSelectorSelectedContainerColor = IndigoPrimary.copy(alpha = 0.35f),
+                        timeSelectorSelectedContainerColor = PurplePrimary.copy(alpha = 0.35f),
                         timeSelectorUnselectedContainerColor = GlassSurfaceMedium,
-                        timeSelectorSelectedContentColor = IndigoLight,
+                        timeSelectorSelectedContentColor = PurpleLight,
                         timeSelectorUnselectedContentColor = TextPrimary
                     )
                 )
@@ -846,7 +842,7 @@ private fun RoundClockTimePickerDialog(
                 },
                 modifier = Modifier.testTag("confirm_time_picker_btn")
             ) {
-                Text("Set Time", color = IndigoLight, fontWeight = FontWeight.Bold)
+                Text("Set Time", color = PurpleLight, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

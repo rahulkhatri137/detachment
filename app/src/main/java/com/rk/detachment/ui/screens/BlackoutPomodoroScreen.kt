@@ -71,6 +71,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassButton
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.GlowingProgressRing
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
@@ -80,8 +81,8 @@ import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
@@ -146,7 +147,7 @@ fun BlackoutPomodoroScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showExitConfirmDialog = false }) {
-                        Text("Keep Focusing", color = IndigoLight)
+                        Text("Keep Focusing", color = PurpleLight)
                     }
                 }
             )
@@ -195,10 +196,10 @@ fun BlackoutPomodoroScreen(
                                     val isSelected = selectedDurationMinutes == min
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = if (isSelected) IndigoPrimary else GlassSurfaceLow,
+                                        color = if (isSelected) PurplePrimary else GlassSurfaceLow,
                                         border = androidx.compose.foundation.BorderStroke(
                                             1.dp,
-                                            if (isSelected) IndigoPrimary else GlassBorderLow
+                                            if (isSelected) PurplePrimary else GlassBorderLow
                                         ),
                                         modifier = Modifier
                                             .weight(1f)
@@ -242,10 +243,10 @@ fun BlackoutPomodoroScreen(
                                     val isSelected = selectedTag == tag
                                     Surface(
                                         shape = RoundedCornerShape(20.dp),
-                                        color = if (isSelected) IndigoPrimary.copy(alpha = 0.25f) else GlassSurfaceLow,
+                                        color = if (isSelected) PurplePrimary.copy(alpha = 0.25f) else GlassSurfaceLow,
                                         border = androidx.compose.foundation.BorderStroke(
                                             1.dp,
-                                            if (isSelected) IndigoLight else GlassBorderLow
+                                            if (isSelected) PurpleLight else GlassBorderLow
                                         ),
                                         modifier = Modifier
                                             .clickable { selectedTag = tag }
@@ -253,7 +254,7 @@ fun BlackoutPomodoroScreen(
                                     ) {
                                         Text(
                                             text = tag,
-                                            color = if (isSelected) IndigoLight else TextSecondary,
+                                            color = if (isSelected) PurpleLight else TextSecondary,
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
@@ -286,7 +287,7 @@ fun BlackoutPomodoroScreen(
                             .fillMaxWidth()
                             .testTag("manage_essential_apps_card"),
                         backgroundColor = GlassSurfaceHigh,
-                        borderColor = IndigoLight.copy(alpha = 0.4f),
+                        borderColor = PurpleLight.copy(alpha = 0.4f),
                         onClick = { showEssentialAppsDialog = true }
                     ) {
                         Row(
@@ -304,13 +305,13 @@ fun BlackoutPomodoroScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(IndigoPrimary.copy(alpha = 0.2f)),
+                                        .background(PurplePrimary.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Security,
                                         contentDescription = null,
-                                        tint = IndigoLight,
+                                        tint = PurpleLight,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -333,9 +334,9 @@ fun BlackoutPomodoroScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 FrostedBadge(
                                     text = "$essentialCount / 10",
-                                    color = if (essentialCount == 10) EmeraldAccent else IndigoLight,
-                                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.18f),
-                                    borderColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.40f)
+                                    color = if (essentialCount == 10) EmeraldAccent else PurpleLight,
+                                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.18f),
+                                    borderColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.40f)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Icon(
@@ -483,9 +484,9 @@ private fun EssentialAppsDialog(
                 }
                 FrostedBadge(
                     text = "$essentialCount / 10",
-                    color = if (essentialCount == 10) EmeraldAccent else IndigoLight,
-                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.18f),
-                    borderColor = (if (essentialCount == 10) EmeraldAccent else IndigoPrimary).copy(alpha = 0.40f)
+                    color = if (essentialCount == 10) EmeraldAccent else PurpleLight,
+                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.18f),
+                    borderColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.40f)
                 )
             }
         },
@@ -513,7 +514,7 @@ private fun EssentialAppsDialog(
                         .padding(bottom = 10.dp)
                         .testTag("search_essential_apps_input"),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = IndigoLight,
+                        focusedBorderColor = PurpleLight,
                         unfocusedBorderColor = GlassBorderMedium,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
@@ -604,7 +605,7 @@ private fun EssentialAppsDialog(
                 onClick = onDismiss,
                 modifier = Modifier.testTag("done_essential_apps_btn")
             ) {
-                Text("Done", color = IndigoLight, fontWeight = FontWeight.Bold)
+                Text("Done", color = PurpleLight, fontWeight = FontWeight.Bold)
             }
         }
     )
@@ -747,17 +748,12 @@ private fun DistractingAppsDialog(
                                     }
                                 }
 
-                                Switch(
+                                LiquidGlassSwitch(
                                     checked = isDistracting,
                                     onCheckedChange = { checked ->
                                         onToggleDistracting(app.packageName, checked)
                                     },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = AmberAccent,
-                                        checkedTrackColor = AmberAccent.copy(alpha = 0.35f),
-                                        uncheckedThumbColor = TextSecondary,
-                                        uncheckedTrackColor = Color(0x331E293B)
-                                    )
+                                    activeColor = AmberAccent
                                 )
                             }
                         }
@@ -849,7 +845,7 @@ fun ActiveBlackoutCanvas(
                 ) {
                     Text(
                         text = "Keep Focusing",
-                        color = IndigoLight
+                        color = PurpleLight
                     )
                 }
             },
@@ -884,8 +880,8 @@ fun ActiveBlackoutCanvas(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = IndigoPrimary.copy(alpha = 0.2f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, IndigoPrimary.copy(alpha = 0.5f))
+                    color = PurplePrimary.copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.5f))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
@@ -894,13 +890,13 @@ fun ActiveBlackoutCanvas(
                         Icon(
                             imageVector = Icons.Default.SelfImprovement,
                             contentDescription = null,
-                            tint = IndigoLight,
+                            tint = PurpleLight,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = pomodoroSessionTag.uppercase(),
-                            color = IndigoLight,
+                            color = PurpleLight,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -928,8 +924,8 @@ fun ActiveBlackoutCanvas(
                     progress = progress,
                     modifier = Modifier.size(260.dp),
                     strokeWidth = 12.dp,
-                    primaryColor = IndigoPrimary,
-                    secondaryColor = IndigoLight,
+                    primaryColor = PurplePrimary,
+                    secondaryColor = PurpleLight,
                     trackColor = Color(0x1AFFFFFF)
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -941,7 +937,7 @@ fun ActiveBlackoutCanvas(
                         )
                         Text(
                             text = if (isPomodoroRunning) "DETACHMENT BLACKOUT ACTIVE" else "PAUSED",
-                            color = if (isPomodoroRunning) IndigoLight else AmberAccent,
+                            color = if (isPomodoroRunning) PurpleLight else AmberAccent,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.8.sp
@@ -977,7 +973,7 @@ fun ActiveBlackoutCanvas(
                     } else {
                         Surface(
                             shape = CircleShape,
-                            color = IndigoPrimary,
+                            color = PurplePrimary,
                             modifier = Modifier
                                 .size(50.dp)
                                 .clip(CircleShape)

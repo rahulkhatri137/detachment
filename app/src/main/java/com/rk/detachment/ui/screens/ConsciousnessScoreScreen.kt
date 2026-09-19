@@ -103,10 +103,10 @@ import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
-import com.rk.detachment.ui.theme.IndigoDark
-import com.rk.detachment.ui.theme.IndigoLight
-import com.rk.detachment.ui.theme.IndigoPrimary
-import com.rk.detachment.ui.theme.IndigoSoft
+import com.rk.detachment.ui.theme.PurpleDark
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.PurpleSoft
 import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.RoseLight
 import com.rk.detachment.ui.theme.TextMuted
@@ -174,7 +174,7 @@ fun ConsciousnessScoreScreen(
                             )
                             Text(
                                 text = "DIGITAL INTENTIONALITY INDEX",
-                                color = IndigoLight,
+                                color = PurpleLight,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.4.sp
@@ -269,7 +269,7 @@ fun ConsciousnessScoreScreen(
                         value = formatMinutesToHoursMinutes(today.unnecessaryUsageMinutes),
                         subtitle = "Impulsive / distracting time",
                         icon = Icons.Default.Timelapse,
-                        accentColor = if (today.unnecessaryUsageMinutes > 45) RoseAccent else IndigoLight,
+                        accentColor = if (today.unnecessaryUsageMinutes > 45) RoseAccent else PurpleLight,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -560,7 +560,7 @@ fun RhythmicConsciousnessWebCard(
                     RadarPill(
                         label = "Intentional",
                         value = "${(metrics.intentionalityScore * 100).toInt()}%",
-                        color = IndigoLight,
+                        color = PurpleLight,
                         modifier = Modifier.weight(1f)
                     )
                     RadarPill(
@@ -663,13 +663,13 @@ fun UnlocksBreakdownCard(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(IndigoPrimary.copy(alpha = 0.2f)),
+                            .background(PurplePrimary.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Fingerprint,
                             contentDescription = null,
-                            tint = IndigoLight,
+                            tint = PurpleLight,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -979,7 +979,7 @@ fun HabitLoopItemRow(
     val severityColor = when (item.severity) {
         "SEVERE" -> RoseAccent
         "MODERATE" -> AmberAccent
-        else -> IndigoLight
+        else -> PurpleLight
     }
 
     Box(
@@ -1102,7 +1102,7 @@ fun YouVsYouSection(
             .testTag("you_vs_you_card"),
         cornerRadius = 28.dp,
         backgroundColor = GlassSurfaceHigh,
-        borderColor = IndigoPrimary.copy(alpha = 0.35f)
+        borderColor = PurplePrimary.copy(alpha = 0.35f)
     ) {
         Column(
             modifier = Modifier
@@ -1122,13 +1122,13 @@ fun YouVsYouSection(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(IndigoPrimary.copy(alpha = 0.25f)),
+                            .background(PurplePrimary.copy(alpha = 0.25f)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.CompareArrows,
                             contentDescription = null,
-                            tint = IndigoLight,
+                            tint = PurpleLight,
                             modifier = Modifier.size(20.dp)
                         )
                     }

@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
@@ -345,20 +346,15 @@ fun DistractionShieldScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Box(
-                                modifier = Modifier.size(width = 30.dp, height = 20.dp),
+                                modifier = Modifier.size(width = 32.dp, height = 22.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Switch(
+                                LiquidGlassSwitch(
                                     checked = uiState.isDelayForDistractingApps,
                                     onCheckedChange = { onToggleDelayForDistractingApps(it) },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = AmberAccent,
-                                        checkedTrackColor = AmberAccent.copy(alpha = 0.45f),
-                                        uncheckedThumbColor = TextSecondary,
-                                        uncheckedTrackColor = Color(0x331E293B)
-                                    ),
+                                    activeColor = AmberAccent,
                                     modifier = Modifier
-                                        .scale(0.55f)
+                                        .scale(0.65f)
                                         .testTag("delay_for_distracting_switch")
                                 )
                             }
@@ -415,17 +411,12 @@ fun DistractionShieldScreen(
                             }
                         }
 
-                        Switch(
+                        LiquidGlassSwitch(
                             checked = isShieldActive,
                             onCheckedChange = { checked ->
                                 onToggleShieldActive(app.packageName, checked)
                             },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = AmberAccent,
-                                checkedTrackColor = AmberAccent.copy(alpha = 0.35f),
-                                uncheckedThumbColor = TextSecondary,
-                                uncheckedTrackColor = Color(0x331E293B)
-                            )
+                            activeColor = AmberAccent
                         )
                     }
                 }

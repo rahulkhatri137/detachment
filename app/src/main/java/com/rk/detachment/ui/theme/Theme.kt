@@ -10,16 +10,16 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-// Material Design 3 Dark Color Scheme mapped to Liquid Frosted Glass Palette
+// Material Design 3 Dark Color Scheme mapped to Liquid Frosted Glass Palette with Purple Accents
 private val FrostedGlassColorScheme = darkColorScheme(
-    primary = IndigoPrimary,                  // Primary action color (#6366F1)
+    primary = PurplePrimary,                  // Primary purple action color (#7C5CF0)
     onPrimary = Color.White,                 // Text on primary buttons
-    primaryContainer = Color(0xFF1E1B4B),    // Deep indigo container tint
-    onPrimaryContainer = IndigoSoft,         // Text on primary containers
-    secondary = IndigoLight,                 // Supporting interactive element accent (#818CF8)
+    primaryContainer = PurpleDark,           // Deep purple container tint (#4C338A)
+    onPrimaryContainer = PurpleSoft,         // Text on primary containers (#D6C8FB)
+    secondary = PurpleLight,                 // Supporting interactive lavender accent (#9E86E8)
     onSecondary = Color.White,               // Text on secondary buttons
-    secondaryContainer = Color(0xFF312E81),  // Indigo secondary container backdrop
-    onSecondaryContainer = Color(0xFFE0E7FF),// Text on secondary containers
+    secondaryContainer = Color(0xFF38296B),  // Secondary purple container backdrop
+    onSecondaryContainer = Color(0xFFEDE9FE),// Text on secondary containers
     tertiary = RoseAccent,                   // Destructive/alert accent color (#F43F5E)
     onTertiary = Color.White,                // Text on tertiary actions
     tertiaryContainer = Color(0xFF4C0519),   // Deep rose container tint
@@ -28,9 +28,9 @@ private val FrostedGlassColorScheme = darkColorScheme(
     onBackground = TextPrimary,              // Primary readable text (#F8FAFC)
     surface = FrostedBackground,             // Base canvas surface (#0F172A)
     onSurface = TextPrimary,                 // Primary surface text color (#F8FAFC)
-    surfaceVariant = GlassSurfaceMedium,     // Translucent liquid glass container surface (~4% white)
+    surfaceVariant = GlassSurfaceMedium,     // Translucent liquid glass container surface (~3% white)
     onSurfaceVariant = TextSecondary,        // Secondary slate body text (#94A3B8)
-    outline = GlassBorderMedium,             // Crisp specular glass border outline (~9.5% white)
+    outline = GlassBorderMedium,             // Crisp specular glass border outline (~13.5% white)
     error = RoseAccent,                      // Error state indicator
     onError = Color.White                    // Text on error containers
 )
