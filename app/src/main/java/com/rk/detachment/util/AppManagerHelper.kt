@@ -575,7 +575,7 @@ object AppManagerHelper {
             pkg.contains("linkedin") || pkg.contains("pinterest")
         ) return "Social"
 
-        if (pkg.contains("youtube") || pkg.contains("netflix") || pkg.contains("prime") ||
+        if (pkg.contains("youtub") || pkg.contains("netflix") || pkg.contains("prime") ||
             pkg.contains("disney") || pkg.contains("hulu") || pkg.contains("twitch") ||
             pkg.contains("vimeo") || pkg.contains("hotstar") || pkg.contains("video")
         ) return "Video"
@@ -596,7 +596,7 @@ object AppManagerHelper {
 
         if (pkg.contains("chrome") || pkg.contains("browser") || pkg.contains("firefox") ||
             pkg.contains("settings") || pkg.contains("calculator") || pkg.contains("camera") ||
-            pkg.contains("gallery") || pkg.contains("photos") || pkg.contains("clock")
+            pkg.contains("gallery") || pkg.contains("photos") || pkg.contains("manager") || pkg.contains("clock")
         ) return "Utilities"
 
         if (pkg.contains("maps") || pkg.contains("uber") || pkg.contains("waze") ||
@@ -614,7 +614,7 @@ object AppManagerHelper {
                 ApplicationInfo.CATEGORY_PRODUCTIVITY -> return "Productivity"
             }
         }
-
+        
         return "Productivity"
     }
 

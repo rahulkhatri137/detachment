@@ -73,21 +73,21 @@ abstract class AppDatabase : RoomDatabase() {
 
             val initialSchedules = listOf(
                 ScheduleRuleEntity(
-                    title = "Study Hours Focus",
-                    type = "STUDY",
+                    title = "Work Focus",
+                    type = "WORK",
                     startHour = 9,
                     startMinute = 0,
                     endHour = 17,
                     endMinute = 0,
                     activeDays = "MON,TUE,WED,THU,FRI",
-                    isEnabled = true,
+                    isEnabled = false,
                     blockedTarget = "DISTRACTING"
                 ),
                 ScheduleRuleEntity(
-                    title = "Night Sleep Sanctuary",
+                    title = "Night Sanctrum",
                     type = "SLEEP",
-                    startHour = 22,
-                    startMinute = 30,
+                    startHour = 21,
+                    startMinute = 0,
                     endHour = 7,
                     endMinute = 0,
                     activeDays = "MON,TUE,WED,THU,FRI,SAT,SUN",
@@ -95,14 +95,14 @@ abstract class AppDatabase : RoomDatabase() {
                     blockedTarget = "ALL_NON_ESSENTIAL"
                 ),
                 ScheduleRuleEntity(
-                    title = "Deep Work Session",
-                    type = "WORK",
-                    startHour = 19,
+                    title = "Morning Tranquility",
+                    type = "SLEEP",
+                    startHour = 7,
                     startMinute = 0,
-                    endHour = 21,
+                    endHour = 8,
                     endMinute = 0,
-                    activeDays = "MON,TUE,WED,THU",
-                    isEnabled = false,
+                    activeDays = "MON,TUE,WED,THU,FRI,SAT,SUN",
+                    isEnabled = true,
                     blockedTarget = "ALL_NON_ESSENTIAL"
                 )
             )

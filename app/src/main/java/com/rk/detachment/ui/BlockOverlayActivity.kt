@@ -168,6 +168,7 @@ class BlockOverlayActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        isExiting = false
         val newData = parseOverlayData(intent)
         if (newData.packageName.isNotBlank() && 
             newData.packageName != packageName && 
@@ -285,8 +286,8 @@ class BlockOverlayActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         isActivityResumed = false
-        val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
-        if (!isExiting) {
+        if (isExiting) {
+            val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
             if (pkgToKill.isNotBlank() && pkgToKill != packageName) {
                 kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
                     kotlinx.coroutines.delay(300)
@@ -296,17 +297,18 @@ class BlockOverlayActivity : ComponentActivity() {
                     } catch (e: Exception) {}
                 }
             }
-            finishAndRemoveTask()
         }
     }
 
     override fun onDestroy() {
-        val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
-        if (!isExiting && pkgToKill.isNotBlank() && pkgToKill != packageName) {
-            try {
-                val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
-                am?.killBackgroundProcesses(pkgToKill)
-            } catch (e: Exception) {
+        if (isExiting) {
+            val pkgToKill = currentActivePackage ?: overlayDataState.value?.packageName ?: ""
+            if (pkgToKill.isNotBlank() && pkgToKill != packageName) {
+                try {
+                    val am = getSystemService(android.content.Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                    am?.killBackgroundProcesses(pkgToKill)
+                } catch (e: Exception) {
+                }
             }
         }
         

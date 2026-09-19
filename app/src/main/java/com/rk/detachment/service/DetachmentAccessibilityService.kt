@@ -245,7 +245,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 300L) {
+        if (packageName == lastInterceptedPackage && (now - lastInterceptTime) < 150L) {
             return
         }
 
@@ -608,7 +608,14 @@ class DetachmentAccessibilityService : AccessibilityService() {
         stopActiveAppMonitoring()
         
         val now = System.currentTimeMillis()
-        if (app.packageName == lastInterceptedPackage && (now - lastInterceptTime) < 1500) {
+        val isOverlayActiveOnTarget = BlockOverlayActivity.isActivityResumed &&
+                BlockOverlayActivity.currentActivePackage == app.packageName
+        
+        if (isOverlayActiveOnTarget) {
+            return
+        }
+
+        if (app.packageName == lastInterceptedPackage && (now - lastInterceptTime) < 150L) {
             return
         }
         
@@ -618,7 +625,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
         try {
             val intent = Intent(this, BlockOverlayActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
                         Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
                         Intent.FLAG_ACTIVITY_NO_ANIMATION
                 putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)

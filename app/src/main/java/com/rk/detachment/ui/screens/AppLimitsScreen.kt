@@ -820,7 +820,7 @@ fun AppLimitsScreen(
                         }
 
                         Text(
-                            text = if (currentLimit == 0) "No Limit (Unlimited)" else "$currentLimit minutes per day",
+                            text = if (currentLimit == 0) "No Limit"  else "$currentLimit minutes per day",
                             color = IndigoLight,
                             fontSize = 19.sp,
                             fontWeight = FontWeight.ExtraBold
@@ -843,7 +843,7 @@ fun AppLimitsScreen(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            quickPresets.take(5).forEach { min ->
+                            quickPresets.take(6).forEach { min ->
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = if (currentLimit == min) IndigoPrimary else Color(0x22FFFFFF),
