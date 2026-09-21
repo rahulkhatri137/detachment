@@ -511,7 +511,7 @@ fun RealLockScreenView(
                     Text(
                         text = reason,
                         color = RoseAccent,
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(12.dp)
@@ -568,7 +568,7 @@ fun RealLockScreenView(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Close & Stay Focused",
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -586,11 +586,11 @@ fun RealLockScreenView(
                 .height(50.dp)
                 .testTag("block_emergency_unlock_btn")
         ) {
-            Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(16.dp), tint = AmberAccent)
+            Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp), tint = AmberAccent)
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Emergency PIN Unlock",
-                fontSize = 13.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = AmberAccent
             )
@@ -736,6 +736,7 @@ fun RealFrictionDelayView(
             appName = appName,
             size = 56.dp,
             isLocked = false,
+            isShieldActive = true,
             cornerRadius = 16.dp
         )
 
@@ -750,8 +751,8 @@ fun RealFrictionDelayView(
 
         Text(
             text = "Detachment Distraction Shield for $appName",
-            color = PurpleLight,
-            fontSize = 13.sp,
+            color = AmberAccent,
+            fontSize = 14.sp,
             lineHeight = 16.sp
         )
 
@@ -846,7 +847,7 @@ fun RealFrictionDelayView(
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = "Resist & Close App",
-                fontSize = 15.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
@@ -869,13 +870,13 @@ fun RealFrictionDelayView(
         ) {
             Text(
                 text = if (isDelayFinished) "Proceed Mindfully" else "Think before Launch",
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (isDelayFinished) Color.Black else TextSecondary
             )
             if (isDelayFinished) {
                 Spacer(modifier = Modifier.width(6.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(16.dp))
+                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
             }
         }
     }

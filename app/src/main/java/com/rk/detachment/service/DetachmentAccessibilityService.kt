@@ -364,7 +364,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             val reason = if (app.isLockedManually) {
                 "Manually locked by Detachment Shield"
             } else {
-                "Daily screen time limit of ${app.dailyLimitMinutes}m exceeded (${app.usedTodayMinutes}m used today)"
+                "Daily usage limit exceeded."
             }
             interceptBlockedApp(app = app, reason = reason, isFrictionDelay = false, delaySeconds = 15)
             return
@@ -537,7 +537,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                         )
                         interceptBlockedApp(
                             app = updatedApp,
-                            reason = "Daily screen time limit of ${limitMinutes}m exceeded (${totalMins}m used today)",
+                            reason = "Daily usage limit exceeded.",
                             isFrictionDelay = false,
                             delaySeconds = 15
                         )

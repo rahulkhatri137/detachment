@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Work
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -66,6 +65,7 @@ import androidx.compose.ui.unit.sp
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassAlertDialog
 import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
@@ -432,14 +432,12 @@ fun SchedulesScreen(
             var showStartTimePicker by remember { mutableStateOf(false) }
             var showEndTimePicker by remember { mutableStateOf(false) }
 
-            AlertDialog(
+            LiquidGlassAlertDialog(
                 onDismissRequest = {
                     showAddDialog = false
                     editingRule = null
                 },
-                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
-                containerColor = FrostedBackgroundDarker,
+                accentColor = PurpleLight,
                 title = {
                     Text(
                         text = if (isEdit) "Edit Focus Schedule" else "Create Focus Schedule",
@@ -844,11 +842,9 @@ private fun RoundClockTimePickerDialog(
         is24Hour = false
     )
 
-    AlertDialog(
+    LiquidGlassAlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        containerColor = FrostedBackgroundDarker,
+        accentColor = PurpleLight,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(

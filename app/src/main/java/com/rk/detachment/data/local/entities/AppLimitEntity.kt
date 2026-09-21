@@ -34,5 +34,9 @@ data class AppLimitEntity(
         if (unlockExpiresAtMillis <= currentTime) return 0L
         return (unlockExpiresAtMillis - currentTime) / 1000L
     }
+
+    fun isEffectiveShieldActive(isDelayForDistractingApps: Boolean): Boolean {
+        return isShieldActive || (isDelayForDistractingApps && isDistracting)
+    }
 }
 

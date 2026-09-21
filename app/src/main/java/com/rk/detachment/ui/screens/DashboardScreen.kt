@@ -506,7 +506,7 @@ fun DashboardScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -581,6 +581,7 @@ fun DashboardScreen(
             items(uiState.allApps.take(6), key = { it.packageName }) { app ->
                 AppUsageGlassTile(
                     app = app,
+                    isDelayForDistractingApps = uiState.isDelayForDistractingApps,
                     onOpenApp = { onLaunchApp(app) }
                 )
             }
@@ -644,10 +645,11 @@ private fun PermissionRow(
 @Composable
 fun AppUsageGlassTile(
     app: AppLimitEntity,
+    isDelayForDistractingApps: Boolean = true,
     onOpenApp: () -> Unit
 ) {
     val isLocked = app.isCurrentlyLocked()
-    val isShieldActive = app.isShieldActive
+    val isShieldActive = app.isEffectiveShieldActive(isDelayForDistractingApps)
     val isTempUnlocked = app.isTemporaryUnlocked()
     val limit = app.dailyLimitMinutes
     val used = app.usedTodayMinutes
@@ -740,14 +742,14 @@ fun AppUsageGlassTile(
                         if (app.isEssential) {
                             Text("Essential", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
                         }
-                        if (app.isShieldActive) {
+                        if (isShieldActive) {
                             Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
                         }
                     }
 
                     if (isTempUnlocked) {
                         val remainingGraceMinutes = (app.remainingUnlockSeconds() / 60).coerceAtLeast(1)
-                        Text("${remainingGraceMinutes}m Pause", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        Text("${remainingGraceMinutes}m Pause", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
                     } else if (isLocked) {
                         Text("Locked", color = RoseAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
                     }

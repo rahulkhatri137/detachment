@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,7 +61,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.rk.detachment.ui.theme.FrostedBackground
+import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderLow
 import com.rk.detachment.ui.theme.GlassBorderMedium
@@ -68,6 +71,8 @@ import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
 import com.rk.detachment.ui.theme.PurpleDark
+import com.rk.detachment.ui.theme.PurpleLight
+import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.PurpleLight
 import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.PurpleSoft
@@ -610,3 +615,43 @@ fun LiquidGlassDialogButton(
         }
     }
 }
+
+@Composable
+fun LiquidGlassAlertDialog(
+    onDismissRequest: () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    dismissButton: (@Composable () -> Unit)? = null,
+    icon: (@Composable () -> Unit)? = null,
+    title: (@Composable () -> Unit)? = null,
+    text: (@Composable () -> Unit)? = null,
+    shape: Shape = RoundedCornerShape(20.dp),
+    containerColor: Color = FrostedBackgroundDarker,
+    accentColor: Color = PurpleLight,
+    borderStrokeWidth: Dp = 2.dp,
+    properties: DialogProperties = DialogProperties()
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = confirmButton,
+        modifier = modifier.border(
+            borderStrokeWidth,
+            Brush.verticalGradient(
+                listOf(
+                    accentColor.copy(alpha = 0.85f),
+                    accentColor.copy(alpha = 0.45f),
+                    PurplePrimary.copy(alpha = 0.30f)
+                )
+            ),
+            shape
+        ),
+        dismissButton = dismissButton,
+        icon = icon,
+        title = title,
+        text = text,
+        shape = shape,
+        containerColor = containerColor,
+        properties = properties
+    )
+}
+

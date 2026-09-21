@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -79,6 +78,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.CategoryBadge
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassAlertDialog
 import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.PasscodeUnlockDialog
@@ -587,7 +587,7 @@ fun AppLimitsScreen(
 
             items(filteredApps, key = { it.packageName }) { app ->
                 val isLocked = app.isCurrentlyLocked()
-                val isShieldActive = app.isShieldActive
+                val isShieldActive = app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
                 val isTempUnlocked = app.isTemporaryUnlocked()
                 val isExceeded = app.isLimitExceeded
 
@@ -810,11 +810,9 @@ fun AppLimitsScreen(
             var currentLimit by remember { mutableIntStateOf(app.dailyLimitMinutes) }
             val quickPresets = remember { listOf(15, 30, 45, 60, 90, 120, 0) }
 
-            AlertDialog(
+            LiquidGlassAlertDialog(
                 onDismissRequest = { editingApp = null },
-                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
-                containerColor = FrostedBackgroundDarker,
+                accentColor = PurpleLight,
                 title = {
                     Text(
                         text = "Daily Screen Time Limit",
@@ -946,11 +944,9 @@ fun AppLimitsScreen(
             var appAuthToggle by remember(uiState.isAppAuthEnabled) { mutableStateOf(uiState.isAppAuthEnabled) }
             var errorMessage by remember { mutableStateOf<String?>(null) }
 
-            AlertDialog(
+            LiquidGlassAlertDialog(
                 onDismissRequest = { showChangePinDialog = false },
-                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
-                containerColor = FrostedBackgroundDarker,
+                accentColor = PurpleLight,
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -1257,14 +1253,12 @@ fun EditCategoriesDialog(
         }
     }
 
-    AlertDialog(
+    LiquidGlassAlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp)
-            .border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(24.dp)),
-        containerColor = FrostedBackgroundDarker,
-        shape = RoundedCornerShape(24.dp),
+            .padding(vertical = 16.dp),
+        accentColor = PurpleLight,
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

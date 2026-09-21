@@ -520,7 +520,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             val reason = if (app.isLockedManually) {
                 "${app.appName} is manually locked by Detachment."
             } else {
-                "${app.appName} daily limit reached (${app.dailyLimitMinutes}m limit, ${app.usedTodayMinutes}m used)."
+                "${app.appName} daily usage limit exceeded."
             }
             showMessage(reason)
             return

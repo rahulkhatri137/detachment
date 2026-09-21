@@ -36,7 +36,7 @@ object TemporaryUnlockManager {
         activeDelaySessions.remove(packageName)
     }
 
-    fun setDelayGrace(packageName: String, expiryMillis: Long = System.currentTimeMillis() + 60000L) {
+    fun setDelayGrace(packageName: String, expiryMillis: Long = System.currentTimeMillis() + 600000L) {
         delayGraceMap[packageName] = expiryMillis
     }
 

@@ -35,9 +35,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -71,6 +68,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassButton
 import com.rk.detachment.ui.components.FrostedGlassCard
+import com.rk.detachment.ui.components.LiquidGlassAlertDialog
 import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.GlowingProgressRing
@@ -125,11 +123,9 @@ fun BlackoutPomodoroScreen(
         )
 
         if (showExitConfirmDialog) {
-            AlertDialog(
+            LiquidGlassAlertDialog(
                 onDismissRequest = { showExitConfirmDialog = false },
-                modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-                shape = RoundedCornerShape(20.dp),
-                containerColor = FrostedBackgroundDarker,
+                accentColor = RoseAccent,
                 title = {
                     Text("Exit Pomodoro Blackout?", color = TextPrimary, fontWeight = FontWeight.Bold)
                 },
@@ -472,11 +468,9 @@ private fun EssentialAppsDialog(
         }
     }
 
-    AlertDialog(
+    LiquidGlassAlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        containerColor = FrostedBackgroundDarker,
+        accentColor = EmeraldAccent,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -595,7 +589,7 @@ private fun EssentialAppsDialog(
                                     }
                                 }
 
-                                Checkbox(
+                                LiquidGlassSwitch(
                                     checked = isEssential,
                                     onCheckedChange = { checked ->
                                         if (isEssential || canSelect) {
@@ -603,11 +597,7 @@ private fun EssentialAppsDialog(
                                         }
                                     },
                                     enabled = isEssential || canSelect,
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = EmeraldAccent,
-                                        uncheckedColor = TextSecondary,
-                                        checkmarkColor = Color.Black
-                                    )
+                                    activeColor = EmeraldAccent
                                 )
                             }
                         }
@@ -647,11 +637,9 @@ private fun DistractingAppsDialog(
         }
     }
 
-    AlertDialog(
+    LiquidGlassAlertDialog(
         onDismissRequest = onDismiss,
-        modifier = Modifier.border(2.dp, PurplePrimary.copy(alpha = 0.85f), RoundedCornerShape(20.dp)),
-        shape = RoundedCornerShape(20.dp),
-        containerColor = FrostedBackgroundDarker,
+        accentColor = AmberAccent,
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),

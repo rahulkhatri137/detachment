@@ -30,11 +30,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
+import com.rk.detachment.ui.theme.AmberAccent
+import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.GlassPillBackground
 import com.rk.detachment.ui.theme.GlassPillBadgeBg
 import com.rk.detachment.ui.theme.GlassPillBorder
 import com.rk.detachment.ui.theme.GlassPillSurface
 import com.rk.detachment.ui.theme.PurplePrimary
+import com.rk.detachment.ui.theme.RoseAccent
 import com.rk.detachment.ui.theme.TextPrimary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -401,7 +404,7 @@ object HeadsUpNotchPillManager {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 22 * density
                 setColor(GlassPillBackground.toArgb())
-                setStroke((1 * density).toInt(), PurplePrimary.toArgb())
+                setStroke((2.2f * density).toInt(), RoseAccent.toArgb())
             }
             background = bg
             elevation = 18 * density
@@ -415,7 +418,7 @@ object HeadsUpNotchPillManager {
             val circleBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(GlassPillSurface.toArgb())
-                setStroke((1 * density).toInt(), GlassPillBorder.toArgb())
+                setStroke((1.5f * density).toInt(), AmberAccent.toArgb())
             }
             background = circleBg
             outlineProvider = object : ViewOutlineProvider() {
@@ -461,14 +464,14 @@ object HeadsUpNotchPillManager {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 14 * density
                 setColor(GlassPillBadgeBg.toArgb())
-                setStroke((1 * density).toInt(), PurplePrimary.toArgb())
+                setStroke((1.5f * density).toInt(), PurplePrimary.toArgb())
             }
             background = capsuleBg
         }
 
         val timeText = TextView(context).apply {
             text = formatMinutes(minutesUsed)
-            setTextColor(TextPrimary.toArgb())
+            setTextColor(EmeraldAccent.toArgb())
             textSize = 13f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
