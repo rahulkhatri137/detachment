@@ -7,10 +7,9 @@ Detachment empowers users to reclaim their focus and attention through intention
 ---
 
 ## 🧠 Consciousness Score Experience
-<details>
-<br>
   
-**Fibonacci Phyllotaxis Rosette Structure**: A 260-node golden-angle spiral lattice that radiates outward in intertwined clockwise and counter-clockwise curved spokes visualizing real-time intentionality across:
+### Fibonacci Phyllotaxis Rosette Structure: 
+A 260-node golden-angle spiral lattice that radiates outward in intertwined clockwise and counter-clockwise curved spokes visualizing real-time intentionality across:
 - Distraction Resistance (delay screen completions)
 - Session Intentionality (deep sessions vs. quick bounces)
 - Unplugged Gap (longest phone-free block)
@@ -18,19 +17,18 @@ Detachment empowers users to reclaim their focus and attention through intention
 - Pomodoro Focus (completed blackout focus minutes)
 - Unlock Mindfulness (intentional unlocks vs habitual checks)
 
-**In-Depth Mindful Telemetry**:
+### In-Depth Mindful Telemetry:
 - Unlocks Distribution: Breakdown separating intentional vs. habitual unlocks.
 - Time Leak Analysis: Metrics for potentially unnecessary usage and quick-bounce (<60s) sessions.
 - Restorative Gaps: Precision tracking of the longest continuous phone-free time and longest continuous screen streak.
 
-**Habit Loop Detector**:
+### Habit Loop Detector:
 - Scans for repetitive open-and-close loops of distracting apps within tight time windows.
 - Displays loop severity, average bounce duration, and direct actions to apply mindful friction delays.
 
-**You vs You Comparative Engine**:
+### You vs You Comparative Engine:
 - Real-time comparison comparing Today vs Yesterday with percentage changes and trend indicators.
 - Compares consciousness score, screen time, total unlocks, habitual pickups, phone-free blocks and mindless sessions.
-</details>
 
 ---
 ## 🌟 Key Features

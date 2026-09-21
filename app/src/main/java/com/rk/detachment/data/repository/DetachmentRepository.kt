@@ -9,6 +9,10 @@ import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.model.AppLimitBackup
+import com.rk.detachment.data.model.DetachmentBackup
+import com.rk.detachment.data.model.ImportSummary
+import com.rk.detachment.data.model.ScheduleRuleBackup
 import com.rk.detachment.util.TemporaryUnlockManager
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -190,6 +194,122 @@ class DetachmentRepository(
             return true
         }
         return false
+    }
+
+    suspend fun exportBackupData(): String {
+        val currentApps = appLimitDao.getAllApps().first()
+        val currentSchedules = scheduleRuleDao.getAllRules().first()
+        val currentSettings = appSettingsDao.getAllSettings()
+
+        val appBackups = currentApps.map {
+            AppLimitBackup(
+                packageName = it.packageName,
+                appName = it.appName,
+                category = it.category,
+                dailyLimitMinutes = it.dailyLimitMinutes,
+                isDistracting = it.isDistracting,
+                isEssential = it.isEssential,
+                isShieldActive = it.isShieldActive,
+                isLockedManually = it.isLockedManually
+            )
+        }
+
+        val schedBackups = currentSchedules.map {
+            ScheduleRuleBackup(
+                title = it.title,
+                type = it.type,
+                startHour = it.startHour,
+                startMinute = it.startMinute,
+                endHour = it.endHour,
+                endMinute = it.endMinute,
+                activeDays = it.activeDays,
+                isEnabled = it.isEnabled,
+                blockedTarget = it.blockedTarget
+            )
+        }
+
+        val settingsMap = currentSettings.associate { it.key to it.value }
+
+        val backup = DetachmentBackup(
+            version = 1,
+            exportDate = System.currentTimeMillis(),
+            appLimits = appBackups,
+            schedules = schedBackups,
+            settings = settingsMap
+        )
+
+        return backup.toJsonString()
+    }
+
+    suspend fun importBackupData(jsonString: String): ImportSummary {
+        val backup = DetachmentBackup.fromJsonString(jsonString)
+        var appsCount = 0
+
+        for (item in backup.appLimits) {
+            val existing = appLimitDao.getAppByPackage(item.packageName)
+            if (existing != null) {
+                appLimitDao.updateApp(
+                    existing.copy(
+                        appName = if (item.appName.isNotBlank()) item.appName else existing.appName,
+                        category = item.category,
+                        dailyLimitMinutes = item.dailyLimitMinutes,
+                        isDistracting = item.isDistracting,
+                        isEssential = item.isEssential,
+                        isShieldActive = item.isShieldActive,
+                        isLockedManually = item.isLockedManually
+                    )
+                )
+            } else {
+                appLimitDao.insertApp(
+                    AppLimitEntity(
+                        packageName = item.packageName,
+                        appName = item.appName,
+                        iconName = "",
+                        category = item.category,
+                        dailyLimitMinutes = item.dailyLimitMinutes,
+                        usedTodayMinutes = 0,
+                        todayOpens = 0,
+                        isDistracting = item.isDistracting,
+                        isEssential = item.isEssential,
+                        isShieldActive = item.isShieldActive,
+                        isLockedManually = item.isLockedManually,
+                        unlockExpiresAtMillis = 0L
+                    )
+                )
+            }
+            appsCount++
+        }
+
+        if (backup.schedules.isNotEmpty()) {
+            val scheduleEntities = backup.schedules.map {
+                ScheduleRuleEntity(
+                    title = it.title,
+                    type = it.type,
+                    startHour = it.startHour,
+                    startMinute = it.startMinute,
+                    endHour = it.endHour,
+                    endMinute = it.endMinute,
+                    activeDays = it.activeDays,
+                    isEnabled = it.isEnabled,
+                    blockedTarget = it.blockedTarget
+                )
+            }
+            scheduleRuleDao.deleteAllRules()
+            scheduleRuleDao.insertRules(scheduleEntities)
+        }
+
+        val settingEntities = backup.settings.map { (k, v) ->
+            AppSettingsEntity(k, v)
+        }
+        if (settingEntities.isNotEmpty()) {
+            appSettingsDao.insertAll(settingEntities)
+        }
+
+        return ImportSummary(
+            appsUpdated = appsCount,
+            schedulesRestored = backup.schedules.size,
+            settingsRestored = settingEntities.size
+        )
     }
 }
 

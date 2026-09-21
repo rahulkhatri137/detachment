@@ -219,7 +219,9 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToConsciousness = { showConsciousnessScreen = true },
                                     onOpenAccessibilitySettings = { viewModel.openAccessibilitySettings(this@MainActivity) },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
-                                    onOpenOverlaySettings = { viewModel.openOverlaySettings(this@MainActivity) }
+                                    onOpenOverlaySettings = { viewModel.openOverlaySettings(this@MainActivity) },
+                                    onExportSettings = { onSuccess, onError -> viewModel.exportSettings(onSuccess, onError) },
+                                    onImportSettings = { json, onResult -> viewModel.importSettings(json, onResult) }
                                 )
                             }
                             NavigationTab.LIMITS.name -> {

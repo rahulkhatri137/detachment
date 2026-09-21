@@ -8,6 +8,7 @@ import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.model.ImportSummary
 import com.rk.detachment.data.model.YouVsYouComparison
 import com.rk.detachment.data.repository.DetachmentRepository
 import com.rk.detachment.util.AppManagerHelper
@@ -578,6 +579,29 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             appName = targetApp.appName,
             minutesUsed = minutes
         )
+    }
+
+    fun exportSettings(onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val json = repository.exportBackupData()
+                onSuccess(json)
+            } catch (e: Exception) {
+                onError(e.message ?: "Failed to export settings")
+            }
+        }
+    }
+
+    fun importSettings(jsonString: String, onResult: (Result<ImportSummary>) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val summary = repository.importBackupData(jsonString)
+                showMessage("Restored ${summary.appsUpdated} apps, ${summary.schedulesRestored} schedules, and settings!")
+                onResult(Result.success(summary))
+            } catch (e: Exception) {
+                onResult(Result.failure(e))
+            }
+        }
     }
 
     private fun showMessage(msg: String) {

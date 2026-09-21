@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
@@ -39,6 +40,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,11 +53,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rk.detachment.data.local.entities.AppLimitEntity
+import com.rk.detachment.data.model.ImportSummary
 import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.GlowingProgressRing
 import com.rk.detachment.ui.components.RadialGlassBackground
+import com.rk.detachment.ui.components.SettingsBackupDialog
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
@@ -83,8 +89,11 @@ fun DashboardScreen(
     onOpenAccessibilitySettings: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
     onOpenOverlaySettings: () -> Unit = {},
+    onExportSettings: (((String) -> Unit, (String) -> Unit) -> Unit)? = null,
+    onImportSettings: ((String, (Result<ImportSummary>) -> Unit) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var showSettingsBackupDialog by remember { mutableStateOf(false) }
     val totalMins = uiState.totalScreenTimeTodayMinutes
     val totalLimitMins = uiState.totalDailyLimitMinutes.coerceAtLeast(1)
     val progress = (totalMins.toFloat() / totalLimitMins.toFloat()).coerceIn(0f, 1f)
@@ -135,13 +144,14 @@ fun DashboardScreen(
                             .clip(CircleShape)
                             .background(GlassSurfaceHigh)
                             .border(1.dp, GlassBorderHigh, CircleShape)
-                            .clickable(onClick = onNavigateToDistractions),
+                            .clickable { showSettingsBackupDialog = true }
+                            .testTag("dashboard_settings_btn"),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Shield,
-                            contentDescription = "Shield Status",
-                            tint = PurpleLight,
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings & Backup",
+                            tint = EmeraldAccent,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -585,6 +595,16 @@ fun DashboardScreen(
                     onOpenApp = { onLaunchApp(app) }
                 )
             }
+        }
+
+        if (showSettingsBackupDialog && onExportSettings != null && onImportSettings != null) {
+            SettingsBackupDialog(
+                onDismiss = { showSettingsBackupDialog = false },
+                onExport = onExportSettings,
+                onImport = onImportSettings,
+                appLimitsCount = uiState.allApps.size,
+                schedulesCount = uiState.scheduleRules.size
+            )
         }
     }
 }
