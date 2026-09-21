@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,7 +47,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -56,12 +59,15 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import com.rk.detachment.R
 import com.rk.detachment.ui.theme.FrostedBackground
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
@@ -71,8 +77,6 @@ import com.rk.detachment.ui.theme.GlassSurfaceHigh
 import com.rk.detachment.ui.theme.GlassSurfaceLow
 import com.rk.detachment.ui.theme.GlassSurfaceMedium
 import com.rk.detachment.ui.theme.PurpleDark
-import com.rk.detachment.ui.theme.PurpleLight
-import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.PurpleLight
 import com.rk.detachment.ui.theme.PurplePrimary
 import com.rk.detachment.ui.theme.PurpleSoft
@@ -85,6 +89,8 @@ import com.rk.detachment.ui.theme.TextTertiary
 @Composable
 fun RadialGlassBackground(
     modifier: Modifier = Modifier,
+    showWatermark: Boolean = true,
+    watermarkAlpha: Float = 0.10f,
     content: @Composable BoxScope.() -> Unit
 ) {
     val topOrbColors = remember {
@@ -105,6 +111,7 @@ fun RadialGlassBackground(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clipToBounds()
             .background(FrostedBackground)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -129,6 +136,18 @@ fun RadialGlassBackground(
                 ),
                 center = Offset(canvasWidth * 0.85f, canvasHeight * 0.88f),
                 radius = canvasWidth * 0.75f
+            )
+        }
+
+        if (showWatermark) {
+            Image(
+                painter = painterResource(id = R.drawable.app_icon_asset),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.Center)
+                    .alpha(watermarkAlpha),
+                contentScale = ContentScale.FillWidth
             )
         }
 
@@ -654,4 +673,3 @@ fun LiquidGlassAlertDialog(
         properties = properties
     )
 }
-
