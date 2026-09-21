@@ -27,6 +27,7 @@ object AppManagerHelper {
 
     private val iconCache = LruCache<String, Bitmap>(200)
 
+    @Suppress("DEPRECATION")
     fun hasUsageStatsPermission(context: Context): Boolean {
         return try {
             val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
@@ -417,6 +418,7 @@ object AppManagerHelper {
         return getUsageMinutesMapForRange(context, yesterdayStart, yesterdayEnd)
     }
 
+    @Suppress("DEPRECATION")
     fun getUsageMinutesMapForRange(context: Context, startTime: Long, endTime: Long): Map<String, Int> {
         val usageMap = mutableMapOf<String, Int>()
         if (!hasUsageStatsPermission(context) || startTime >= endTime) {
@@ -683,6 +685,7 @@ object AppManagerHelper {
         return ((diff.toFloat() / previous.toFloat()) * 100).toInt()
     }
 
+    @Suppress("DEPRECATION")
     private fun analyzeConsciousnessForPeriod(
         context: Context,
         startTime: Long,

@@ -37,7 +37,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Lock
@@ -471,7 +471,7 @@ fun RealLockScreenView(
                 AppIconView(
                     packageName = packageName,
                     appName = appName,
-                    size = 56.dp,
+                    size = 66.dp,
                     isLocked = true,
                     cornerRadius = 16.dp
                 )
@@ -734,7 +734,7 @@ fun RealFrictionDelayView(
         AppIconView(
             packageName = packageName,
             appName = appName,
-            size = 56.dp,
+            size = 66.dp,
             isLocked = false,
             isShieldActive = true,
             cornerRadius = 16.dp
@@ -743,16 +743,16 @@ fun RealFrictionDelayView(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "${safeDelaySeconds}-Second Mindful Delay",
+            text = "$appName",
             color = TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold
         )
 
         Text(
-            text = "Detachment Distraction Shield for $appName",
+            text = "Detachment Distraction Shield",
             color = AmberAccent,
-            fontSize = 14.sp,
+            fontSize = 18.sp,
             lineHeight = 16.sp
         )
 
@@ -876,7 +876,7 @@ fun RealFrictionDelayView(
             )
             if (isDelayFinished) {
                 Spacer(modifier = Modifier.width(6.dp))
-                Icon(Icons.Default.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = Color.Black, modifier = Modifier.size(18.dp))
             }
         }
     }

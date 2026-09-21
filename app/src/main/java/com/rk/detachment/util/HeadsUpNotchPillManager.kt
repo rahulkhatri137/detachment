@@ -403,11 +403,10 @@ object HeadsUpNotchPillManager {
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 22 * density
-                setColor(GlassPillBackground.toArgb())
-                setStroke((2.2f * density).toInt(), RoseAccent.toArgb())
+                setColor(android.graphics.Color.TRANSPARENT)
+                setStroke((1.7f * density).toInt(), RoseAccent.toArgb())
             }
             background = bg
-            elevation = 18 * density
         }
 
         val iconContainer = FrameLayout(context).apply {
@@ -417,8 +416,8 @@ object HeadsUpNotchPillManager {
             }
             val circleBg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(GlassPillSurface.toArgb())
-                setStroke((1.5f * density).toInt(), AmberAccent.toArgb())
+                setColor(android.graphics.Color.TRANSPARENT)
+                setStroke((1.0f * density).toInt(), AmberAccent.toArgb())
             }
             background = circleBg
             outlineProvider = object : ViewOutlineProvider() {
@@ -464,7 +463,7 @@ object HeadsUpNotchPillManager {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 14 * density
                 setColor(GlassPillBadgeBg.toArgb())
-                setStroke((1.5f * density).toInt(), PurplePrimary.toArgb())
+                setStroke((1.0f * density).toInt(), PurplePrimary.toArgb())
             }
             background = capsuleBg
         }

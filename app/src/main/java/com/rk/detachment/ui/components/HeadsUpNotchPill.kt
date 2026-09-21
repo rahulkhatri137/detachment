@@ -123,15 +123,8 @@ fun HeadsUpNotchPillContent(
 
     Box(
         modifier = modifier
-            .shadow(
-                elevation = 18.dp,
-                shape = CircleShape,
-                spotColor = Color.Black.copy(alpha = 0.5f),
-                ambientColor = Color.Black.copy(alpha = 0.3f)
-            )
             .clip(CircleShape)
-            .background(GlassPillBackground)
-            .border(BorderStroke(2.5.dp, pillBorderBrush), CircleShape)
+            .border(BorderStroke(2.0.dp, pillBorderBrush), CircleShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -139,20 +132,6 @@ fun HeadsUpNotchPillContent(
             )
             .testTag("heads_up_notch_pill")
     ) {
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.15f),
-                            Color.Transparent
-                        ),
-                        endY = 40f
-                    )
-                )
-        )
-
         Row(
             modifier = Modifier
                 .height(44.dp)
@@ -163,8 +142,7 @@ fun HeadsUpNotchPillContent(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(GlassPillSurface)
-                    .border(BorderStroke(1.5.dp, AmberAccent), CircleShape),
+                    .border(BorderStroke(1.0.dp, AmberAccent), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 AppIconView(
@@ -180,7 +158,7 @@ fun HeadsUpNotchPillContent(
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = GlassPillBadgeBg,
-                border = BorderStroke(1.5.dp, PurplePrimary)
+                border = BorderStroke(1.0.dp, PurplePrimary)
             ) {
                 Box(
                     modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp),
