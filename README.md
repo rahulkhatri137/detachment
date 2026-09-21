@@ -1,4 +1,8 @@
-# 🧘‍♂️ Detachment — Digital Mindfulness & Screen Time Control
+<div align="center">
+  <img src="app/src/main/res/drawable/app_icon_asset.png" width="150" />
+</div>
+
+# Detachment — Digital Mindfulness & Screen Time Control
 
 **Detachment** is a digital mindfulness, habit interruption, and screen time management Android application built using modern **Kotlin**, **Jetpack Compose (Material 3)**, and **Room Database**. 
 
@@ -89,4 +93,4 @@ For full device-level blocking functionality:
 
 ## 🤖 AI Assistance Disclosure
 
-This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure and Conciousness Score quantification and visualization.
+This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure,Conciousness Score quantification & visualization and app icon.
