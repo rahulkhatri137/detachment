@@ -375,16 +375,25 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun toggleDistracting(packageName: String, isDistracting: Boolean) {
+        val app = _uiState.value.allApps.find { it.packageName == packageName }
+        if (app?.isEssential == true && isDistracting) {
+            showMessage("${app.appName} is an Essential app and cannot be marked as distracting.")
+            return
+        }
         viewModelScope.launch {
             repository.toggleDistracting(packageName, isDistracting)
         }
     }
 
     fun toggleShieldActive(packageName: String, isShieldActive: Boolean) {
+        val app = _uiState.value.allApps.find { it.packageName == packageName }
+        if (app?.isEssential == true && isShieldActive) {
+            showMessage("${app.appName} is an Essential app and is exempt from Distraction Shield.")
+            return
+        }
         viewModelScope.launch {
             repository.toggleShieldActive(packageName, isShieldActive)
             if (!isShieldActive && _uiState.value.isDelayForDistractingApps) {
-                val app = _uiState.value.allApps.find { it.packageName == packageName }
                 if (app?.isDistracting == true) {
                     repository.toggleDistracting(packageName, false)
                 }
@@ -403,11 +412,19 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             val success = repository.toggleEssential(packageName, isEssential)
             if (!success) {
                 showMessage("Maximum 10 essential apps allowed for Detachment Blackout mode!")
+            } else if (isEssential) {
+                val app = _uiState.value.allApps.find { it.packageName == packageName }
+                showMessage("${app?.appName ?: "App"} marked as Essential (immune to limits and shields).")
             }
         }
     }
 
     fun toggleManualLock(packageName: String, isLocked: Boolean) {
+        val app = _uiState.value.allApps.find { it.packageName == packageName }
+        if (app?.isEssential == true && isLocked) {
+            showMessage("${app.appName} is an Essential app and cannot be locked.")
+            return
+        }
         viewModelScope.launch {
             repository.toggleManualLock(packageName, isLocked)
         }

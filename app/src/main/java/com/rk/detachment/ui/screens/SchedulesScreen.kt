@@ -69,6 +69,7 @@ import com.rk.detachment.ui.components.LiquidGlassAlertDialog
 import com.rk.detachment.ui.components.LiquidGlassDialogButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
+import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderMedium
@@ -244,8 +245,8 @@ fun SchedulesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("schedule_card_${rule.id}"),
-                        borderColor = if (isRuleActiveNow) PurpleLight else GlassBorderMedium,
-                        backgroundColor = if (isRuleActiveNow) PurplePrimary.copy(alpha = 0.25f) else GlassSurfaceHigh
+                        borderColor = if (isRuleActiveNow) EmeraldAccent else GlassBorderMedium,
+                        backgroundColor = if (isRuleActiveNow) EmeraldAccent.copy(alpha = 0.25f) else GlassSurfaceHigh
                     ) {
                         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
                             Row(
@@ -354,18 +355,10 @@ fun SchedulesScreen(
                                         }
                                     }
                                 }
-
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0x22FFFFFF)
-                                ) {
-                                    Text(
-                                        text = if (rule.blockedTarget == "DISTRACTING") "Blocks Distracting" else "Blocks Non-Essential",
-                                        color = TextSecondary,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
-                                    )
+                                if (rule.blockedTarget == "DISTRACTING") {
+                                    FrostedBadge(text = "Blocks Distracting", color = AmberAccent)
+                                } else {
+                                    FrostedBadge(text = "Blocks Non-Essential", color = RoseAccent)
                                 }
                             }
 

@@ -586,12 +586,14 @@ fun AppLimitsScreen(
             }
 
             items(filteredApps, key = { it.packageName }) { app ->
-                val isLocked = app.isCurrentlyLocked()
-                val isShieldActive = app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
-                val isTempUnlocked = app.isTemporaryUnlocked()
-                val isExceeded = app.isLimitExceeded
+                val isEssential = app.isEssential
+                val isLocked = if (isEssential) false else app.isCurrentlyLocked()
+                val isShieldActive = if (isEssential) false else app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
+                val isTempUnlocked = if (isEssential) false else app.isTemporaryUnlocked()
+                val isExceeded = if (isEssential) false else app.isLimitExceeded
 
                 val targetBorderColor = when {
+                    isEssential -> EmeraldAccent.copy(alpha = 0.50f)
                     isLocked -> RoseAccent.copy(alpha = 0.50f)
                     isShieldActive -> AmberAccent.copy(alpha = 0.50f)
                     else -> GlassBorderLow
@@ -620,6 +622,7 @@ fun AppLimitsScreen(
                                 size = 44.dp,
                                 isLocked = isLocked,
                                 isShieldActive = isShieldActive,
+                                isEssential = isEssential,
                                 cornerRadius = 12.dp
                             )
 
@@ -647,13 +650,13 @@ fun AppLimitsScreen(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}",
-                                        color = TextSecondary,
+                                        text = if (isEssential) "Essential" else "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}",
+                                        color = if (isEssential) EmeraldAccent else TextSecondary,
                                         fontSize = 12.sp
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "• Used: ${app.usedTodayMinutes}m today",
+                                        text = "• Used: ${app.usedTodayMinutes}m",
                                         color = if (isExceeded) RoseAccent else if (app.usedTodayMinutes > 0) EmeraldAccent else TextSecondary,
                                         fontSize = 12.sp,
                                         fontWeight = if (app.usedTodayMinutes > 0) FontWeight.SemiBold else FontWeight.Normal
@@ -663,14 +666,17 @@ fun AppLimitsScreen(
 
                             LiquidGlassSwitch(
                                 checked = isLocked,
+                                enabled = !isEssential,
                                 onCheckedChange = { checked ->
-                                    onToggleLock(app.packageName, checked)
+                                    if (!isEssential) {
+                                        onToggleLock(app.packageName, checked)
+                                    }
                                 },
                                 activeColor = RoseAccent
                             )
                         }
 
-                        if (app.dailyLimitMinutes > 0) {
+                        if (!isEssential && app.dailyLimitMinutes > 0) {
                             val prog = (app.usedTodayMinutes.toFloat() / app.dailyLimitMinutes.toFloat()).coerceIn(0f, 1f)
                             Spacer(modifier = Modifier.height(8.dp))
                             LinearProgressIndicator(
@@ -694,7 +700,7 @@ fun AppLimitsScreen(
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = Color(0x18FFFFFF),
-                                modifier = Modifier.clickable { editingApp = app }
+                                modifier = Modifier.clickable(enabled = !isEssential) { editingApp = app }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
@@ -703,13 +709,13 @@ fun AppLimitsScreen(
                                     Icon(
                                         imageVector = Icons.Default.Edit,
                                         contentDescription = "Time Limit",
-                                        tint = TextSecondary,
+                                        tint = if (isEssential) EmeraldAccent else TextSecondary,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = "Time Limit",
-                                        color = TextSecondary,
+                                        text = if (isEssential) "Exempted" else "Time Limit",
+                                        color = if (isEssential) EmeraldAccent else TextSecondary,
                                         fontSize = 11.sp
                                     )
                                 }
@@ -824,7 +830,14 @@ fun AppLimitsScreen(
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            AppIconView(packageName = app.packageName, appName = app.appName, size = 32.dp)
+                            AppIconView(
+                                packageName = app.packageName,
+                                appName = app.appName,
+                                size = 32.dp,
+                                isLocked = app.isCurrentlyLocked(),
+                                isShieldActive = app.isEffectiveShieldActive(uiState.isDelayForDistractingApps),
+                                isEssential = app.isEssential
+                            )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(text = app.appName, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         }
@@ -1362,6 +1375,9 @@ fun EditCategoriesDialog(
                                             packageName = app.packageName,
                                             appName = app.appName,
                                             size = 32.dp,
+                                            isLocked = app.isCurrentlyLocked(),
+                                            isShieldActive = app.isShieldActive,
+                                            isEssential = app.isEssential,
                                             cornerRadius = 8.dp
                                         )
                                         Spacer(modifier = Modifier.width(10.dp))

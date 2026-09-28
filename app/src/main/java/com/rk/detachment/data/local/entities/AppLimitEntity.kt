@@ -19,13 +19,14 @@ data class AppLimitEntity(
     val todayOpens: Int = 0
 ) {
     val isLimitExceeded: Boolean
-        get() = dailyLimitMinutes > 0 && usedTodayMinutes >= dailyLimitMinutes
+        get() = !isEssential && dailyLimitMinutes > 0 && usedTodayMinutes >= dailyLimitMinutes
 
     fun isTemporaryUnlocked(currentTime: Long = System.currentTimeMillis()): Boolean {
         return unlockExpiresAtMillis > currentTime
     }
 
     fun isCurrentlyLocked(currentTime: Long = System.currentTimeMillis()): Boolean {
+        if (isEssential) return false
         if (isTemporaryUnlocked(currentTime)) return false
         return isLockedManually || isLimitExceeded
     }
@@ -36,6 +37,7 @@ data class AppLimitEntity(
     }
 
     fun isEffectiveShieldActive(isDelayForDistractingApps: Boolean = true): Boolean {
+        if (isEssential) return false
         return isShieldActive || (isDelayForDistractingApps && isDistracting)
     }
 }

@@ -330,6 +330,11 @@ class DetachmentAccessibilityService : AccessibilityService() {
             app = app.copy(usedTodayMinutes = currentMins)
         }
 
+        if (app.isEssential) {
+            startActiveAppMonitoring(app)
+            return
+        }
+
         val isUnlocked = TemporaryUnlockManager.isUnlocked(packageName, now) || app.isTemporaryUnlocked(now)
         if (isUnlocked) {
             if (app.isTemporaryUnlocked(now)) {
@@ -450,7 +455,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     packageName = currentPkg,
                     appName = displayName,
                     minutesUsed = initialMinutes,
-                    intervalMinutes = 15
+                    intervalMinutes = 15,
                 )
             }
         }
@@ -497,7 +502,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                             packageName = currentPkg,
                             appName = displayName,
                             minutesUsed = finalMins,
-                            intervalMinutes = 15
+                            intervalMinutes = 15,
                         )
                     }
                 }

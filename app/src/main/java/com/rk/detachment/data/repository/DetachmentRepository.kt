@@ -72,10 +72,14 @@ class DetachmentRepository(
     }
 
     suspend fun toggleDistracting(packageName: String, isDistracting: Boolean) {
+        val app = appLimitDao.getAppByPackage(packageName)
+        if (app?.isEssential == true && isDistracting) return
         appLimitDao.setDistracting(packageName, isDistracting)
     }
 
     suspend fun toggleShieldActive(packageName: String, isShieldActive: Boolean) {
+        val app = appLimitDao.getAppByPackage(packageName)
+        if (app?.isEssential == true && isShieldActive) return
         appLimitDao.setShieldActive(packageName, isShieldActive)
     }
 
@@ -85,12 +89,18 @@ class DetachmentRepository(
             if (currentCount >= 10) {
                 return false
             }
+            appLimitDao.setManualLock(packageName, false)
+            appLimitDao.setShieldActive(packageName, false)
+            appLimitDao.setDistracting(packageName, false)
+            appLimitDao.cancelTemporaryUnlock(packageName)
         }
         appLimitDao.setEssential(packageName, isEssential)
         return true
     }
 
     suspend fun toggleManualLock(packageName: String, isLocked: Boolean) {
+        val app = appLimitDao.getAppByPackage(packageName)
+        if (app?.isEssential == true && isLocked) return
         appLimitDao.setManualLock(packageName, isLocked)
     }
 

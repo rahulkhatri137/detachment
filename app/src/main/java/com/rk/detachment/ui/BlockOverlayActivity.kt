@@ -217,6 +217,18 @@ class BlockOverlayActivity : ComponentActivity() {
                 }
 
                 val currentData = overlayDataState.value ?: parseOverlayData(intent)
+                LaunchedEffect(currentData.packageName) {
+                    if (currentData.packageName.isNotBlank()) {
+                        val isEssential = withContext(Dispatchers.IO) {
+                            val db = AppDatabase.getDatabase(applicationContext, this)
+                            db.appLimitDao().getAppByPackage(currentData.packageName)?.isEssential == true
+                        }
+                        if (isEssential) {
+                            TemporaryUnlockManager.setDelaySessionActive(currentData.packageName)
+                            dismissIfActive()
+                        }
+                    }
+                }
                 if (currentData.packageName.isBlank()) {
                     LaunchedEffect(Unit) {
                         finishAndRemoveTask()

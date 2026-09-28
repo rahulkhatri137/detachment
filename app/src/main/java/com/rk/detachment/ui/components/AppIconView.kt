@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rk.detachment.ui.theme.AmberAccent
+import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderMedium
 import com.rk.detachment.ui.theme.PurplePrimary
@@ -81,6 +82,7 @@ fun AppIconView(
     size: Dp = 46.dp,
     isLocked: Boolean = false,
     isShieldActive: Boolean = false,
+    isEssential: Boolean = false,
     cornerRadius: Dp = 14.dp,
     shape: Shape = remember { CircularPetalShape(petalCount = 6, petalDepth = 0.08f) }
 ) {
@@ -99,6 +101,7 @@ fun AppIconView(
     }
 
     val targetBorderColor = when {
+        isEssential -> EmeraldAccent.copy(alpha = 0.85f)
         isLocked -> RoseAccent.copy(alpha = 0.85f)
         isShieldActive -> AmberAccent.copy(alpha = 0.85f)
         else -> GlassBorderHigh
@@ -110,6 +113,7 @@ fun AppIconView(
     )
 
     val targetFallbackBg = when {
+        isEssential -> EmeraldAccent.copy(alpha = 0.2f)
         isLocked -> RoseAccent.copy(alpha = 0.2f)
         isShieldActive -> AmberAccent.copy(alpha = 0.2f)
         else -> PurplePrimary.copy(alpha = 0.2f)

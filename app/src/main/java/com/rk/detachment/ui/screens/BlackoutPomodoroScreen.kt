@@ -293,7 +293,7 @@ fun BlackoutPomodoroScreen(
                             .fillMaxWidth()
                             .testTag("manage_essential_apps_card"),
                         backgroundColor = GlassSurfaceHigh,
-                        borderColor = PurpleLight.copy(alpha = 0.4f),
+                        borderColor = EmeraldAccent.copy(alpha = 0.4f),
                         onClick = { showEssentialAppsDialog = true }
                     ) {
                         Row(
@@ -569,6 +569,7 @@ private fun EssentialAppsDialog(
                                         packageName = app.packageName,
                                         appName = app.appName,
                                         size = 36.dp,
+                                        isEssential = isEssential,
                                         cornerRadius = 8.dp
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -582,8 +583,8 @@ private fun EssentialAppsDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = if (isEssential) "Whitelisted Essential App" else "Blocked in Blackout",
-                                            color = if (isEssential) EmeraldAccent else TextSecondary,
+                                            text = if (isEssential) "Essential App" else if (app.isDistracting) "Distracting App" else "Standard App",
+                                            color = if (isEssential) EmeraldAccent else if (app.isDistracting) AmberAccent else TextSecondary,
                                             fontSize = 11.sp
                                         )
                                     }
@@ -716,7 +717,9 @@ private fun DistractingAppsDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    onToggleDistracting(app.packageName, !isDistracting)
+                                    if (!app.isEssential) {
+                                        onToggleDistracting(app.packageName, !isDistracting)
+                                    }
                                 }
                                 .testTag("distracting_item_${app.packageName.replace(".", "_")}")
                         ) {
@@ -735,6 +738,8 @@ private fun DistractingAppsDialog(
                                         packageName = app.packageName,
                                         appName = app.appName,
                                         size = 36.dp,
+                                        isShieldActive = isDistracting && !app.isEssential,
+                                        isEssential = app.isEssential,
                                         cornerRadius = 8.dp
                                     )
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -748,17 +753,20 @@ private fun DistractingAppsDialog(
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
-                                            text = if (isDistracting) "Marked as distracting" else "Standard app",
-                                            color = if (isDistracting) AmberAccent else TextSecondary,
+                                            text = if (app.isEssential) "Essential App" else if (isDistracting) "Distracting App" else "Standard App",
+                                            color = if (app.isEssential) EmeraldAccent else if (isDistracting) AmberAccent else TextSecondary,
                                             fontSize = 11.sp
                                         )
                                     }
                                 }
 
                                 LiquidGlassSwitch(
-                                    checked = isDistracting,
+                                    checked = if (app.isEssential) false else isDistracting,
+                                    enabled = !app.isEssential,
                                     onCheckedChange = { checked ->
-                                        onToggleDistracting(app.packageName, checked)
+                                        if (!app.isEssential) {
+                                            onToggleDistracting(app.packageName, checked)
+                                        }
                                     },
                                     activeColor = AmberAccent
                                 )
@@ -985,6 +993,7 @@ fun ActiveBlackoutCanvas(
                                 packageName = app.packageName,
                                 appName = app.appName,
                                 size = 42.dp,
+                                isEssential = true,
                                 cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -1017,6 +1026,7 @@ fun ActiveBlackoutCanvas(
                                 packageName = app.packageName,
                                 appName = app.appName,
                                 size = 42.dp,
+                                isEssential = true,
                                 cornerRadius = 12.dp
                             )
                             Spacer(modifier = Modifier.height(4.dp))

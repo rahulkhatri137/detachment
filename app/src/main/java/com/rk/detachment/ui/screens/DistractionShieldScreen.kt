@@ -55,6 +55,7 @@ import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
+import com.rk.detachment.ui.theme.EmeraldAccent
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
 import com.rk.detachment.ui.theme.GlassBorderHigh
 import com.rk.detachment.ui.theme.GlassBorderLow
@@ -371,11 +372,13 @@ fun DistractionShieldScreen(
             }
 
             items(uiState.allApps, key = { it.packageName }) { app ->
-                val isShieldActive = app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
-                val isFromDistracting = uiState.isDelayForDistractingApps && app.isDistracting
-                val isLocked = app.isCurrentlyLocked()
+                val isEssential = app.isEssential
+                val isShieldActive = if (isEssential) false else app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
+                val isFromDistracting = !isEssential && uiState.isDelayForDistractingApps && app.isDistracting
+                val isLocked = if (isEssential) false else app.isCurrentlyLocked()
 
                 val targetBorderColor = when {
+                    isEssential -> EmeraldAccent.copy(alpha = 0.50f)
                     isLocked -> RoseAccent.copy(alpha = 0.50f)
                     isShieldActive -> AmberAccent.copy(alpha = 0.50f)
                     else -> GlassBorderLow
@@ -410,6 +413,7 @@ fun DistractionShieldScreen(
                                 size = 42.dp,
                                 isLocked = isLocked,
                                 isShieldActive = isShieldActive,
+                                isEssential = isEssential,
                                 cornerRadius = 12.dp
                             )
 
@@ -423,11 +427,16 @@ fun DistractionShieldScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = if (isShieldActive) {
-                                        if (isFromDistracting && !app.isShieldActive) "Delayed (Blackout Distracting)"
-                                        else "Friction Delay"
-                                    } else "Instant launch",
-                                    color = if (isShieldActive) AmberAccent else TextSecondary,
+                                    text = when {
+                                        isEssential -> "Immune (Essential App)"
+                                        isShieldActive -> if (isFromDistracting && !app.isShieldActive) "Delayed (Distracting App)" else "Friction Delay"
+                                        else -> "Instant launch"
+                                    },
+                                    color = when {
+                                        isEssential -> EmeraldAccent
+                                        isShieldActive -> AmberAccent
+                                        else -> TextSecondary
+                                    },
                                     fontSize = 12.sp
                                 )
                             }
@@ -435,8 +444,11 @@ fun DistractionShieldScreen(
 
                         LiquidGlassSwitch(
                             checked = isShieldActive,
+                            enabled = !isEssential,
                             onCheckedChange = { checked ->
-                                onToggleShieldActive(app.packageName, checked)
+                                if (!isEssential) {
+                                    onToggleShieldActive(app.packageName, checked)
+                                }
                             },
                             activeColor = AmberAccent
                         )

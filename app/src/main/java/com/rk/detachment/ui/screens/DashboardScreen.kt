@@ -668,14 +668,16 @@ fun AppUsageGlassTile(
     isDelayForDistractingApps: Boolean = true,
     onOpenApp: () -> Unit
 ) {
-    val isLocked = app.isCurrentlyLocked()
-    val isShieldActive = app.isEffectiveShieldActive(isDelayForDistractingApps)
+    val isEssential = app.isEssential
+    val isLocked = if (isEssential) false else app.isCurrentlyLocked()
+    val isShieldActive = if (isEssential) false else app.isEffectiveShieldActive(isDelayForDistractingApps)
     val isTempUnlocked = app.isTemporaryUnlocked()
     val limit = app.dailyLimitMinutes
     val used = app.usedTodayMinutes
-    val usagePercent = if (limit > 0) (used.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
+    val usagePercent = if (!isEssential && limit > 0) (used.toFloat() / limit.toFloat()).coerceIn(0f, 1f) else 0f
 
     val targetBorderColor = when {
+        isEssential -> EmeraldAccent.copy(alpha = 0.50f)
         isLocked -> RoseAccent.copy(alpha = 0.50f)
         isShieldActive -> AmberAccent.copy(alpha = 0.50f)
         else -> GlassBorderLow
@@ -707,6 +709,7 @@ fun AppUsageGlassTile(
                 size = 40.dp,
                 isLocked = isLocked,
                 isShieldActive = isShieldActive,
+                isEssential = isEssential,
                 cornerRadius = 10.dp
             )
 
@@ -728,8 +731,12 @@ fun AppUsageGlassTile(
                     )
 
                     Text(
-                        text = "${used}m ${if (limit > 0) "/ ${limit}m" else ""}",
-                        color = if (isLocked) RoseAccent else TextSecondary,
+                        text = if (isEssential) "${used}m today" else "${used}m ${if (limit > 0) "/ ${limit}m" else ""}",
+                        color = when {
+                            isEssential -> EmeraldAccent
+                            isLocked -> RoseAccent
+                            else -> TextSecondary
+                        },
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         lineHeight = 16.sp
@@ -745,6 +752,7 @@ fun AppUsageGlassTile(
                         .height(4.dp)
                         .clip(RoundedCornerShape(2.dp)),
                     color = when {
+                        isEssential -> EmeraldAccent
                         isLocked -> RoseAccent
                         usagePercent > 0.8f -> AmberAccent
                         else -> PurplePrimary
@@ -759,19 +767,22 @@ fun AppUsageGlassTile(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        if (app.isEssential) {
+                        if (isEssential) {
                             Text("Essential", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
-                        }
-                        if (isShieldActive) {
-                            Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
+                        } else {
+                            if (isShieldActive) {
+                                Text("Distraction Shield", color = AmberAccent, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, lineHeight = 12.sp)
+                            }
                         }
                     }
 
-                    if (isTempUnlocked) {
-                        val remainingGraceMinutes = (app.remainingUnlockSeconds() / 60).coerceAtLeast(1)
-                        Text("${remainingGraceMinutes}m Pause", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
-                    } else if (isLocked) {
-                        Text("Locked", color = RoseAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
+                    if (!isEssential) {
+                        if (isTempUnlocked) {
+                            val remainingGraceMinutes = (app.remainingUnlockSeconds() / 60).coerceAtLeast(1)
+                            Text("${remainingGraceMinutes}m Pause", color = EmeraldAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
+                        } else if (isLocked) {
+                            Text("Locked", color = RoseAccent, fontSize = 10.sp, fontWeight = FontWeight.Bold, lineHeight = 12.sp)
+                        }
                     }
                 }
             }
@@ -782,13 +793,13 @@ fun AppUsageGlassTile(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(CircleShape)
-                    .background(PurplePrimary.copy(alpha = 0.15f)),
+                    .background(if (isEssential) EmeraldAccent.copy(alpha = 0.15f) else PurplePrimary.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.OpenInNew,
                     contentDescription = "Launch",
-                    tint = PurpleLight,
+                    tint = if (isEssential) EmeraldAccent else PurpleLight,
                     modifier = Modifier.size(16.dp)
                 )
             }
