@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -121,10 +120,13 @@ fun HeadsUpNotchPillContent(
         )
     )
 
+    val pillRadius = 18.dp
+    val pillShape = RoundedCornerShape(pillRadius)
+
     Box(
         modifier = modifier
-            .clip(CircleShape)
-            .border(BorderStroke(2.0.dp, pillBorderBrush), CircleShape)
+            .clip(pillShape)
+            .border(BorderStroke(2.0.dp, pillBorderBrush), pillShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -134,34 +136,25 @@ fun HeadsUpNotchPillContent(
     ) {
         Row(
             modifier = Modifier
-                .height(44.dp)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 3.5.dp, vertical = 2.5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .border(BorderStroke(1.0.dp, AmberAccent), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                AppIconView(
-                    packageName = data.packageName,
-                    appName = data.appName,
-                    size = 22.dp,
-                    cornerRadius = 11.dp
-                )
-            }
+            AppIconView(
+                packageName = data.packageName,
+                appName = data.appName,
+                size = 32.dp,
+                isShieldActive = true
+            )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(5.dp))
 
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = GlassPillBadgeBg,
                 border = BorderStroke(1.0.dp, PurplePrimary)
             ) {
                 Box(
-                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 4.dp),
+                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.5.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(

@@ -311,13 +311,13 @@ fun BlackoutPomodoroScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(CircleShape)
-                                        .background(PurplePrimary.copy(alpha = 0.2f)),
+                                        .background(EmeraldAccent.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Security,
                                         contentDescription = null,
-                                        tint = PurpleLight,
+                                        tint = EmeraldAccent,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -342,8 +342,8 @@ fun BlackoutPomodoroScreen(
                                 FrostedBadge(
                                     text = "$essentialCount / 10",
                                     color = if (essentialCount == 10) EmeraldAccent else PurpleLight,
-                                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.18f),
-                                    borderColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.40f)
+                                    backgroundColor = EmeraldAccent.copy(alpha = 0.18f),
+                                    borderColor = EmeraldAccent.copy(alpha = 0.40f)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Icon(
@@ -494,8 +494,8 @@ private fun EssentialAppsDialog(
                 FrostedBadge(
                     text = "$essentialCount / 10",
                     color = if (essentialCount == 10) EmeraldAccent else PurpleLight,
-                    backgroundColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.18f),
-                    borderColor = (if (essentialCount == 10) EmeraldAccent else PurplePrimary).copy(alpha = 0.40f)
+                    backgroundColor = EmeraldAccent.copy(alpha = 0.18f),
+                    borderColor = EmeraldAccent.copy(alpha = 0.40f)
                 )
             }
         },
@@ -608,10 +608,10 @@ private fun EssentialAppsDialog(
         confirmButton = {
             LiquidGlassDialogButton(
                 onClick = onDismiss,
-                accentColor = PurpleLight,
+                accentColor = EmeraldAccent,
                 modifier = Modifier.testTag("done_essential_apps_btn")
             ) {
-                Text("Done", color = PurpleLight, fontWeight = FontWeight.Bold)
+                Text("Done", color = EmeraldAccent, fontWeight = FontWeight.Bold)
             }
         }
     )

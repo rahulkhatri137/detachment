@@ -371,8 +371,8 @@ fun DistractionShieldScreen(
             }
 
             items(uiState.allApps, key = { it.packageName }) { app ->
+                val isShieldActive = app.isEffectiveShieldActive(uiState.isDelayForDistractingApps)
                 val isFromDistracting = uiState.isDelayForDistractingApps && app.isDistracting
-                val isShieldActive = app.isShieldActive || isFromDistracting
                 val isLocked = app.isCurrentlyLocked()
 
                 val targetBorderColor = when {

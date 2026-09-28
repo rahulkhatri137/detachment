@@ -371,9 +371,9 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
 
         val delayForDistracting = (db.appSettingsDao().getValue("key_delay_for_distracting_apps") ?: "true") != "false"
-        val isDelayActive = app.isShieldActive || (delayForDistracting && app.isDistracting)
+        val isShieldActive = app.isEffectiveShieldActive(delayForDistracting)
 
-        if (isDelayActive) {
+        if (isShieldActive) {
             val isGraceActive = TemporaryUnlockManager.isDelayGraceActive(packageName, now)
             val isSessionActive = TemporaryUnlockManager.isDelaySessionActive(packageName)
             if (!isGraceActive && !isSessionActive) {

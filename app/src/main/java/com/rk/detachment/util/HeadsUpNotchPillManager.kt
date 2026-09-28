@@ -396,40 +396,65 @@ object HeadsUpNotchPillManager {
         val rootLayout = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            val padH = (8 * density).toInt()
-            val padV = (5 * density).toInt()
+            val padH = (3.5f * density).toInt()
+            val padV = (2.5f * density).toInt()
             setPadding(padH, padV, padH, padV)
 
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = 22 * density
+                cornerRadius = 18f * density
                 setColor(android.graphics.Color.TRANSPARENT)
-                setStroke((1.7f * density).toInt(), RoseAccent.toArgb())
+                setStroke((2.0f * density).toInt(), RoseAccent.toArgb())
             }
             background = bg
         }
 
-        val iconContainer = FrameLayout(context).apply {
+        val iconContainer = object : FrameLayout(context) {
+            private val petalPath = android.graphics.Path()
+            private val borderPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = 2.0f * density
+                color = AmberAccent.toArgb()
+            }
+            private val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                style = android.graphics.Paint.Style.FILL
+                color = android.graphics.Color.argb(51, 245, 158, 11)
+            }
+
+            override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+                super.onSizeChanged(w, h, oldw, oldh)
+                petalPath.reset()
+                val centerX = w / 2f
+                val centerY = h / 2f
+                val baseRadius = minOf(centerX, centerY) - (1.0f * density)
+                val numPoints = 120
+                for (i in 0 until numPoints) {
+                    val theta = (i.toFloat() / numPoints.toFloat()) * (2f * Math.PI.toFloat())
+                    val radius = baseRadius * (1f - 0.08f * (0.5f - 0.5f * kotlin.math.cos(6 * theta)))
+                    val x = centerX + radius * kotlin.math.cos(theta)
+                    val y = centerY + radius * kotlin.math.sin(theta)
+                    if (i == 0) petalPath.moveTo(x, y) else petalPath.lineTo(x, y)
+                }
+                petalPath.close()
+            }
+
+            override fun dispatchDraw(canvas: android.graphics.Canvas) {
+                canvas.drawPath(petalPath, bgPaint)
+                canvas.save()
+                canvas.clipPath(petalPath)
+                super.dispatchDraw(canvas)
+                canvas.restore()
+                canvas.drawPath(petalPath, borderPaint)
+            }
+        }.apply {
             val sizePx = (32 * density).toInt()
             layoutParams = LinearLayout.LayoutParams(sizePx, sizePx).apply {
-                marginEnd = (8 * density).toInt()
+                marginEnd = (5 * density).toInt()
             }
-            val circleBg = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(android.graphics.Color.TRANSPARENT)
-                setStroke((1.0f * density).toInt(), AmberAccent.toArgb())
-            }
-            background = circleBg
-            outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) {
-                    outline.setOval(0, 0, view.width, view.height)
-                }
-            }
-            clipToOutline = true
         }
 
         val iconView = ImageView(context).apply {
-            val iconSizePx = (22 * density).toInt()
+            val iconSizePx = (28 * density).toInt()
             layoutParams = FrameLayout.LayoutParams(iconSizePx, iconSizePx, Gravity.CENTER)
             scaleType = ImageView.ScaleType.FIT_CENTER
 
@@ -455,13 +480,13 @@ object HeadsUpNotchPillManager {
         val textCapsule = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            val padCapsuleH = (12 * density).toInt()
-            val padCapsuleV = (4 * density).toInt()
+            val padCapsuleH = (9 * density).toInt()
+            val padCapsuleV = (3.5f * density).toInt()
             setPadding(padCapsuleH, padCapsuleV, padCapsuleH, padCapsuleV)
 
             val capsuleBg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = 14 * density
+                cornerRadius = 12 * density
                 setColor(GlassPillBadgeBg.toArgb())
                 setStroke((1.0f * density).toInt(), PurplePrimary.toArgb())
             }

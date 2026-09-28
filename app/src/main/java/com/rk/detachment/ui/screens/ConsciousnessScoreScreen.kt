@@ -290,6 +290,7 @@ fun ConsciousnessScoreScreen(
                 HabitLoopSection(
                     habitLoops = today.habitLoops,
                     allApps = uiState.allApps,
+                    isDelayForDistractingApps = uiState.isDelayForDistractingApps,
                     onNavigateToShield = onNavigateToShield,
                     onNavigateToLimits = onNavigateToLimits
                 )
@@ -839,12 +840,13 @@ fun StatTile(
 fun HabitLoopSection(
     habitLoops: List<HabitLoopItem>,
     allApps: List<AppLimitEntity>,
+    isDelayForDistractingApps: Boolean = true,
     onNavigateToShield: () -> Unit,
     onNavigateToLimits: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shieldedPackageSet = remember(allApps) {
-        allApps.filter { it.isShieldActive }.map { it.packageName }.toSet()
+    val shieldActivePackageSet = remember(allApps, isDelayForDistractingApps) {
+        allApps.filter { it.isEffectiveShieldActive(isDelayForDistractingApps) }.map { it.packageName }.toSet()
     }
     val hasLoops = habitLoops.isNotEmpty()
 
@@ -963,10 +965,10 @@ fun HabitLoopSection(
                 }
             } else {
                 habitLoops.forEachIndexed { index, loop ->
-                    val isShielded = shieldedPackageSet.contains(loop.packageName)
+                    val isShieldActive = shieldActivePackageSet.contains(loop.packageName)
                     HabitLoopItemRow(
                         item = loop,
-                        isShielded = isShielded,
+                        isShieldActive = isShieldActive,
                         onAddShield = onNavigateToShield
                     )
                     if (index < habitLoops.size - 1) {
@@ -981,7 +983,7 @@ fun HabitLoopSection(
 @Composable
 fun HabitLoopItemRow(
     item: HabitLoopItem,
-    isShielded: Boolean,
+    isShieldActive: Boolean,
     onAddShield: () -> Unit
 ) {
     val severityColor = when (item.severity) {
@@ -1035,7 +1037,7 @@ fun HabitLoopItemRow(
 
                 Spacer(modifier = Modifier.width(6.dp))
 
-                if (isShielded) {
+                if (isShieldActive) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier

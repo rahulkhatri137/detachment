@@ -62,7 +62,15 @@ data class DetachmentUiState(
         get() = allApps.filter { it.isDistracting }
 
     val shieldActiveApps: List<AppLimitEntity>
-        get() = allApps.filter { it.isShieldActive || (isDelayForDistractingApps && it.isDistracting) }
+        get() = allApps.filter { it.isEffectiveShieldActive(isDelayForDistractingApps) }
+
+    fun isShieldActive(packageName: String): Boolean {
+        return allApps.find { it.packageName == packageName }?.isEffectiveShieldActive(isDelayForDistractingApps) ?: false
+    }
+
+    fun isShieldActive(app: AppLimitEntity): Boolean {
+        return app.isEffectiveShieldActive(isDelayForDistractingApps)
+    }
 
     val lockedAppsCount: Int
         get() = allApps.count { it.isCurrentlyLocked() }
@@ -557,28 +565,6 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.setHeadsUpPillEnabled(enabled)
         }
-    }
-
-    fun testHeadsUpPill(app: AppLimitEntity? = null, minutes: Int = 15) {
-        val targetApp = app
-            ?: _uiState.value.distractingApps.firstOrNull()
-            ?: _uiState.value.allApps.firstOrNull { it.dailyLimitMinutes > 0 }
-            ?: _uiState.value.allApps.firstOrNull()
-            ?: AppLimitEntity(
-                packageName = "com.google.android.youtube",
-                appName = "YouTube",
-                iconName = "youtube",
-                category = "Social & Media",
-                dailyLimitMinutes = 30,
-                usedTodayMinutes = 15,
-                isDistracting = true
-            )
-        HeadsUpNotchPillManager.showPill(
-            context = getApplication(),
-            packageName = targetApp.packageName,
-            appName = targetApp.appName,
-            minutesUsed = minutes
-        )
     }
 
     fun exportSettings(onSuccess: (String) -> Unit, onError: (String) -> Unit) {
