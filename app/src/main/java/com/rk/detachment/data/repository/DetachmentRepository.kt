@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
@@ -135,6 +136,10 @@ class DetachmentRepository(
         appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted", (current + 1).toString()))
     }
 
+    suspend fun getYesterdayDistractionsResisted(): Int {
+        return appSettingsDao.getValue("distractions_resisted_yesterday")?.toIntOrNull() ?: 0
+    }
+
     suspend fun incrementAppOpens(packageName: String) {
         appLimitDao.incrementOpens(packageName)
     }
@@ -197,9 +202,12 @@ class DetachmentRepository(
 
     suspend fun checkAndResetDailyUsageIfNeeded(): Boolean {
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val lastResetDate = appSettingsDao.getValue("key_last_usage_reset_date")
-        if (lastResetDate != todayDateString) {
+        val lastUsageResetDate = appSettingsDao.getValue("key_last_usage_reset_date")
+        if (lastUsageResetDate != todayDateString) {
             appLimitDao.resetDailyUsage()
+            val currentResisted = appSettingsDao.getValue("distractions_resisted")?.toIntOrNull() ?: 0
+            appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
+            appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted", "0"))
             appSettingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
             return true
         }

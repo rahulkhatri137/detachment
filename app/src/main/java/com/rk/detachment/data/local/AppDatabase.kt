@@ -129,8 +129,11 @@ abstract class AppDatabase : RoomDatabase() {
             val scheduleDao = database.scheduleRuleDao()
             val settingsDao = database.appSettingsDao()
 
+            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
             settingsDao.setSetting(AppSettingsEntity("master_pin", "1234"))
             settingsDao.setSetting(AppSettingsEntity("distractions_resisted", "0"))
+            settingsDao.setSetting(AppSettingsEntity("distractions_resisted_yesterday", "0"))
+            settingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", today))
             settingsDao.setSetting(AppSettingsEntity("key_schedules_schema_version", "2"))
 
             scheduleDao.deleteAllRules()

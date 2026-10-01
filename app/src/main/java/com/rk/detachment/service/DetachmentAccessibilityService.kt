@@ -284,9 +284,12 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
         val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val lastResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
-        if (lastResetDate != todayDateString) {
+        val lastUsageResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
+        if (lastUsageResetDate != todayDateString) {
             db.appLimitDao().resetDailyUsage()
+            val currentResisted = db.appSettingsDao().getValue("distractions_resisted")?.toIntOrNull() ?: 0
+            db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
+            db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted", "0"))
             db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
         }
 
@@ -430,9 +433,12 @@ class DetachmentAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
             val todayDateString = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-            val lastResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
-            if (lastResetDate != todayDateString) {
+            val lastUsageResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
+            if (lastUsageResetDate != todayDateString) {
                 db.appLimitDao().resetDailyUsage()
+                val currentResisted = db.appSettingsDao().getValue("distractions_resisted")?.toIntOrNull() ?: 0
+                db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
+                db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted", "0"))
                 db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
             }
 
@@ -478,9 +484,12 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
                 if (shouldUpdateUsage) {
                     val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                    val lastReset = db.appSettingsDao().getValue("key_last_usage_reset_date")
-                    if (lastReset != todayDate) {
+                    val lastUsageResetDate = db.appSettingsDao().getValue("key_last_usage_reset_date")
+                    if (lastUsageResetDate != todayDate) {
                         db.appLimitDao().resetDailyUsage()
+                        val currentResisted = db.appSettingsDao().getValue("distractions_resisted")?.toIntOrNull() ?: 0
+                        db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
+                        db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted", "0"))
                         db.appSettingsDao().setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDate))
                         monitoredBaseMinutes = 0
                         monitoredSessionStart = now

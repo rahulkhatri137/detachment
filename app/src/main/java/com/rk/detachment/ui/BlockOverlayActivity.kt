@@ -93,10 +93,15 @@ import com.rk.detachment.ui.theme.TextPrimary
 import com.rk.detachment.ui.theme.TextSecondary
 import com.rk.detachment.util.AppManagerHelper
 import com.rk.detachment.util.TemporaryUnlockManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -392,7 +397,7 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun recordDistractionResisted() {
-        lifecycleScope.launch(Dispatchers.IO) {
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             val db = AppDatabase.getDatabase(applicationContext, this)
             val current = db.appSettingsDao().getValue("distractions_resisted")?.toIntOrNull() ?: 0
             db.appSettingsDao().setSetting(AppSettingsEntity("distractions_resisted", (current + 1).toString()))

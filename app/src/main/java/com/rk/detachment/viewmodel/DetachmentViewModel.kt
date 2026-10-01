@@ -217,6 +217,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
 
+        checkDailyResetAndRefreshUsage()
         scanAndSyncRealApps()
 
         activeTimeTickerJob = viewModelScope.launch {
@@ -260,6 +261,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun checkPermissionsAndRefresh() {
+        checkDailyResetAndRefreshUsage()
         val app = getApplication<Application>()
         val hasUsage = AppManagerHelper.hasUsageStatsPermission(app)
         val hasAccess = AppManagerHelper.isAccessibilityServiceEnabled(app)
@@ -305,7 +307,8 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             val currentApps = _uiState.value.allApps
             val resisted = _uiState.value.distractionsResistedCount
             val focusMins = _uiState.value.combinedFocusMinutes
-            val result = AppManagerHelper.calculateConsciousnessData(app, currentApps, resisted, focusMins)
+            val yesterdayResisted = repository.getYesterdayDistractionsResisted()
+            val result = AppManagerHelper.calculateConsciousnessData(app, currentApps, resisted, focusMins, yesterdayResisted)
             _uiState.value = _uiState.value.copy(consciousnessComparison = result)
         }
     }

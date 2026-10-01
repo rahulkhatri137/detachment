@@ -731,7 +731,7 @@ fun AppUsageGlassTile(
                     )
 
                     Text(
-                        text = if (isEssential) "${used}m today" else "${used}m ${if (limit > 0) "/ ${limit}m" else ""}",
+                        text = if (isEssential) "${used}m" else "${used}m ${if (limit > 0) "/ ${limit}m" else ""}",
                         color = when {
                             isEssential -> EmeraldAccent
                             isLocked -> RoseAccent

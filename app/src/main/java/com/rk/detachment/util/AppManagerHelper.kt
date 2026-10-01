@@ -624,7 +624,8 @@ object AppManagerHelper {
         context: Context,
         allApps: List<AppLimitEntity>,
         distractionsResisted: Int,
-        totalFocusMinutes: Int
+        totalFocusMinutes: Int,
+        yesterdayDistractionsResisted: Int = 0
     ): com.rk.detachment.data.model.YouVsYouComparison {
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -650,12 +651,18 @@ object AppManagerHelper {
             isYesterday = false
         )
 
+        val yesterdayResistedCount = if (yesterdayDistractionsResisted > 0) {
+            yesterdayDistractionsResisted
+        } else {
+            (distractionsResisted * 0.45f).toInt().coerceAtLeast(0)
+        }
+
         val yesterdayMetrics = analyzeConsciousnessForPeriod(
             context = context,
             startTime = yesterdayStart,
             endTime = yesterdayEnd,
             allApps = allApps,
-            distractionsResisted = (distractionsResisted * 0.45f).toInt().coerceAtLeast(1),
+            distractionsResisted = yesterdayResistedCount,
             totalFocusMinutes = (totalFocusMinutes * 0.50f).toInt(),
             isYesterday = true
         )
