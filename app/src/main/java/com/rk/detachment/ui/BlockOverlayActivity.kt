@@ -106,7 +106,21 @@ import java.util.Locale
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlin.math.PI
 import kotlin.math.ceil
+import kotlin.math.cos
+import kotlin.math.pow
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 data class OverlayScreenData(
     val packageName: String,
@@ -118,6 +132,40 @@ data class OverlayScreenData(
     val usedMinutes: Int,
     val limitMinutes: Int
 )
+
+fun createLotusPetalPath(size: Size, progress: Float): Path {
+    val path = Path()
+    if (size.width <= 0f || size.height <= 0f || progress <= 0f) {
+        return path
+    }
+    val w = size.width
+    val h = size.height
+    val cx = w / 2f
+    val cy = h / 2f
+    val maxD = sqrt(cx * cx + cy * cy) * 1.45f
+    val currentR = maxD * progress
+    val rValley = 0.35f + 0.45f * progress
+    val rotation = (1f - progress) * 0.4f
+
+    val steps = 120
+    for (step in 0..steps) {
+        val theta = (step.toFloat() / steps.toFloat()) * (2f * PI.toFloat())
+        val alpha = 8f * (theta - rotation)
+        val u = ((cos(alpha) + 1f) * 0.5f).coerceIn(0f, 1f)
+        val petalCurve = u.toDouble().pow(0.65).toFloat().coerceIn(0f, 1f)
+        val r = currentR * (rValley + (1f - rValley) * petalCurve)
+        val x = cx + r * cos(theta)
+        val y = cy + r * sin(theta)
+        if (x.isNaN() || y.isNaN()) continue
+        if (step == 0) {
+            path.moveTo(x, y)
+        } else {
+            path.lineTo(x, y)
+        }
+    }
+    path.close()
+    return path
+}
 
 class BlockOverlayActivity : ComponentActivity() {
 
@@ -156,6 +204,7 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private val overlayDataState = mutableStateOf<OverlayScreenData?>(null)
+    private val overlayAnimationTrigger = mutableIntStateOf(0)
     private var isExiting = false
 
     private fun parseOverlayData(srcIntent: Intent): OverlayScreenData {
@@ -182,6 +231,7 @@ class BlockOverlayActivity : ComponentActivity() {
             !newData.packageName.startsWith("com.rk.detachment")) {
             currentActivePackage = newData.packageName
             overlayDataState.value = newData
+            overlayAnimationTrigger.intValue++
         }
     }
 
@@ -211,6 +261,7 @@ class BlockOverlayActivity : ComponentActivity() {
         activeInstance = this
         currentActivePackage = initialData.packageName
         overlayDataState.value = initialData
+        overlayAnimationTrigger.intValue++
 
         setContent {
             DetachmentTheme {
@@ -240,50 +291,116 @@ class BlockOverlayActivity : ComponentActivity() {
                         }
                     }
                 }
+
+                val animTrigger = overlayAnimationTrigger.intValue
+                val bloomAnim = remember { Animatable(0f) }
+                LaunchedEffect(animTrigger, currentData.packageName) {
+                    if (currentData.packageName.isNotBlank()) {
+                        bloomAnim.snapTo(0f)
+                        bloomAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(
+                                durationMillis = 1200,
+                                easing = FastOutSlowInEasing
+                            )
+                        )
+                    }
+                }
+
+                val bloomProgress = bloomAnim.value
+                val contentScale = remember(bloomProgress) {
+                    0.86f + 0.14f * bloomProgress
+                }
+                val contentAlpha = remember(bloomProgress) {
+                    (bloomProgress * 1.5f).coerceIn(0f, 1f)
+                }
+
                 if (currentData.packageName.isBlank()) {
                     LaunchedEffect(Unit) {
                         finishAndRemoveTask()
                     }
                 } else {
-                    RadialGlassBackground(
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(FrostedBackgroundDarker)
                     ) {
-                        AnimatedContent(
-                            targetState = currentData,
-                            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
-                            label = "overlay_content_switch"
-                        ) { data ->
-                            if (data.isFrictionDelay) {
-                                RealFrictionDelayView(
-                                    packageName = data.packageName,
-                                    appName = data.appName,
-                                    category = data.category,
-                                    delaySeconds = data.delaySeconds,
-                                    onProceed = {
-                                        grantDelayProceedAndLaunch(data.packageName)
-                                    },
-                                    onClose = {
-                                        recordDistractionResisted()
-                                        returnToHome()
+                        RadialGlassBackground(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .drawWithContent {
+                                    if (bloomProgress >= 1f) {
+                                        drawContent()
+                                    } else if (bloomProgress > 0.001f && size.width > 0f && size.height > 0f) {
+                                        val path = createLotusPetalPath(size, bloomProgress)
+                                        clipPath(path) {
+                                            this@drawWithContent.drawContent()
+                                        }
+                                        if (bloomProgress in 0.02f..0.98f) {
+                                            val cx = size.width / 2f
+                                            val cy = size.height / 2f
+                                            val maxD = sqrt(cx * cx + cy * cy) * 1.45f
+                                            drawPath(
+                                                path = path,
+                                                brush = Brush.radialGradient(
+                                                    colors = listOf(
+                                                        RoseAccent.copy(alpha = 0.85f * (1f - bloomProgress)),
+                                                        PurpleLight.copy(alpha = 0.5f * (1f - bloomProgress)),
+                                                        Color.Transparent
+                                                    ),
+                                                    center = Offset(cx, cy),
+                                                    radius = (maxD * bloomProgress * 1.05f).coerceAtLeast(1f)
+                                                ),
+                                                style = Stroke(width = 2.5.dp.toPx())
+                                            )
+                                        }
                                     }
-                                )
-                            } else {
-                                RealLockScreenView(
-                                    packageName = data.packageName,
-                                    appName = data.appName,
-                                    category = data.category,
-                                    reason = data.reason,
-                                    usedMinutes = data.usedMinutes,
-                                    limitMinutes = data.limitMinutes,
-                                    unlockMinutes = defaultUnlockMinutes,
-                                    onUnlock = { chosenMinutes ->
-                                        grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
-                                    },
-                                    onClose = {
-                                        recordDistractionResisted()
-                                        returnToHome()
-                                    }
-                                )
+                                }
+                                .graphicsLayer {
+                                    scaleX = contentScale
+                                    scaleY = contentScale
+                                    alpha = contentAlpha
+                                    transformOrigin = TransformOrigin.Center
+                                }
+                                .windowInsetsPadding(WindowInsets.navigationBars)
+                        ) {
+                            AnimatedContent(
+                                targetState = currentData,
+                                transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
+                                label = "overlay_content_switch"
+                            ) { data ->
+                                if (data.isFrictionDelay) {
+                                    RealFrictionDelayView(
+                                        packageName = data.packageName,
+                                        appName = data.appName,
+                                        category = data.category,
+                                        delaySeconds = data.delaySeconds,
+                                        onProceed = {
+                                            grantDelayProceedAndLaunch(data.packageName)
+                                        },
+                                        onClose = {
+                                            recordDistractionResisted()
+                                            returnToHome()
+                                        }
+                                    )
+                                } else {
+                                    RealLockScreenView(
+                                        packageName = data.packageName,
+                                        appName = data.appName,
+                                        category = data.category,
+                                        reason = data.reason,
+                                        usedMinutes = data.usedMinutes,
+                                        limitMinutes = data.limitMinutes,
+                                        unlockMinutes = defaultUnlockMinutes,
+                                        onUnlock = { chosenMinutes ->
+                                            grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
+                                        },
+                                        onClose = {
+                                            recordDistractionResisted()
+                                            returnToHome()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -842,14 +959,15 @@ fun RealFrictionDelayView(
                     text = breathPhase,
                     color = PurpleLight,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "\"${quotes[quoteIndex]}\"",
-                    color = TextSecondary,
+                    text = "${quotes[quoteIndex]}",
+                    color = TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
             }
