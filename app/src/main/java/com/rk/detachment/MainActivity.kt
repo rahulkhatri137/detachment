@@ -25,10 +25,6 @@ import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -41,6 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.ui.components.AppLaunchSecurityScreen
 import com.rk.detachment.ui.components.HeadsUpNotchPillOverlay
+import com.rk.detachment.ui.components.LiquidGlassBottomNavBar
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
 import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
@@ -138,65 +136,19 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier.padding(16.dp)
                                 )
                             }
-                        },
-                    bottomBar = {
-                        if (!uiState.isBlackoutActive) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .windowInsetsPadding(WindowInsets.navigationBars),
-                                color = FrostedBackgroundDarker.copy(alpha = 0.85f),
-                                border = BorderStroke(1.dp, GlassBorderMedium)
-                            ) {
-                                NavigationBar(
-                                    containerColor = Color.Transparent,
-                                    contentColor = TextPrimary
-                                ) {
-                                    NavigationTab.values().forEach { tab ->
-                                        val isSelected = currentTab == tab && !showConsciousnessScreen
-                                        NavigationBarItem(
-                                            selected = isSelected,
-                                            onClick = {
-                                                currentTab = tab
-                                                showConsciousnessScreen = false
-                                            },
-                                            icon = {
-                                                Icon(
-                                                    imageVector = tab.icon,
-                                                    contentDescription = tab.title,
-                                                    modifier = Modifier.size(22.dp)
-                                                )
-                                            },
-                                            label = {
-                                                Text(
-                                                    text = tab.title,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                                )
-                                            },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = Color.White,
-                                                selectedTextColor = PurpleLight,
-                                                indicatorColor = PurplePrimary.copy(alpha = 0.35f),
-                                                unselectedIconColor = TextSecondary,
-                                                unselectedTextColor = TextMuted
-                                            ),
-                                            modifier = Modifier.testTag(tab.tag)
-                                        )
-                                    }
-                                }
-                            }
                         }
-                    }
-                ) { innerPadding ->
-                    AnimatedContent(
-                        targetState = if (showConsciousnessScreen) "CONSCIOUSNESS" else currentTab.name,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "tab_switch_animation",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) { screenKey ->
+                    ) { innerPadding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = innerPadding.calculateTopPadding())
+                        ) {
+                            AnimatedContent(
+                                targetState = if (showConsciousnessScreen) "CONSCIOUSNESS" else currentTab.name,
+                                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                label = "tab_switch_animation",
+                                modifier = Modifier.fillMaxSize()
+                            ) { screenKey ->
                         when (screenKey) {
                             "CONSCIOUSNESS" -> {
                                 ConsciousnessScoreScreen(
@@ -280,7 +232,21 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+
+                    if (!uiState.isBlackoutActive) {
+                        LiquidGlassBottomNavBar(
+                            currentTab = currentTab,
+                            showConsciousnessScreen = showConsciousnessScreen,
+                            onTabSelected = { tab ->
+                                currentTab = tab
+                                showConsciousnessScreen = false
+                            },
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        )
+                    }
                 }
+            }
+        }
 
                 val headsUpPillState by HeadsUpNotchPillManager.currentPillState.collectAsStateWithLifecycle()
                 HeadsUpNotchPillOverlay(
@@ -290,6 +256,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 }
 }

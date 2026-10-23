@@ -2,6 +2,7 @@ package com.rk.detachment.service
 
 import android.accessibilityservice.AccessibilityService
 import android.app.ActivityManager
+import android.app.ActivityOptions
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,7 @@ import android.view.accessibility.AccessibilityEvent
 import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
+import com.rk.detachment.data.local.entities.ScheduleRuleEntity
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.util.AppManagerHelper
 import com.rk.detachment.util.HeadsUpNotchPillManager
@@ -31,6 +33,16 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private var cachedLauncherPackages: Set<String> = emptySet()
     private var lastLauncherCacheTime = 0L
 
+    @Volatile
+    private var cachedAppsMap: Map<String, AppLimitEntity> = emptyMap()
+    @Volatile
+    private var cachedSchedules: List<ScheduleRuleEntity> = emptyList()
+    @Volatile
+    private var cachedDelayForDistracting: Boolean = true
+    @Volatile
+    private var cachedDelaySeconds: Int = 15
+    @Volatile
+    private var cachedIsBlackout: Boolean = false
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var database: AppDatabase? = null
@@ -67,7 +79,47 @@ class DetachmentAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         isServiceRunning = true
         HeadsUpNotchPillManager.registerAccessibilityService(this)
-        database = AppDatabase.getDatabase(applicationContext, serviceScope)
+        val db = AppDatabase.getDatabase(applicationContext, serviceScope)
+        database = db
+
+        serviceScope.launch {
+            val apps = db.appLimitDao().getAllApps().firstOrNull() ?: emptyList()
+            cachedAppsMap = apps.associateBy { it.packageName }
+            cachedSchedules = db.scheduleRuleDao().getAllRules().firstOrNull() ?: emptyList()
+            cachedDelayForDistracting = (db.appSettingsDao().getValue("key_delay_for_distracting_apps") ?: "true") != "false"
+            cachedDelaySeconds = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
+            cachedIsBlackout = db.appSettingsDao().getValue("is_blackout_active") == "true"
+        }
+
+        serviceScope.launch {
+            db.appLimitDao().getAllApps().collect { apps ->
+                cachedAppsMap = apps.associateBy { it.packageName }
+            }
+        }
+
+        serviceScope.launch {
+            db.scheduleRuleDao().getAllRules().collect { rules ->
+                cachedSchedules = rules
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("key_delay_for_distracting_apps").collect { value ->
+                cachedDelayForDistracting = (value != "false")
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("key_delay_seconds").collect { value ->
+                cachedDelaySeconds = value?.toIntOrNull() ?: 15
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("is_blackout_active").collect { value ->
+                cachedIsBlackout = (value == "true")
+            }
+        }
 
         if (!isReceiverRegistered) {
             try {
@@ -122,14 +174,15 @@ class DetachmentAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             return
         }
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName.isBlank()) return
 
-        val isBlackoutActive = PomodoroManager.state.value.isBlackoutActive
+        val isBlackoutActive = cachedIsBlackout || PomodoroManager.state.value.isBlackoutActive
 
         if (packageName == this.packageName || 
             packageName == applicationContext.packageName || 
@@ -157,27 +210,23 @@ class DetachmentAccessibilityService : AccessibilityService() {
             if (isSystemUiOrSpecial(packageName)) {
                 return
             }
-            blackoutJob?.cancel()
-            blackoutJob = serviceScope.launch {
-                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
-                val checkApp = db.appLimitDao().getAppByPackage(packageName)
-                if (checkApp != null && checkApp.isEssential) {
-                    PomodoroManager.setOverlayHidden(true)
-                    currentForegroundPackage = packageName
-                    startActiveAppMonitoring(checkApp)
-                } else {
-                    PomodoroManager.setOverlayHidden(false)
-                    stopActiveAppMonitoring()
-                    val now = System.currentTimeMillis()
-                    if (packageName != lastInterceptedPackage || (now - lastInterceptTime) > 600L) {
-                        lastInterceptedPackage = packageName
-                        lastInterceptTime = now
-                        performGlobalAction(GLOBAL_ACTION_HOME)
-                        try {
-                            val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-                            am?.killBackgroundProcesses(packageName)
-                        } catch (e: Exception) {}
-                    }
+            val checkApp = cachedAppsMap[packageName]
+            if (checkApp != null && checkApp.isEssential) {
+                PomodoroManager.setOverlayHidden(true)
+                currentForegroundPackage = packageName
+                startActiveAppMonitoring(checkApp)
+            } else {
+                PomodoroManager.setOverlayHidden(false)
+                stopActiveAppMonitoring()
+                val now = System.currentTimeMillis()
+                if (packageName != lastInterceptedPackage || (now - lastInterceptTime) > 600L) {
+                    lastInterceptedPackage = packageName
+                    lastInterceptTime = now
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    try {
+                        val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                        am?.killBackgroundProcesses(packageName)
+                    } catch (e: Exception) {}
                 }
             }
             return
@@ -206,36 +255,27 @@ class DetachmentAccessibilityService : AccessibilityService() {
             currentForegroundPackage = packageName
             lastInterceptedPackage = null
             lastInterceptTime = 0L
-            serviceScope.launch {
-                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
-                val app = db.appLimitDao().getAppByPackage(packageName) ?: return@launch
-                startActiveAppMonitoring(app)
-            }
+            cachedAppsMap[packageName]?.let { startActiveAppMonitoring(it) }
             return
         }
 
         if (TemporaryUnlockManager.isDelaySessionActive(packageName)) {
-            val isNewLaunch = (packageName != currentForegroundPackage)
-            if (isNewLaunch) {
-                val prevPkg = currentForegroundPackage
-                if (prevPkg != null && !isHomeScreenLauncher(prevPkg) && !isExcludedOrSystem(prevPkg)) {
-                    TemporaryUnlockManager.endDelaySession(prevPkg)
+            val cachedApp = cachedAppsMap[packageName]
+            if (cachedApp != null && !cachedApp.isCurrentlyLocked(now)) {
+                val isNewLaunch = (packageName != currentForegroundPackage)
+                if (isNewLaunch) {
+                    val prevPkg = currentForegroundPackage
+                    if (prevPkg != null && !isHomeScreenLauncher(prevPkg) && !isExcludedOrSystem(prevPkg)) {
+                        TemporaryUnlockManager.endDelaySession(prevPkg)
+                    }
+                    stopActiveAppMonitoring()
                 }
-                stopActiveAppMonitoring()
+                currentForegroundPackage = packageName
+                lastInterceptedPackage = null
+                lastInterceptTime = 0L
+                startActiveAppMonitoring(cachedApp)
+                return
             }
-            currentForegroundPackage = packageName
-            lastInterceptedPackage = null
-            lastInterceptTime = 0L
-            serviceScope.launch {
-                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
-                val app = db.appLimitDao().getAppByPackage(packageName) ?: return@launch
-                if (app.isCurrentlyLocked(now)) {
-                    evaluateAndEnforceApp(packageName, isNewLaunch = false)
-                } else {
-                    startActiveAppMonitoring(app)
-                }
-            }
-            return
         }
 
         val isOverlayShowing = BlockOverlayActivity.isActivityResumed &&
@@ -259,9 +299,81 @@ class DetachmentAccessibilityService : AccessibilityService() {
         }
         currentForegroundPackage = packageName
 
+        val cachedApp = cachedAppsMap[packageName]
+        if (cachedApp != null) {
+            if (checkAndEnforceAppSynchronously(cachedApp, now)) {
+                return
+            }
+        }
+
         serviceScope.launch {
             evaluateAndEnforceApp(packageName, isNewLaunch)
         }
+    }
+
+    private fun checkAndEnforceAppSynchronously(app: AppLimitEntity, now: Long): Boolean {
+        if (app.isEssential) {
+            startActiveAppMonitoring(app)
+            return true
+        }
+
+        if (TemporaryUnlockManager.isUnlocked(app.packageName, now) || app.isTemporaryUnlocked(now)) {
+            if (app.isTemporaryUnlocked(now)) {
+                TemporaryUnlockManager.setUnlock(app.packageName, app.unlockExpiresAtMillis)
+            }
+            startActiveAppMonitoring(app)
+            return true
+        }
+
+        val activeSchedule = cachedSchedules.firstOrNull { rule ->
+            if (rule.isCurrentlyActive()) {
+                when (rule.blockedTarget) {
+                    "DISTRACTING" -> app.isDistracting
+                    "ALL_NON_ESSENTIAL" -> !app.isEssential
+                    else -> true
+                }
+            } else false
+        }
+
+        if (activeSchedule != null) {
+            interceptBlockedApp(
+                app = app,
+                reason = "Locked by focus schedule '${activeSchedule.title}' (${activeSchedule.formattedTimeRange()})",
+                isFrictionDelay = false,
+                delaySeconds = 15
+            )
+            return true
+        }
+
+        if (app.isCurrentlyLocked(now)) {
+            val reason = if (app.isLockedManually) {
+                "Manually locked by Detachment"
+            } else {
+                "Daily usage limit exceeded"
+            }
+            interceptBlockedApp(app = app, reason = reason, isFrictionDelay = false, delaySeconds = 15)
+            return true
+        }
+
+        val isShieldActive = app.isEffectiveShieldActive(cachedDelayForDistracting)
+        if (isShieldActive) {
+            val isGraceActive = TemporaryUnlockManager.isDelayGraceActive(app.packageName, now)
+            val isSessionActive = TemporaryUnlockManager.isDelaySessionActive(app.packageName)
+            if (!isGraceActive && !isSessionActive) {
+                interceptBlockedApp(
+                    app = app,
+                    reason = "Mindful Pause: Detachment Distraction Shield Active",
+                    isFrictionDelay = true,
+                    delaySeconds = cachedDelaySeconds
+                )
+                return true
+            } else if (isGraceActive && !isSessionActive) {
+                TemporaryUnlockManager.setDelaySessionActive(app.packageName)
+            }
+        }
+
+        startActiveAppMonitoring(app)
+        return true
     }
 
     private suspend fun evaluateAndEnforceApp(packageName: String, isNewLaunch: Boolean) {
@@ -635,12 +747,21 @@ class DetachmentAccessibilityService : AccessibilityService() {
         
         lastInterceptedPackage = app.packageName
         lastInterceptTime = now
+
+        if (!isFrictionDelay) {
+            performGlobalAction(GLOBAL_ACTION_HOME)
+            try {
+                val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                am?.killBackgroundProcesses(app.packageName)
+            } catch (e: Exception) {}
+        }
         
         try {
             val intent = Intent(this, BlockOverlayActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                         Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
                         Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
                         Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
                         Intent.FLAG_ACTIVITY_NO_ANIMATION
                 putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, app.packageName)
@@ -652,7 +773,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 putExtra(BlockOverlayActivity.EXTRA_USED_MINUTES, app.usedTodayMinutes)
                 putExtra(BlockOverlayActivity.EXTRA_LIMIT_MINUTES, app.dailyLimitMinutes)
             }
-            startActivity(intent)
+            val options = ActivityOptions.makeCustomAnimation(this, 0, 0)
+            startActivity(intent, options.toBundle())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch BlockOverlayActivity", e)
         }

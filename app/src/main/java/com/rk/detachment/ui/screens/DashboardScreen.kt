@@ -178,7 +178,7 @@ fun DashboardScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "System Real-App Enforcement",
+                                    text = "Detachment Enforcement",
                                     color = TextPrimary,
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold
@@ -186,10 +186,10 @@ fun DashboardScreen(
                             }
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "To physically block real apps on your phone and track exact screen time, enable these Android permissions:",
+                                text = "To physically block apps on your phone and track exact screen time, enable these Android permissions:",
                                 color = TextSecondary,
                                 fontSize = 12.sp,
-                                lineHeight = 16.sp
+                                lineHeight = 12.sp
                             )
 
                             Spacer(modifier = Modifier.height(10.dp))
@@ -214,7 +214,7 @@ fun DashboardScreen(
 
                             PermissionRow(
                                 title = "Overlay Friction Lock Screen",
-                                description = "Shows mindful delay and lock screens over apps",
+                                description = "Shows delay and block overlays over apps",
                                 isGranted = uiState.hasOverlayPermission,
                                 onGrant = onOpenOverlaySettings
                             )
@@ -553,7 +553,7 @@ fun DashboardScreen(
                                     text = "${uiState.shieldActiveApps.size} apps delayed for mindful pause",
                                     color = TextSecondary,
                                     fontSize = 11.sp,
-                                    lineHeight = 16.sp
+                                    lineHeight = 12.sp
                                 )
                             }
                         }
@@ -642,7 +642,7 @@ private fun PermissionRow(
                 text = description,
                 color = TextSecondary,
                 fontSize = 10.sp,
-                lineHeight = 16.sp
+                lineHeight = 12.sp
             )
         }
         Spacer(modifier = Modifier.width(8.dp))
