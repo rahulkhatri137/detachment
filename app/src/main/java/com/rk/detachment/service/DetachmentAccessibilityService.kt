@@ -749,7 +749,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
         lastInterceptTime = now
 
         if (!isFrictionDelay) {
-            performGlobalAction(GLOBAL_ACTION_HOME)
             try {
                 val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                 am?.killBackgroundProcesses(app.packageName)

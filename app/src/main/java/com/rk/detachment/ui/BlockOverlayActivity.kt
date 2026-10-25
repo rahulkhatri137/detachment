@@ -106,6 +106,7 @@ import java.util.Locale
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import com.rk.detachment.ui.components.LotusBloomContainer
 import kotlin.math.ceil
 
 data class OverlayScreenData(
@@ -156,6 +157,7 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private val overlayDataState = mutableStateOf<OverlayScreenData?>(null)
+    private val overlayAnimationTrigger = mutableIntStateOf(0)
     private var isExiting = false
 
     private fun parseOverlayData(srcIntent: Intent): OverlayScreenData {
@@ -182,6 +184,7 @@ class BlockOverlayActivity : ComponentActivity() {
             !newData.packageName.startsWith("com.rk.detachment")) {
             currentActivePackage = newData.packageName
             overlayDataState.value = newData
+            overlayAnimationTrigger.intValue++
         }
     }
 
@@ -211,6 +214,7 @@ class BlockOverlayActivity : ComponentActivity() {
         activeInstance = this
         currentActivePackage = initialData.packageName
         overlayDataState.value = initialData
+        overlayAnimationTrigger.intValue++
 
         setContent {
             DetachmentTheme {
@@ -240,50 +244,60 @@ class BlockOverlayActivity : ComponentActivity() {
                         }
                     }
                 }
+
+                val animTrigger = overlayAnimationTrigger.intValue
+
                 if (currentData.packageName.isBlank()) {
                     LaunchedEffect(Unit) {
                         finishAndRemoveTask()
                     }
                 } else {
-                    RadialGlassBackground(
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                    LotusBloomContainer(
+                        triggerKey = Pair(animTrigger, currentData.packageName),
+                        backgroundColor = FrostedBackgroundDarker
                     ) {
-                        AnimatedContent(
-                            targetState = currentData,
-                            transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
-                            label = "overlay_content_switch"
-                        ) { data ->
-                            if (data.isFrictionDelay) {
-                                RealFrictionDelayView(
-                                    packageName = data.packageName,
-                                    appName = data.appName,
-                                    category = data.category,
-                                    delaySeconds = data.delaySeconds,
-                                    onProceed = {
-                                        grantDelayProceedAndLaunch(data.packageName)
-                                    },
-                                    onClose = {
-                                        recordDistractionResisted()
-                                        returnToHome()
-                                    }
-                                )
-                            } else {
-                                RealLockScreenView(
-                                    packageName = data.packageName,
-                                    appName = data.appName,
-                                    category = data.category,
-                                    reason = data.reason,
-                                    usedMinutes = data.usedMinutes,
-                                    limitMinutes = data.limitMinutes,
-                                    unlockMinutes = defaultUnlockMinutes,
-                                    onUnlock = { chosenMinutes ->
-                                        grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
-                                    },
-                                    onClose = {
-                                        recordDistractionResisted()
-                                        returnToHome()
-                                    }
-                                )
+                        RadialGlassBackground(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .windowInsetsPadding(WindowInsets.navigationBars)
+                        ) {
+                            AnimatedContent(
+                                targetState = currentData,
+                                transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(200)) },
+                                label = "overlay_content_switch"
+                            ) { data ->
+                                if (data.isFrictionDelay) {
+                                    RealFrictionDelayView(
+                                        packageName = data.packageName,
+                                        appName = data.appName,
+                                        category = data.category,
+                                        delaySeconds = data.delaySeconds,
+                                        onProceed = {
+                                            grantDelayProceedAndLaunch(data.packageName)
+                                        },
+                                        onClose = {
+                                            recordDistractionResisted()
+                                            returnToHome()
+                                        }
+                                    )
+                                } else {
+                                    RealLockScreenView(
+                                        packageName = data.packageName,
+                                        appName = data.appName,
+                                        category = data.category,
+                                        reason = data.reason,
+                                        usedMinutes = data.usedMinutes,
+                                        limitMinutes = data.limitMinutes,
+                                        unlockMinutes = defaultUnlockMinutes,
+                                        onUnlock = { chosenMinutes ->
+                                            grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
+                                        },
+                                        onClose = {
+                                            recordDistractionResisted()
+                                            returnToHome()
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
@@ -842,14 +856,15 @@ fun RealFrictionDelayView(
                     text = breathPhase,
                     color = PurpleLight,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "\"${quotes[quoteIndex]}\"",
-                    color = TextSecondary,
+                    text = "${quotes[quoteIndex]}",
+                    color = TextPrimary,
                     fontSize = 12.sp,
                     lineHeight = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
             }

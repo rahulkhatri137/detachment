@@ -366,20 +366,20 @@ fun SchedulesScreen(
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
+                                horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(
                                     onClick = { editingRule = rule },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(18.dp))
                                 }
                                 IconButton(
                                     onClick = { onDeleteRule(rule) },
                                     modifier = Modifier.size(32.dp)
                                 ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RoseAccent.copy(alpha = 0.8f), modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RoseAccent.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
                                 }
                             }
                         }
@@ -391,7 +391,9 @@ fun SchedulesScreen(
                 onClick = { showAddDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(24.dp)
+                    .padding(
+                        end = 24.dp,
+                        bottom = 80.dp)
                     .testTag("add_schedule_fab"),
                 containerColor = PurplePrimary,
                 contentColor = Color.White

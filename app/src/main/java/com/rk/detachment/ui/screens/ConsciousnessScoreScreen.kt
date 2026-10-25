@@ -177,7 +177,7 @@ fun ConsciousnessScoreScreen(
                             Text(
                                 text = "DIGITAL INTENTIONALITY INDEX",
                                 color = PurpleLight,
-                                fontSize = 9.5.sp,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.4.sp
                             )

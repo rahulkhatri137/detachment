@@ -50,6 +50,7 @@ import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.ui.components.AppLaunchSecurityScreen
 import com.rk.detachment.ui.components.HeadsUpNotchPillOverlay
 import com.rk.detachment.ui.components.LiquidGlassBottomNavBar
+import com.rk.detachment.ui.components.LotusBloomContainer
 import com.rk.detachment.ui.screens.AppLimitsScreen
 import com.rk.detachment.ui.screens.BlackoutPomodoroScreen
 import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
@@ -101,7 +102,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DetachmentTheme {
-                val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                LotusBloomContainer {
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 var isAppUnlocked by remember { isAppUnlockedState }
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
                 var showConsciousnessScreen by remember { mutableStateOf(false) }
@@ -256,5 +258,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 }
 }
