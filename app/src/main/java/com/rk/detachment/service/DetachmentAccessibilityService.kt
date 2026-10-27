@@ -317,7 +317,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return true
         }
 
-        if (TemporaryUnlockManager.isUnlocked(app.packageName, now) || app.isTemporaryUnlocked(now)) {
+        if (!app.isHardMode && (TemporaryUnlockManager.isUnlocked(app.packageName, now) || app.isTemporaryUnlocked(now))) {
             if (app.isTemporaryUnlocked(now)) {
                 TemporaryUnlockManager.setUnlock(app.packageName, app.unlockExpiresAtMillis)
             }
@@ -450,7 +450,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return
         }
 
-        val isUnlocked = TemporaryUnlockManager.isUnlocked(packageName, now) || app.isTemporaryUnlocked(now)
+        val isUnlocked = !app.isHardMode && (TemporaryUnlockManager.isUnlocked(packageName, now) || app.isTemporaryUnlocked(now))
         if (isUnlocked) {
             if (app.isTemporaryUnlocked(now)) {
                 TemporaryUnlockManager.setUnlock(packageName, app.unlockExpiresAtMillis)
@@ -771,6 +771,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 putExtra(BlockOverlayActivity.EXTRA_DELAY_SECONDS, delaySeconds)
                 putExtra(BlockOverlayActivity.EXTRA_USED_MINUTES, app.usedTodayMinutes)
                 putExtra(BlockOverlayActivity.EXTRA_LIMIT_MINUTES, app.dailyLimitMinutes)
+                putExtra(BlockOverlayActivity.EXTRA_IS_HARD_MODE, app.isHardMode)
             }
             val options = ActivityOptions.makeCustomAnimation(this, 0, 0)
             startActivity(intent, options.toBundle())

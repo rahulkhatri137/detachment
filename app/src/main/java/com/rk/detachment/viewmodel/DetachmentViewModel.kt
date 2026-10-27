@@ -356,10 +356,11 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         AppManagerHelper.openOverlaySettings(getApplication())
     }
 
-    fun updateAppLimit(packageName: String, limitMinutes: Int) {
+    fun updateAppLimit(packageName: String, limitMinutes: Int, isHardMode: Boolean = false) {
         viewModelScope.launch {
-            repository.updateAppLimit(packageName, limitMinutes)
-            showMessage("Updated limit to ${limitMinutes}m")
+            repository.updateAppLimit(packageName, limitMinutes, isHardMode)
+            val suffix = if (isHardMode) " (Hard mode)" else ""
+            showMessage("Updated limit to ${limitMinutes}m$suffix")
         }
     }
 

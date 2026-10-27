@@ -64,8 +64,8 @@ class DetachmentRepository(
         appSettingsDao.setSetting(AppSettingsEntity("key_unlock_minutes", minutes.toString()))
     }
 
-    suspend fun updateAppLimit(packageName: String, limitMinutes: Int) {
-        appLimitDao.updateLimit(packageName, limitMinutes)
+    suspend fun updateAppLimit(packageName: String, limitMinutes: Int, isHardMode: Boolean = false) {
+        appLimitDao.updateLimit(packageName, limitMinutes, isHardMode)
     }
 
     suspend fun addUsage(packageName: String, minutes: Int) {
@@ -228,7 +228,8 @@ class DetachmentRepository(
                 isDistracting = it.isDistracting,
                 isEssential = it.isEssential,
                 isShieldActive = it.isShieldActive,
-                isLockedManually = it.isLockedManually
+                isLockedManually = it.isLockedManually,
+                isHardMode = it.isHardMode
             )
         }
 
@@ -274,7 +275,8 @@ class DetachmentRepository(
                         isDistracting = item.isDistracting,
                         isEssential = item.isEssential,
                         isShieldActive = item.isShieldActive,
-                        isLockedManually = item.isLockedManually
+                        isLockedManually = item.isLockedManually,
+                        isHardMode = item.isHardMode
                     )
                 )
             } else {
@@ -291,7 +293,8 @@ class DetachmentRepository(
                         isEssential = item.isEssential,
                         isShieldActive = item.isShieldActive,
                         isLockedManually = item.isLockedManually,
-                        unlockExpiresAtMillis = 0L
+                        unlockExpiresAtMillis = 0L,
+                        isHardMode = item.isHardMode
                     )
                 )
             }

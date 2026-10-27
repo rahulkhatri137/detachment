@@ -117,7 +117,8 @@ data class OverlayScreenData(
     val isFrictionDelay: Boolean,
     val delaySeconds: Int,
     val usedMinutes: Int,
-    val limitMinutes: Int
+    val limitMinutes: Int,
+    val isHardMode: Boolean = false
 )
 
 class BlockOverlayActivity : ComponentActivity() {
@@ -131,6 +132,7 @@ class BlockOverlayActivity : ComponentActivity() {
         const val EXTRA_DELAY_SECONDS = "extra_delay_seconds"
         const val EXTRA_USED_MINUTES = "extra_used_minutes"
         const val EXTRA_LIMIT_MINUTES = "extra_limit_minutes"
+        const val EXTRA_IS_HARD_MODE = "extra_is_hard_mode"
 
         @Volatile
         var activeInstance: BlockOverlayActivity? = null
@@ -169,7 +171,8 @@ class BlockOverlayActivity : ComponentActivity() {
             isFrictionDelay = srcIntent.getBooleanExtra(EXTRA_IS_FRICTION_DELAY, false),
             delaySeconds = srcIntent.getIntExtra(EXTRA_DELAY_SECONDS, 15),
             usedMinutes = srcIntent.getIntExtra(EXTRA_USED_MINUTES, 0),
-            limitMinutes = srcIntent.getIntExtra(EXTRA_LIMIT_MINUTES, 0)
+            limitMinutes = srcIntent.getIntExtra(EXTRA_LIMIT_MINUTES, 0),
+            isHardMode = srcIntent.getBooleanExtra(EXTRA_IS_HARD_MODE, false)
         )
     }
 
@@ -289,8 +292,11 @@ class BlockOverlayActivity : ComponentActivity() {
                                         usedMinutes = data.usedMinutes,
                                         limitMinutes = data.limitMinutes,
                                         unlockMinutes = defaultUnlockMinutes,
+                                        isHardMode = data.isHardMode,
                                         onUnlock = { chosenMinutes ->
-                                            grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
+                                            if (!data.isHardMode) {
+                                                grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
+                                            }
                                         },
                                         onClose = {
                                             recordDistractionResisted()
@@ -399,6 +405,7 @@ class BlockOverlayActivity : ComponentActivity() {
     }
 
     private fun grantTemporaryUnlockAndLaunch(packageName: String, minutes: Int) {
+        if (overlayDataState.value?.isHardMode == true) return
         isExiting = true
         isActivityResumed = false
         val expiry = System.currentTimeMillis() + (minutes * 60 * 1000L)
@@ -434,6 +441,7 @@ fun RealLockScreenView(
     usedMinutes: Int,
     limitMinutes: Int,
     unlockMinutes: Int = 15,
+    isHardMode: Boolean = false,
     onUnlock: (Int) -> Unit,
     onClose: () -> Unit
 ) {
@@ -611,30 +619,32 @@ fun RealLockScreenView(
             )
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        if (!isHardMode) {
+            Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedButton(
-            onClick = { showPinDialog = true },
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AmberAccent),
-            border = androidx.compose.foundation.BorderStroke(1.dp, AmberAccent.copy(alpha = 0.5f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .testTag("block_emergency_unlock_btn")
-        ) {
-            Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp), tint = AmberAccent)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Emergency PIN Unlock",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = AmberAccent
-            )
+            OutlinedButton(
+                onClick = { showPinDialog = true },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AmberAccent),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AmberAccent.copy(alpha = 0.5f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .testTag("block_emergency_unlock_btn")
+            ) {
+                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp), tint = AmberAccent)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Emergency PIN Unlock",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AmberAccent
+                )
+            }
         }
     }
 
-    if (showPinDialog) {
+    if (showPinDialog && !isHardMode) {
         PasscodeUnlockDialog(
             appName = appName,
             unlockMinutes = unlockMinutes,

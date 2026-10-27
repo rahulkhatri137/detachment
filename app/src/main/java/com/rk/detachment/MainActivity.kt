@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
                             NavigationTab.LIMITS.name -> {
                                 AppLimitsScreen(
                                     uiState = uiState,
-                                    onUpdateLimit = { pkg, limit -> viewModel.updateAppLimit(pkg, limit) },
+                                    onUpdateLimit = { pkg, limit, isHardMode -> viewModel.updateAppLimit(pkg, limit, isHardMode) },
                                     onToggleLock = { pkg, isLocked -> viewModel.toggleManualLock(pkg, isLocked) },
                                     onUnlock15Min = { pkg -> viewModel.unlockAppFor15Minutes(pkg) },
                                     onUnlockApp = { pkg, min -> viewModel.unlockApp(pkg, min) },

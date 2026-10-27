@@ -103,7 +103,7 @@ import com.rk.detachment.viewmodel.DetachmentUiState
 @Composable
 fun AppLimitsScreen(
     uiState: DetachmentUiState,
-    onUpdateLimit: (String, Int) -> Unit,
+    onUpdateLimit: (String, Int, Boolean) -> Unit,
     onToggleLock: (String, Boolean) -> Unit,
     onUnlock15Min: (String) -> Unit,
     onUnlockApp: (String, Int) -> Unit = { pkg, min -> onUnlock15Min(pkg) },
@@ -650,8 +650,8 @@ fun AppLimitsScreen(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = if (isEssential) "Essential" else "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}",
-                                        color = if (isEssential) EmeraldAccent else TextSecondary,
+                                        text = if (isEssential) "Essential" else "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}${if (app.isHardMode && app.dailyLimitMinutes > 0) " (Hard)" else ""}",
+                                        color = if (isEssential) EmeraldAccent else if (app.isHardMode && app.dailyLimitMinutes > 0) RoseAccent else TextSecondary,
                                         fontSize = 12.sp
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
@@ -749,7 +749,7 @@ fun AppLimitsScreen(
                                         )
                                     }
                                 }
-                            } else if (isLocked) {
+                            } else if (isLocked && !app.isHardMode) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = AmberAccent.copy(alpha = 0.2f),
@@ -772,6 +772,31 @@ fun AppLimitsScreen(
                                         Text(
                                             text = "Unlock (${uiState.unlockMinutes}m)",
                                             color = AmberAccent,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            } else if (isLocked && app.isHardMode) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = RoseAccent.copy(alpha = 0.2f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, RoseAccent.copy(alpha = 0.5f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Lock,
+                                            contentDescription = null,
+                                            tint = RoseAccent,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Hard Mode",
+                                            color = RoseAccent,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
                                         )
@@ -814,6 +839,7 @@ fun AppLimitsScreen(
 
         editingApp?.let { app ->
             var currentLimit by remember { mutableIntStateOf(app.dailyLimitMinutes) }
+            var isHardMode by remember { mutableStateOf(app.isHardMode) }
             val quickPresets = remember { listOf(15, 30, 45, 60, 90, 120, 0) }
 
             LiquidGlassAlertDialog(
@@ -890,6 +916,43 @@ fun AppLimitsScreen(
                                 }
                             }
                         }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isHardMode) RoseAccent.copy(alpha = 0.12f) else GlassSurfaceMedium)
+                                .border(
+                                    1.dp,
+                                    if (isHardMode) RoseAccent.copy(alpha = 0.45f) else GlassBorderLow,
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                Text(
+                                    text = "Hard mode",
+                                    color = if (isHardMode) RoseAccent else TextPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "No unlocks allowed",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                            LiquidGlassSwitch(
+                                checked = isHardMode,
+                                onCheckedChange = { isHardMode = it },
+                                activeColor = RoseAccent,
+                                testTag = "hard_mode_switch"
+                            )
+                        }
                     }
                 },
                 confirmButton = {
@@ -900,7 +963,7 @@ fun AppLimitsScreen(
                     ) {
                         LiquidGlassDialogButton(
                             onClick = {
-                                onUpdateLimit(app.packageName, 0)
+                                onUpdateLimit(app.packageName, 0, false)
                                 editingApp = null
                             },
                             accentColor = RoseAccent,
@@ -919,7 +982,7 @@ fun AppLimitsScreen(
                         }
                         LiquidGlassDialogButton(
                             onClick = {
-                                onUpdateLimit(app.packageName, currentLimit)
+                                onUpdateLimit(app.packageName, currentLimit, isHardMode)
                                 editingApp = null
                             },
                             accentColor = PurpleLight,

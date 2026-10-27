@@ -16,12 +16,14 @@ data class AppLimitEntity(
     val isShieldActive: Boolean = false,
     val isLockedManually: Boolean = false,
     val unlockExpiresAtMillis: Long = 0L,
-    val todayOpens: Int = 0
+    val todayOpens: Int = 0,
+    val isHardMode: Boolean = false
 ) {
     val isLimitExceeded: Boolean
         get() = !isEssential && dailyLimitMinutes > 0 && usedTodayMinutes >= dailyLimitMinutes
 
     fun isTemporaryUnlocked(currentTime: Long = System.currentTimeMillis()): Boolean {
+        if (isHardMode) return false
         return unlockExpiresAtMillis > currentTime
     }
 
@@ -32,7 +34,7 @@ data class AppLimitEntity(
     }
 
     fun remainingUnlockSeconds(currentTime: Long = System.currentTimeMillis()): Long {
-        if (unlockExpiresAtMillis <= currentTime) return 0L
+        if (isHardMode || unlockExpiresAtMillis <= currentTime) return 0L
         return (unlockExpiresAtMillis - currentTime) / 1000L
     }
 

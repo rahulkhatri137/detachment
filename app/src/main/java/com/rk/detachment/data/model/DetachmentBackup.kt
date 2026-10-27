@@ -11,7 +11,8 @@ data class AppLimitBackup(
     val isDistracting: Boolean,
     val isEssential: Boolean,
     val isShieldActive: Boolean,
-    val isLockedManually: Boolean
+    val isLockedManually: Boolean,
+    val isHardMode: Boolean = false
 )
 
 data class ScheduleRuleBackup(
@@ -55,6 +56,7 @@ data class DetachmentBackup(
             appObj.put("isEssential", app.isEssential)
             appObj.put("isShieldActive", app.isShieldActive)
             appObj.put("isLockedManually", app.isLockedManually)
+            appObj.put("isHardMode", app.isHardMode)
             appArray.put(appObj)
         }
         root.put("appLimits", appArray)
@@ -106,7 +108,8 @@ data class DetachmentBackup(
                                 isDistracting = item.optBoolean("isDistracting", false),
                                 isEssential = item.optBoolean("isEssential", false),
                                 isShieldActive = item.optBoolean("isShieldActive", false),
-                                isLockedManually = item.optBoolean("isLockedManually", false)
+                                isLockedManually = item.optBoolean("isLockedManually", false),
+                                isHardMode = item.optBoolean("isHardMode", false)
                             )
                         )
                     }

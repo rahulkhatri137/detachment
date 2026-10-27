@@ -43,8 +43,14 @@ interface AppLimitDao {
     @Update
     suspend fun updateApp(app: AppLimitEntity)
 
+    @Query("UPDATE app_limits SET dailyLimitMinutes = :limitMinutes, isHardMode = :isHardMode WHERE packageName = :packageName")
+    suspend fun updateLimit(packageName: String, limitMinutes: Int, isHardMode: Boolean)
+
     @Query("UPDATE app_limits SET dailyLimitMinutes = :limitMinutes WHERE packageName = :packageName")
     suspend fun updateLimit(packageName: String, limitMinutes: Int)
+
+    @Query("UPDATE app_limits SET isHardMode = :isHardMode WHERE packageName = :packageName")
+    suspend fun setHardMode(packageName: String, isHardMode: Boolean)
 
     @Query("UPDATE app_limits SET usedTodayMinutes = :minutes WHERE packageName = :packageName")
     suspend fun updateUsedMinutes(packageName: String, minutes: Int)
