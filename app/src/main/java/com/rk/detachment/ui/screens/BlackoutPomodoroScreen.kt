@@ -725,7 +725,7 @@ fun BlackoutPomodoroScreen(
                                         )
                                         Spacer(modifier = Modifier.height(6.dp))
                                         Text(
-                                            text = "Block Distracting",
+                                            text = "Block Distracting Apps",
                                             color = if (isDistractingSelected) Color.White else TextPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold,
@@ -776,7 +776,7 @@ fun BlackoutPomodoroScreen(
                     LiquidGlassHoldButton(
                         text = "Hold to commit",
                         holdingText = "Hold to commit",
-                        accentColor = PurpleLight,
+                        accentColor = EmeraldAccent,
                         holdDurationMillis = 3000L,
                         onAction = {
                             showSelfRestraintDialog = false

@@ -252,10 +252,6 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
         if (isExcludedOrSystem(packageName)) {
             stopActiveAppMonitoring()
-            serviceScope.launch {
-                val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
-                db.appLimitDao().deleteApp(packageName)
-            }
             return
         }
 
@@ -646,9 +642,9 @@ class DetachmentAccessibilityService : AccessibilityService() {
                 val db = database ?: AppDatabase.getDatabase(applicationContext, serviceScope)
 
                 val shouldUpdateUsage = (loopSeconds % 5 == 0)
-                var currentDbApp = db.appLimitDao().getAppByPackage(currentPkg)
+                var currentDbApp = cachedAppsMap[currentPkg] ?: app
                 val elapsedMins = ((now - monitoredSessionStart) / 60000L).toInt()
-                val currentDbMinutes = currentDbApp?.usedTodayMinutes ?: 0
+                val currentDbMinutes = currentDbApp.usedTodayMinutes
                 val totalMins = maxOf(currentDbMinutes, monitoredBaseMinutes + elapsedMins)
 
                 if (shouldUpdateUsage) {
@@ -670,7 +666,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
 
                     if (finalMins != currentDbMinutes) {
                         db.appLimitDao().updateUsedMinutes(currentPkg, finalMins)
-                        currentDbApp = currentDbApp?.copy(usedTodayMinutes = finalMins)
+                        currentDbApp = currentDbApp.copy(usedTodayMinutes = finalMins)
                     }
 
                     val isPillEnabled = (db.appSettingsDao().getValue("key_heads_up_pill_enabled") ?: "true") != "false"
@@ -685,20 +681,20 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     }
                 }
 
-                val isBlackoutActive = db.appSettingsDao().getValue("is_blackout_active") == "true" || PomodoroManager.state.value.isBlackoutActive
-                if (isBlackoutActive && (currentDbApp == null || !currentDbApp.isEssential)) {
+                val isBlackoutActive = cachedIsBlackout || PomodoroManager.state.value.isBlackoutActive
+                if (isBlackoutActive && !currentDbApp.isEssential) {
                     stopActiveAppMonitoring()
                     performGlobalAction(GLOBAL_ACTION_HOME)
                     break
                 }
 
-                val isUnlocked = TemporaryUnlockManager.isUnlocked(currentPkg, now) || (currentDbApp?.isTemporaryUnlocked(now) == true)
+                val isUnlocked = TemporaryUnlockManager.isUnlocked(currentPkg, now) || currentDbApp.isTemporaryUnlocked(now)
                 if (!isUnlocked) {
-                    val limitMinutes = currentDbApp?.dailyLimitMinutes ?: app.dailyLimitMinutes
-                    val isLockedManually = currentDbApp?.isLockedManually ?: app.isLockedManually
+                    val limitMinutes = currentDbApp.dailyLimitMinutes
+                    val isLockedManually = currentDbApp.isLockedManually
 
                     if (isLockedManually) {
-                        val updatedApp = (currentDbApp ?: app).copy(
+                        val updatedApp = currentDbApp.copy(
                             usedTodayMinutes = totalMins,
                             dailyLimitMinutes = limitMinutes,
                             isLockedManually = true
@@ -713,7 +709,7 @@ class DetachmentAccessibilityService : AccessibilityService() {
                     }
 
                     if (limitMinutes > 0 && totalMins >= limitMinutes) {
-                        val updatedApp = (currentDbApp ?: app).copy(
+                        val updatedApp = currentDbApp.copy(
                             usedTodayMinutes = totalMins,
                             dailyLimitMinutes = limitMinutes,
                             isLockedManually = isLockedManually
@@ -727,19 +723,19 @@ class DetachmentAccessibilityService : AccessibilityService() {
                         break
                     }
 
-                    val allSchedules = db.scheduleRuleDao().getAllRules().firstOrNull() ?: emptyList()
+                    val allSchedules = cachedSchedules
                     val activeSchedule = allSchedules.firstOrNull { rule ->
                         if (rule.isCurrentlyActive()) {
                             when (rule.blockedTarget) {
-                                "DISTRACTING" -> (currentDbApp?.isDistracting ?: app.isDistracting)
-                                "ALL_NON_ESSENTIAL" -> !(currentDbApp?.isEssential ?: app.isEssential)
+                                "DISTRACTING" -> currentDbApp.isDistracting
+                                "ALL_NON_ESSENTIAL" -> !currentDbApp.isEssential
                                 else -> true
                             }
                         } else false
                     }
 
                     if (activeSchedule != null) {
-                        val updatedApp = (currentDbApp ?: app).copy(usedTodayMinutes = totalMins)
+                        val updatedApp = currentDbApp.copy(usedTodayMinutes = totalMins)
                         interceptBlockedApp(
                             app = updatedApp,
                             reason = "Locked by focus schedule '${activeSchedule.title}' (${activeSchedule.formattedTimeRange()})",

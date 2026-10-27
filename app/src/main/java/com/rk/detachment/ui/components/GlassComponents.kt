@@ -722,16 +722,19 @@ fun LiquidGlassHoldButton(
     val explodeAnimatable = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
 
-    val infiniteTransition = rememberInfiniteTransition(label = "fluid_wave")
-    val wavePhase by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 2f * Math.PI.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "wave_phase"
-    )
+    val isWaveActive = isHolding || progressAnimatable.value > 0f
+    val wavePhase = if (isWaveActive) {
+        val infiniteTransition = rememberInfiniteTransition(label = "fluid_wave")
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 2f * Math.PI.toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wave_phase"
+        ).value
+    } else 0f
 
     val particles = remember {
         List(40) { index ->

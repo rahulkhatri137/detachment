@@ -91,6 +91,9 @@ For full device-level blocking functionality:
 <img src="screenshots/10.png" width="30%" />
 <img src="screenshots/11.png" width="30%" />
 <img src="screenshots/12.png" width="30%" />
+<img src="screenshots/13.png" width="30%" />
+<img src="screenshots/14.png" width="30%" />
+<img src="screenshots/15.png" width="30%" />
 </div>
 
 ---

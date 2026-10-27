@@ -85,7 +85,7 @@ data class DetachmentUiState(
             val pomodoroMins = pomodoroSessions.sumOf { it.durationMinutes }
             val productiveAppsMins = allApps.filter {
                 val cat = it.category.lowercase()
-                cat == "productivity" || cat == "utilities" || cat == "education" || cat == "reading" || cat == "work" || (it.isEssential && !it.isDistracting)
+                cat == "productivity" || cat == "education" || cat == "reading" || cat == "work" || (it.isEssential && !it.isDistracting)
             }.sumOf { it.usedTodayMinutes }
             val phoneFreeMins = consciousnessComparison.today.longestPhoneFreeMinutes
             return (pomodoroMins + phoneFreeMins + productiveAppsMins).coerceAtLeast(totalFocusMinutes)
@@ -283,10 +283,6 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
                 val currentApps = repository.allApps.first()
                 val toUpdate = mutableListOf<Pair<String, Int>>()
                 for (installedApp in currentApps) {
-                    if (AppManagerHelper.isLauncherOrSystemPackage(installedApp.packageName, emptySet(), app)) {
-                        repository.deleteApp(installedApp.packageName)
-                        continue
-                    }
                     val realMins = todayUsageMap[installedApp.packageName] ?: 0
                     val targetMins = maxOf(installedApp.usedTodayMinutes, realMins)
                     if (targetMins != installedApp.usedTodayMinutes) {
