@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -46,6 +47,10 @@ data class DetachmentUiState(
     val unlockMinutes: Int = 15,
     val isDelayForDistractingApps: Boolean = true,
     val isHeadsUpPillEnabled: Boolean = true,
+    val isSelfRestraintActive: Boolean = false,
+    val selfRestraintSecondsRemaining: Int = 0,
+    val selfRestraintTotalSeconds: Int = 0,
+    val selfRestraintTarget: String = "DISTRACTING",
     val statusMessage: String? = null,
     val consciousnessComparison: YouVsYouComparison = YouVsYouComparison()
 ) {
@@ -115,6 +120,7 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
     private var pomodoroJob: Job? = null
     private var activeTimeTickerJob: Job? = null
+    private var selfRestraintTickerJob: Job? = null
 
     init {
         com.rk.detachment.service.PomodoroManager.initialize(application, repository, database)
@@ -214,6 +220,40 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.isHeadsUpPillEnabled.collect { enabled ->
                 _uiState.value = _uiState.value.copy(isHeadsUpPillEnabled = enabled)
+            }
+        }
+
+        viewModelScope.launch {
+            repository.selfRestraintEndTime.collect { endStr ->
+                val endTime = endStr?.toLongOrNull() ?: 0L
+                val now = System.currentTimeMillis()
+                if (endTime > now) {
+                    val totalSec = repository.getSetting("self_restraint_total_seconds")?.toIntOrNull() ?: 1800
+                    val target = repository.getSetting("self_restraint_target") ?: "DISTRACTING"
+                    val remainingSec = ((endTime - now) / 1000L).toInt().coerceAtLeast(0)
+                    _uiState.value = _uiState.value.copy(
+                        isSelfRestraintActive = true,
+                        selfRestraintSecondsRemaining = remainingSec,
+                        selfRestraintTotalSeconds = totalSec,
+                        selfRestraintTarget = target
+                    )
+                    startSelfRestraintTicker(endTime)
+                } else {
+                    if (_uiState.value.isSelfRestraintActive) {
+                        _uiState.value = _uiState.value.copy(
+                            isSelfRestraintActive = false,
+                            selfRestraintSecondsRemaining = 0
+                        )
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            repository.selfRestraintTarget.collect { target ->
+                if (target != null) {
+                    _uiState.value = _uiState.value.copy(selfRestraintTarget = target)
+                }
             }
         }
 
@@ -541,6 +581,18 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             com.rk.detachment.service.PomodoroManager.setOverlayHidden(true)
         }
 
+        if (uiState.value.isSelfRestraintActive) {
+            val shouldBlock = when (uiState.value.selfRestraintTarget) {
+                "ALL_NON_ESSENTIAL" -> !app.isEssential
+                else -> app.isDistracting
+            }
+            if (shouldBlock && !app.isTemporaryUnlocked()) {
+                val targetDesc = if (uiState.value.selfRestraintTarget == "ALL_NON_ESSENTIAL") "non-essential app" else "distracting app"
+                showMessage("${app.appName} is locked by active Self Restraint Mode ($targetDesc).")
+                return
+            }
+        }
+
         val activeSchedules = uiState.value.activeSchedules
         val isBlockedBySchedule = activeSchedules.any { rule ->
             when (rule.blockedTarget) {
@@ -569,6 +621,58 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         val launched = AppManagerHelper.launchRealApp(getApplication(), app.packageName)
         if (!launched) {
             showMessage("Could not open ${app.appName}. Launch intent unavailable.")
+        }
+    }
+
+    fun startSelfRestraint(durationMinutes: Int, target: String) {
+        selfRestraintTickerJob?.cancel()
+        val totalSecs = durationMinutes * 60
+        val endTime = System.currentTimeMillis() + totalSecs * 1000L
+        viewModelScope.launch {
+            repository.startSelfRestraint(endTime, totalSecs, target)
+            _uiState.value = _uiState.value.copy(
+                isSelfRestraintActive = true,
+                selfRestraintSecondsRemaining = totalSecs,
+                selfRestraintTotalSeconds = totalSecs,
+                selfRestraintTarget = target
+            )
+            showMessage("Self Restraint Mode started for ${durationMinutes}m")
+            startSelfRestraintTicker(endTime, durationMinutes)
+        }
+    }
+
+    private fun startSelfRestraintTicker(endTime: Long, durationMinutes: Int = 0) {
+        selfRestraintTickerJob?.cancel()
+        selfRestraintTickerJob = viewModelScope.launch {
+            while (isActive) {
+                val now = System.currentTimeMillis()
+                val remaining = ((endTime - now) / 1000L).toInt().coerceAtLeast(0)
+                _uiState.value = _uiState.value.copy(selfRestraintSecondsRemaining = remaining)
+                if (remaining <= 0) {
+                    val mins = if (durationMinutes > 0) durationMinutes else (_uiState.value.selfRestraintTotalSeconds / 60)
+                    repository.stopSelfRestraint()
+                    repository.savePomodoroSession(mins, "Self Restraint", 0)
+                    _uiState.value = _uiState.value.copy(
+                        isSelfRestraintActive = false,
+                        selfRestraintSecondsRemaining = 0
+                    )
+                    showMessage("Self Restraint completed! +$mins min focus logged.")
+                    break
+                }
+                delay(1000L)
+            }
+        }
+    }
+
+    fun stopSelfRestraint() {
+        selfRestraintTickerJob?.cancel()
+        viewModelScope.launch {
+            repository.stopSelfRestraint()
+            _uiState.value = _uiState.value.copy(
+                isSelfRestraintActive = false,
+                selfRestraintSecondsRemaining = 0
+            )
+            showMessage("Self Restraint session ended.")
         }
     }
 

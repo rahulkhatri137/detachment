@@ -43,6 +43,21 @@ class DetachmentRepository(
     val unlockMinutes: Flow<String?> = appSettingsDao.observeValue("key_unlock_minutes")
     val isDelayForDistractingApps: Flow<Boolean> = appSettingsDao.observeValue("key_delay_for_distracting_apps").map { it != "false" }
     val isHeadsUpPillEnabled: Flow<Boolean> = appSettingsDao.observeValue("key_heads_up_pill_enabled").map { it != "false" }
+    val selfRestraintEndTime: Flow<String?> = appSettingsDao.observeValue("self_restraint_end_time")
+    val selfRestraintTarget: Flow<String?> = appSettingsDao.observeValue("self_restraint_target")
+    val selfRestraintTotalSeconds: Flow<String?> = appSettingsDao.observeValue("self_restraint_total_seconds")
+
+    suspend fun startSelfRestraint(endTimeMillis: Long, totalSeconds: Int, target: String) {
+        appSettingsDao.setSetting(AppSettingsEntity("self_restraint_end_time", endTimeMillis.toString()))
+        appSettingsDao.setSetting(AppSettingsEntity("self_restraint_target", target))
+        appSettingsDao.setSetting(AppSettingsEntity("self_restraint_total_seconds", totalSeconds.toString()))
+    }
+
+    suspend fun stopSelfRestraint() {
+        appSettingsDao.setSetting(AppSettingsEntity("self_restraint_end_time", "0"))
+    }
+
+    suspend fun getSetting(key: String): String? = appSettingsDao.getValue(key)
 
     suspend fun setHeadsUpPillEnabled(enabled: Boolean) {
         appSettingsDao.setSetting(AppSettingsEntity("key_heads_up_pill_enabled", enabled.toString()))
@@ -210,9 +225,11 @@ class DetachmentRepository(
             val currentResisted = appSettingsDao.getValue("distractions_resisted")?.toIntOrNull() ?: 0
             appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
             appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted", "0"))
+
             val currentUnlocks = appSettingsDao.getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
             appSettingsDao.setSetting(AppSettingsEntity("emergency_pin_unlocks_yesterday", currentUnlocks.toString()))
             appSettingsDao.setSetting(AppSettingsEntity("emergency_pin_unlocks", "0"))
+
             appSettingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
             return true
         }
@@ -226,7 +243,7 @@ class DetachmentRepository(
     suspend fun getEmergencyPinUnlocksYesterday(): Int {
         return appSettingsDao.getValue("emergency_pin_unlocks_yesterday")?.toIntOrNull() ?: 0
     }
-    
+
     suspend fun exportBackupData(): String {
         val currentApps = appLimitDao.getAllApps().first()
         val currentSchedules = scheduleRuleDao.getAllRules().first()

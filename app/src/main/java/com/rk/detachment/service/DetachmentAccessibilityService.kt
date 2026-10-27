@@ -43,6 +43,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private var cachedDelaySeconds: Int = 15
     @Volatile
     private var cachedIsBlackout: Boolean = false
+    @Volatile
+    private var cachedSelfRestraintEndTime: Long = 0L
+    @Volatile
+    private var cachedSelfRestraintTarget: String = "DISTRACTING"
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var database: AppDatabase? = null
@@ -89,6 +93,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
             cachedDelayForDistracting = (db.appSettingsDao().getValue("key_delay_for_distracting_apps") ?: "true") != "false"
             cachedDelaySeconds = db.appSettingsDao().getValue("key_delay_seconds")?.toIntOrNull() ?: 15
             cachedIsBlackout = db.appSettingsDao().getValue("is_blackout_active") == "true"
+            cachedSelfRestraintEndTime = db.appSettingsDao().getValue("self_restraint_end_time")?.toLongOrNull() ?: 0L
+            cachedSelfRestraintTarget = db.appSettingsDao().getValue("self_restraint_target") ?: "DISTRACTING"
         }
 
         serviceScope.launch {
@@ -118,6 +124,18 @@ class DetachmentAccessibilityService : AccessibilityService() {
         serviceScope.launch {
             db.appSettingsDao().observeValue("is_blackout_active").collect { value ->
                 cachedIsBlackout = (value == "true")
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("self_restraint_end_time").collect { value ->
+                cachedSelfRestraintEndTime = value?.toLongOrNull() ?: 0L
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("self_restraint_target").collect { value ->
+                cachedSelfRestraintTarget = value ?: "DISTRACTING"
             }
         }
 
@@ -325,6 +343,25 @@ class DetachmentAccessibilityService : AccessibilityService() {
             return true
         }
 
+        val isSelfRestraintActive = (cachedSelfRestraintEndTime > now)
+        if (isSelfRestraintActive) {
+            val shouldBlock = when (cachedSelfRestraintTarget) {
+                "ALL_NON_ESSENTIAL" -> !app.isEssential
+                else -> app.isDistracting
+            }
+            if (shouldBlock) {
+                val remainingMins = ((cachedSelfRestraintEndTime - now) / 60000L).coerceAtLeast(1)
+                val targetDesc = if (cachedSelfRestraintTarget == "ALL_NON_ESSENTIAL") "Non-essential apps" else "Distracting apps"
+                interceptBlockedApp(
+                    app = app,
+                    reason = "Locked by Self Restraint Mode ($remainingMins min left • $targetDesc)",
+                    isFrictionDelay = false,
+                    delaySeconds = 15
+                )
+                return true
+            }
+        }
+
         val activeSchedule = cachedSchedules.firstOrNull { rule ->
             if (rule.isCurrentlyActive()) {
                 when (rule.blockedTarget) {
@@ -457,6 +494,26 @@ class DetachmentAccessibilityService : AccessibilityService() {
             }
             startActiveAppMonitoring(app)
             return
+        }
+
+        val selfRestraintEnd = db.appSettingsDao().getValue("self_restraint_end_time")?.toLongOrNull() ?: 0L
+        val selfRestraintTarget = db.appSettingsDao().getValue("self_restraint_target") ?: "DISTRACTING"
+        if (selfRestraintEnd > now) {
+            val shouldBlock = when (selfRestraintTarget) {
+                "ALL_NON_ESSENTIAL" -> !app.isEssential
+                else -> app.isDistracting
+            }
+            if (shouldBlock) {
+                val remainingMins = ((selfRestraintEnd - now) / 60000L).coerceAtLeast(1)
+                val targetDesc = if (selfRestraintTarget == "ALL_NON_ESSENTIAL") "Non-essential apps" else "Distracting apps"
+                interceptBlockedApp(
+                    app = app,
+                    reason = "Locked by Self Restraint Mode ($remainingMins min left • $targetDesc)",
+                    isFrictionDelay = false,
+                    delaySeconds = 15
+                )
+                return
+            }
         }
 
         val allSchedules = db.scheduleRuleDao().getAllRules().firstOrNull() ?: emptyList()

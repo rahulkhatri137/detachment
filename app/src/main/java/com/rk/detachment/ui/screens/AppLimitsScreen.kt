@@ -650,7 +650,7 @@ fun AppLimitsScreen(
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = if (isEssential) "Essential" else "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}${if (app.isHardMode && app.dailyLimitMinutes > 0) " (Hard)" else ""}",
+                                        text = if (isEssential) "Essential" else "Limit: ${if (app.dailyLimitMinutes > 0) "${app.dailyLimitMinutes}m" else "None"}${if (app.isHardMode && app.dailyLimitMinutes > 0) " (H)" else ""}",
                                         color = if (isEssential) EmeraldAccent else if (app.isHardMode && app.dailyLimitMinutes > 0) RoseAccent else TextSecondary,
                                         fontSize = 12.sp
                                     )
@@ -927,7 +927,7 @@ fun AppLimitsScreen(
                                     if (isHardMode) RoseAccent.copy(alpha = 0.45f) else GlassBorderLow,
                                     RoundedCornerShape(12.dp)
                                 )
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {

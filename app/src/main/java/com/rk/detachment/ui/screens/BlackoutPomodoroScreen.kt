@@ -70,6 +70,7 @@ import com.rk.detachment.ui.components.FrostedGlassButton
 import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.LiquidGlassAlertDialog
 import com.rk.detachment.ui.components.LiquidGlassDialogButton
+import com.rk.detachment.ui.components.LiquidGlassHoldButton
 import com.rk.detachment.ui.components.LiquidGlassSwitch
 import com.rk.detachment.ui.components.GlowingProgressRing
 import com.rk.detachment.ui.components.RadialGlassBackground
@@ -98,6 +99,8 @@ fun BlackoutPomodoroScreen(
     onToggleEssential: (String, Boolean) -> Unit,
     onToggleDistracting: (String, Boolean) -> Unit,
     onOpenEssentialApp: (AppLimitEntity) -> Unit,
+    onStartSelfRestraint: (Int, String) -> Unit = { _, _ -> },
+    onStopSelfRestraint: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedDurationMinutes by remember { mutableIntStateOf(30) }
@@ -105,6 +108,10 @@ fun BlackoutPomodoroScreen(
     var showExitConfirmDialog by remember { mutableStateOf(false) }
     var showEssentialAppsDialog by remember { mutableStateOf(false) }
     var showDistractingAppsDialog by remember { mutableStateOf(false) }
+    var showSelfRestraintDialog by remember { mutableStateOf(false) }
+    var showEndSelfRestraintDialog by remember { mutableStateOf(false) }
+    var selectedSelfRestraintDuration by remember { mutableIntStateOf(30) }
+    var selectedSelfRestraintTarget by remember { mutableStateOf("DISTRACTING") }
 
     val durations = listOf(15, 30, 45, 60, 90)
     val tags = listOf("Deep Work", "Study", "Reading", "Meditation", "Code")
@@ -118,7 +125,7 @@ fun BlackoutPomodoroScreen(
             essentialApps = uiState.essentialApps,
             onPause = onPauseBlackout,
             onResume = onResumeBlackout,
-            onRequestStop = { showExitConfirmDialog = true },
+            onRequestStop = onStopBlackout,
             onOpenEssentialApp = onOpenEssentialApp
         )
 
@@ -137,20 +144,26 @@ fun BlackoutPomodoroScreen(
                     )
                 },
                 confirmButton = {
-                    LiquidGlassDialogButton(
-                        onClick = {
+                    LiquidGlassHoldButton(
+                        text = "End Session",
+                        holdingText = "Hold to commit",
+                        accentColor = RoseAccent,
+                        holdDurationMillis = 3000L,
+                        onAction = {
                             showExitConfirmDialog = false
                             onStopBlackout()
                         },
-                        accentColor = RoseAccent
-                    ) {
-                        Text("Exit Blackout", color = RoseAccent, fontWeight = FontWeight.Bold)
-                    }
+                        modifier = Modifier
+                            .widthIn(min = 140.dp)
+                            .height(44.dp)
+                            .testTag("confirm_exit_blackout_btn")
+                    )
                 },
                 dismissButton = {
                     LiquidGlassDialogButton(
                         onClick = { showExitConfirmDialog = false },
-                        accentColor = PurpleLight
+                        accentColor = PurpleLight,
+                        modifier = Modifier.testTag("keep_focusing_exit_blackout_btn")
                     ) {
                         Text("Keep Focusing", color = PurpleLight)
                     }
@@ -427,7 +440,406 @@ fun BlackoutPomodoroScreen(
                         }
                     }
                 }
+
+                item(key = "self_restraint_mode_card") {
+                    if (uiState.isSelfRestraintActive) {
+                        val remainingSecs = uiState.selfRestraintSecondsRemaining
+                        val totalSecs = uiState.selfRestraintTotalSeconds.coerceAtLeast(1)
+                        val progress = (remainingSecs.toFloat() / totalSecs.toFloat()).coerceIn(0f, 1f)
+                        val hours = remainingSecs / 3600
+                        val minutes = (remainingSecs % 3600) / 60
+                        val seconds = remainingSecs % 60
+                        val timeDisplay = if (hours > 0) {
+                            String.format("%02d:%02d:%02d", hours, minutes, seconds)
+                        } else {
+                            String.format("%02d:%02d", minutes, seconds)
+                        }
+                        val targetLabel = if (uiState.selfRestraintTarget == "ALL_NON_ESSENTIAL") "Non-essential apps blocked" else "Distracting apps blocked"
+
+                        FrostedGlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("self_restraint_countdown_card"),
+                            backgroundColor = GlassSurfaceHigh,
+                            borderColor = PurplePrimary.copy(alpha = 0.65f),
+                            onClick = { showEndSelfRestraintDialog = true }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .clip(CircleShape)
+                                                .background(EmeraldAccent)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "SELF-RESTRAINT ACTIVE",
+                                            color = PurpleLight,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp
+                                        )
+                                    }
+                                    FrostedBadge(
+                                        text = if (uiState.selfRestraintTarget == "ALL_NON_ESSENTIAL") "NON-ESSENTIAL" else "DISTRACTING",
+                                        color = AmberAccent,
+                                        backgroundColor = AmberAccent.copy(alpha = 0.18f),
+                                        borderColor = AmberAccent.copy(alpha = 0.35f)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                GlowingProgressRing(
+                                    progress = progress,
+                                    modifier = Modifier.size(160.dp),
+                                    strokeWidth = 8.dp,
+                                    primaryColor = PurplePrimary,
+                                    secondaryColor = PurpleLight,
+                                    trackColor = Color(0x1AFFFFFF)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = timeDisplay,
+                                            color = Color.White,
+                                            fontSize = 28.sp,
+                                            fontWeight = FontWeight.Black
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "REMAINING",
+                                            color = TextSecondary,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.2.sp
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Text(
+                                    text = targetLabel,
+                                    color = TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Tap countdown clock to end session early",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                    } else {
+                        FrostedGlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("self_restraint_mode_card"),
+                            backgroundColor = GlassSurfaceHigh,
+                            borderColor = PurpleLight.copy(alpha = 0.4f),
+                            onClick = { showSelfRestraintDialog = true }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(PurplePrimary.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.SelfImprovement,
+                                            contentDescription = null,
+                                            tint = PurpleLight,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = "Self-restraint Mode",
+                                            color = TextPrimary,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "Flexible focus schedule without blackout canvas",
+                                            color = TextSecondary,
+                                            fontSize = 12.sp,
+                                            lineHeight = 16.sp
+                                        )
+                                    }
+                                }
+
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = "Open",
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
+        }
+
+        if (showSelfRestraintDialog) {
+            val selfRestraintDurations = listOf(15, 20, 30, 45, 60, 90)
+            LiquidGlassAlertDialog(
+                onDismissRequest = { showSelfRestraintDialog = false },
+                accentColor = PurpleLight,
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SelfImprovement,
+                            contentDescription = null,
+                            tint = PurpleLight,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Text(
+                            text = "Self-restraint Mode",
+                            color = TextPrimary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text(
+                            text = "Enforce a temporary focus schedule to block chosen apps for a specific duration. Unblocked apps remain accessible normally.",
+                            color = TextSecondary,
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+
+                        Column {
+                            Text(
+                                text = "DURATION (MINUTES)",
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                selfRestraintDurations.forEach { min ->
+                                    val isSelected = selectedSelfRestraintDuration == min
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isSelected) PurplePrimary else GlassSurfaceLow,
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            1.dp,
+                                            if (isSelected) PurpleLight else GlassBorderLow
+                                        ),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { selectedSelfRestraintDuration = min }
+                                            .testTag("self_restraint_duration_$min")
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.padding(vertical = 10.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "${min}m",
+                                                color = if (isSelected) Color.White else TextPrimary,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 12.sp
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Column {
+                            Text(
+                                text = "CHOOSE TARGET APPS",
+                                color = TextSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                val isDistractingSelected = selectedSelfRestraintTarget == "DISTRACTING"
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isDistractingSelected) AmberAccent.copy(alpha = 0.22f) else GlassSurfaceLow,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (isDistractingSelected) AmberAccent else GlassBorderLow
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { selectedSelfRestraintTarget = "DISTRACTING" }
+                                        .testTag("self_restraint_target_distracting")
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 14.dp, horizontal = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = null,
+                                            tint = if (isDistractingSelected) AmberAccent else TextSecondary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Block Distracting",
+                                            color = if (isDistractingSelected) Color.White else TextPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
+                                }
+
+                                val isNonEssentialSelected = selectedSelfRestraintTarget == "ALL_NON_ESSENTIAL"
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (isNonEssentialSelected) PurplePrimary.copy(alpha = 0.25f) else GlassSurfaceLow,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (isNonEssentialSelected) PurpleLight else GlassBorderLow
+                                    ),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { selectedSelfRestraintTarget = "ALL_NON_ESSENTIAL" }
+                                        .testTag("self_restraint_target_non_essential")
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 14.dp, horizontal = 12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Security,
+                                            contentDescription = null,
+                                            tint = if (isNonEssentialSelected) PurpleLight else TextSecondary,
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = "Block Non-essential",
+                                            color = if (isNonEssentialSelected) Color.White else TextPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    LiquidGlassHoldButton(
+                        text = "Hold to commit",
+                        holdingText = "Hold to commit",
+                        accentColor = PurpleLight,
+                        holdDurationMillis = 3000L,
+                        onAction = {
+                            showSelfRestraintDialog = false
+                            onStartSelfRestraint(selectedSelfRestraintDuration, selectedSelfRestraintTarget)
+                        },
+                        modifier = Modifier
+                            .widthIn(min = 150.dp)
+                            .height(44.dp)
+                            .testTag("commit_self_restraint_btn")
+                    )
+                },
+                dismissButton = {
+                    LiquidGlassDialogButton(
+                        onClick = { showSelfRestraintDialog = false },
+                        accentColor = PurpleLight,
+                        modifier = Modifier.testTag("cancel_self_restraint_btn")
+                    ) {
+                        Text("Cancel", color = PurpleLight)
+                    }
+                }
+            )
+        }
+
+        if (showEndSelfRestraintDialog) {
+            LiquidGlassAlertDialog(
+                onDismissRequest = { showEndSelfRestraintDialog = false },
+                accentColor = RoseAccent,
+                title = {
+                    Text("End Self-restraint Session?", color = TextPrimary, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(
+                        "Are you sure you want to end this self-restraint focus session early? Blocked apps will be unlocked.",
+                        color = TextSecondary,
+                        lineHeight = 16.sp
+                    )
+                },
+                confirmButton = {
+                    LiquidGlassHoldButton(
+                        text = "End Session",
+                        holdingText = "Hold to commit",
+                        accentColor = RoseAccent,
+                        holdDurationMillis = 3000L,
+                        onAction = {
+                            showEndSelfRestraintDialog = false
+                            onStopSelfRestraint()
+                        },
+                        modifier = Modifier
+                            .widthIn(min = 140.dp)
+                            .height(44.dp)
+                            .testTag("confirm_end_self_restraint_btn")
+                    )
+                },
+                dismissButton = {
+                    LiquidGlassDialogButton(
+                        onClick = { showEndSelfRestraintDialog = false },
+                        accentColor = PurpleLight,
+                        modifier = Modifier.testTag("cancel_end_self_restraint_btn")
+                    ) {
+                        Text("Keep Focusing", color = PurpleLight)
+                    }
+                }
+            )
         }
 
         if (showEssentialAppsDialog) {
@@ -1084,7 +1496,8 @@ fun ActiveBlackoutCanvas(
                         Spacer(modifier = Modifier.height(20.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             LiquidGlassDialogButton(
                                 onClick = { showExitConfirmation = false },
@@ -1096,20 +1509,20 @@ fun ActiveBlackoutCanvas(
                                     color = PurpleLight
                                 )
                             }
-                            LiquidGlassDialogButton(
-                                onClick = {
+                            LiquidGlassHoldButton(
+                                text = "End Session",
+                                holdingText = "Hold to commit",
+                                accentColor = RoseAccent,
+                                holdDurationMillis = 3000L,
+                                onAction = {
                                     showExitConfirmation = false
                                     onRequestStop()
                                 },
-                                accentColor = RoseAccent,
-                                modifier = Modifier.testTag("confirm_exit_blackout_btn")
-                            ) {
-                                Text(
-                                    text = "End Session",
-                                    color = RoseAccent,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .testTag("confirm_exit_blackout_btn")
+                            )
                         }
                     }
                 }

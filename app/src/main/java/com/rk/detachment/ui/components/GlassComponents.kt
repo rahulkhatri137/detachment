@@ -734,10 +734,10 @@ fun LiquidGlassHoldButton(
     )
 
     val particles = remember {
-        List(16) { index ->
-            val angle = (index * (2.0 * Math.PI / 16.0) + (index % 3) * 0.15).toFloat()
-            val speed = 70f + (index % 5) * 20f
-            val radius = 3.5f + (index % 3) * 1.5f
+        List(40) { index ->
+            val angle = (index * (2.0 * Math.PI / 40.0) + (index % 5) * 0.12).toFloat()
+            val speed = 120f + (index % 7) * 45f
+            val radius = 5f + (index % 4) * 2.5f
             HoldParticle(angle, speed, radius)
         }
     }
@@ -904,22 +904,28 @@ fun LiquidGlassHoldButton(
                 val cx = size.width / 2f
                 val cy = size.height / 2f
                 val alpha = (1f - explodeVal).coerceIn(0f, 1f)
+                val densityVal = density
 
                 particles.forEach { p ->
-                    val dist = p.speed * explodeVal * 1.5f
+                    val dist = p.speed * explodeVal * 2.5f * densityVal
                     val px = cx + cos(p.angle) * dist
                     val py = cy + sin(p.angle) * dist
-                    val r = p.radius * (1f - explodeVal * 0.4f)
+                    val r = p.radius * densityVal * (1f - explodeVal * 0.25f)
 
                     drawCircle(
-                        color = accentColor.copy(alpha = alpha * 0.85f),
+                        color = accentColor.copy(alpha = alpha * 0.40f),
+                        radius = r * 1.6f,
+                        center = Offset(px, py)
+                    )
+                    drawCircle(
+                        color = accentColor.copy(alpha = alpha * 0.90f),
                         radius = r,
                         center = Offset(px, py)
                     )
                     drawCircle(
                         color = Color.White.copy(alpha = alpha * 0.95f),
-                        radius = r * 0.4f,
-                        center = Offset(px - r * 0.3f, py - r * 0.3f)
+                        radius = r * 0.45f,
+                        center = Offset(px - r * 0.25f, py - r * 0.25f)
                     )
                 }
             }

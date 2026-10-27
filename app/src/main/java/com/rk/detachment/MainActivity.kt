@@ -221,7 +221,9 @@ class MainActivity : ComponentActivity() {
                                     onStopBlackout = { viewModel.stopBlackout() },
                                     onToggleEssential = { pkg, isEss -> viewModel.toggleEssential(pkg, isEss) },
                                     onToggleDistracting = { pkg, isDis -> viewModel.toggleDistracting(pkg, isDis) },
-                                    onOpenEssentialApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) }
+                                    onOpenEssentialApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
+                                    onStartSelfRestraint = { duration, target -> viewModel.startSelfRestraint(duration, target) },
+                                    onStopSelfRestraint = { viewModel.stopSelfRestraint() }
                                 )
                             }
                             NavigationTab.DISTRACTIONS.name -> {

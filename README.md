@@ -58,6 +58,7 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 ### 🍅 Pomodoro Blackout Mode
 * Pitch-Blackout canvas featuring a countdown timer, session activities (Deep Work, Study, Reading).
 * Essential Apps Whitelist: Users can select up to a strict maximum of 10 essential apps (e.g. Phone, Messages, Maps, Calendar, Notes) to remain accessible from the blackout dock while all other phone usage is completely blocked.
+* Self Restraint Mode: Unlike full Blackout, Self Restraint mode is a focus session operating as as a temporary block for selected target apps while keeping the rest device accessible.
 
 ---
 
