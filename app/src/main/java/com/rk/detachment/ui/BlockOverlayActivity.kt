@@ -75,6 +75,7 @@ import com.rk.detachment.ui.components.AppIconView
 import com.rk.detachment.ui.components.FrostedBadge
 import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.GlowingProgressRing
+import com.rk.detachment.ui.components.LiquidGlassHoldButton
 import com.rk.detachment.ui.components.PasscodeUnlockDialog
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.theme.AmberAccent
@@ -622,25 +623,20 @@ fun RealLockScreenView(
         if (!isHardMode) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedButton(
-                onClick = { showPinDialog = true },
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AmberAccent),
-                border = androidx.compose.foundation.BorderStroke(1.dp, AmberAccent.copy(alpha = 0.5f)),
+            LiquidGlassHoldButton(
+                text = "Emergency PIN Unlock",
+                holdingText = "Hold to commit",
+                icon = Icons.Default.Key,
+                accentColor = AmberAccent,
+                holdDurationMillis = 3000L,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
-                    .testTag("block_emergency_unlock_btn")
-            ) {
-                Icon(Icons.Default.Key, contentDescription = null, modifier = Modifier.size(18.dp), tint = AmberAccent)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Emergency PIN Unlock",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AmberAccent
-                )
-            }
+                    .height(52.dp)
+                    .testTag("block_emergency_unlock_btn"),
+                onAction = {
+                    showPinDialog = true
+                }
+            )
         }
     }
 

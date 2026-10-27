@@ -1,14 +1,35 @@
 package com.rk.detachment.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.input.pointer.pointerInput
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -672,4 +693,234 @@ fun LiquidGlassAlertDialog(
         containerColor = containerColor,
         properties = properties
     )
+}
+
+data class HoldParticle(
+    val angle: Float,
+    val speed: Float,
+    val radius: Float
+)
+
+@Composable
+fun LiquidGlassHoldButton(
+    text: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    holdingText: String = "Hold to commit",
+    icon: ImageVector? = null,
+    accentColor: Color = PurpleLight,
+    holdDurationMillis: Long = 3000L,
+    enabled: Boolean = true,
+    shape: Shape = RoundedCornerShape(16.dp),
+    testTag: String? = null
+) {
+    var isHolding by remember { mutableStateOf(false) }
+    var isExploding by remember { mutableStateOf(false) }
+    val progressAnimatable = remember { Animatable(0f) }
+    val explodeAnimatable = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val infiniteTransition = rememberInfiniteTransition(label = "fluid_wave")
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 2f * Math.PI.toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wave_phase"
+    )
+
+    val particles = remember {
+        List(16) { index ->
+            val angle = (index * (2.0 * Math.PI / 16.0) + (index % 3) * 0.15).toFloat()
+            val speed = 70f + (index % 5) * 20f
+            val radius = 3.5f + (index % 3) * 1.5f
+            HoldParticle(angle, speed, radius)
+        }
+    }
+
+    LaunchedEffect(isHolding) {
+        if (isHolding && enabled && !isExploding) {
+            val remaining = (1f - progressAnimatable.value) * holdDurationMillis
+            val result = progressAnimatable.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = remaining.toInt().coerceAtLeast(10),
+                    easing = LinearEasing
+                )
+            )
+            if (progressAnimatable.value >= 0.999f && isHolding) {
+                isExploding = true
+                coroutineScope.launch {
+                    explodeAnimatable.snapTo(0f)
+                    explodeAnimatable.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(450, easing = FastOutSlowInEasing)
+                    )
+                    onAction()
+                    isExploding = false
+                    progressAnimatable.snapTo(0f)
+                    explodeAnimatable.snapTo(0f)
+                }
+            }
+        } else if (!isHolding && !isExploding) {
+            if (progressAnimatable.value > 0f) {
+                progressAnimatable.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(250, easing = FastOutSlowInEasing)
+                )
+            }
+        }
+    }
+
+    val progress = progressAnimatable.value
+    val explodeVal = explodeAnimatable.value
+
+    val buttonScale by animateFloatAsState(
+        targetValue = when {
+            isExploding -> 1.04f - explodeVal * 0.04f
+            isHolding -> 0.97f
+            else -> 1f
+        },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "btn_scale"
+    )
+
+    val currentModifier = modifier
+        .scale(buttonScale)
+        .then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
+        .pointerInput(enabled, isExploding) {
+            if (!enabled || isExploding) return@pointerInput
+            awaitEachGesture {
+                awaitFirstDown(requireUnconsumed = false)
+                isHolding = true
+                waitForUpOrCancellation()
+                isHolding = false
+            }
+        }
+
+    Box(
+        modifier = currentModifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            shape = shape,
+            color = if (isHolding) accentColor.copy(alpha = 0.16f) else accentColor.copy(alpha = 0.08f),
+            border = BorderStroke(
+                width = if (isHolding) 1.5.dp else 1.dp,
+                brush = Brush.verticalGradient(
+                    listOf(
+                        accentColor.copy(alpha = if (isHolding) 0.85f else 0.45f),
+                        accentColor.copy(alpha = if (isHolding) 0.50f else 0.20f)
+                    )
+                )
+            )
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                if (progress > 0f) {
+                    val fillWidth = size.width * progress
+                    val waveAmplitude = 5.dp.toPx()
+                    val wavePath = Path().apply {
+                        moveTo(0f, 0f)
+                        lineTo((fillWidth - waveAmplitude).coerceAtLeast(0f), 0f)
+                        var y = 0f
+                        val step = 4.dp.toPx()
+                        while (y <= size.height) {
+                            val waveOffset = sin((y / size.height) * 4f * Math.PI.toFloat() + wavePhase) * waveAmplitude
+                            lineTo(fillWidth + waveOffset, y)
+                            y += step
+                        }
+                        lineTo(0f, size.height)
+                        close()
+                    }
+
+                    drawPath(
+                        path = wavePath,
+                        brush = Brush.horizontalGradient(
+                            listOf(
+                                accentColor.copy(alpha = 0.22f),
+                                accentColor.copy(alpha = 0.45f + progress * 0.25f)
+                            ),
+                            startX = 0f,
+                            endX = fillWidth.coerceAtLeast(1f)
+                        )
+                    )
+
+                    drawPath(
+                        path = wavePath,
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.65f),
+                                accentColor.copy(alpha = 0.85f)
+                            )
+                        ),
+                        style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round)
+                    )
+
+                    val flecks = 6
+                    for (i in 0 until flecks) {
+                        val fx = (fillWidth * (0.2f + (i * 0.13f))).coerceIn(0f, fillWidth)
+                        val fy = (size.height * ((i * 0.28f + wavePhase * 0.1f) % 1f))
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.4f),
+                            radius = 1.5.dp.toPx(),
+                            center = Offset(fx, fy)
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = if (isHolding) Color.White else accentColor
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = if (isHolding || progress > 0.05f) holdingText else text,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isHolding) Color.White else accentColor
+            )
+        }
+
+        if (isExploding && explodeVal > 0f) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val cx = size.width / 2f
+                val cy = size.height / 2f
+                val alpha = (1f - explodeVal).coerceIn(0f, 1f)
+
+                particles.forEach { p ->
+                    val dist = p.speed * explodeVal * 1.5f
+                    val px = cx + cos(p.angle) * dist
+                    val py = cy + sin(p.angle) * dist
+                    val r = p.radius * (1f - explodeVal * 0.4f)
+
+                    drawCircle(
+                        color = accentColor.copy(alpha = alpha * 0.85f),
+                        radius = r,
+                        center = Offset(px, py)
+                    )
+                    drawCircle(
+                        color = Color.White.copy(alpha = alpha * 0.95f),
+                        radius = r * 0.4f,
+                        center = Offset(px - r * 0.3f, py - r * 0.3f)
+                    )
+                }
+            }
+        }
+    }
 }
