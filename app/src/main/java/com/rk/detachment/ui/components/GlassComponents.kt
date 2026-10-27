@@ -182,12 +182,14 @@ fun FrostedGlassCard(
     cornerRadius: Dp = 24.dp,
     borderColor: Color = GlassBorderHigh,
     backgroundColor: Color = GlassSurfaceHigh,
+    backgroundBrush: Brush? = null,
+    borderBrush: Brush? = null,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val cardShape = remember(cornerRadius) { RoundedCornerShape(cornerRadius) }
-    val borderBrush = remember(borderColor) {
-        if (borderColor == GlassBorderHigh || borderColor == GlassBorderMedium) {
+    val resolvedBorderBrush = remember(borderColor, borderBrush) {
+        borderBrush ?: if (borderColor == GlassBorderHigh || borderColor == GlassBorderMedium) {
             Brush.verticalGradient(
                 listOf(
                     Color.White.copy(alpha = 0.65f),
@@ -208,8 +210,8 @@ fun FrostedGlassCard(
         }
     }
 
-    val liquidBackgroundBrush = remember(backgroundColor) {
-        if (backgroundColor == GlassSurfaceHigh || backgroundColor == GlassSurfaceMedium || backgroundColor == GlassSurfaceLow) {
+    val liquidBackgroundBrush = remember(backgroundColor, backgroundBrush) {
+        backgroundBrush ?: if (backgroundColor == GlassSurfaceHigh || backgroundColor == GlassSurfaceMedium || backgroundColor == GlassSurfaceLow) {
             Brush.verticalGradient(
                 listOf(
                     Color.White.copy(alpha = 0.13f),
@@ -244,7 +246,7 @@ fun FrostedGlassCard(
     Box(
         modifier = baseModifier
             .background(liquidBackgroundBrush)
-            .border(BorderStroke(1.dp, borderBrush), shape = cardShape)
+            .border(BorderStroke(1.dp, resolvedBorderBrush), shape = cardShape)
     ) {
         Box(
             modifier = Modifier

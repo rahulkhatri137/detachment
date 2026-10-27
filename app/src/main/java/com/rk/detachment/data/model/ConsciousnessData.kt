@@ -31,6 +31,7 @@ data class ConsciousnessMetrics(
     val overLimitMinutes: Int = 0,
     val distractionsResistedCount: Int = 6,
     val totalScreenTimeMinutes: Int = 115,
+    val appUnlocksCount: Int = 34,
     val habitLoops: List<HabitLoopItem> = emptyList()
 )
 
@@ -58,6 +59,7 @@ data class YouVsYouComparison(
         overLimitMinutes = 35,
         distractionsResistedCount = 2,
         totalScreenTimeMinutes = 225,
+        appUnlocksCount = 56,
         habitLoops = listOf(
             HabitLoopItem(
                 packageName = "com.instagram.android",
@@ -74,5 +76,7 @@ data class YouVsYouComparison(
     val unlocksDeltaPercent: Int = -43,
     val habitualUnlocksDeltaPercent: Int = -68,
     val phoneFreeDeltaPercent: Int = +94,
-    val mindlessSessionsDeltaPercent: Int = -75
+    val mindlessSessionsDeltaPercent: Int = -75,
+    val distractionsResistedDeltaPercent: Int = +200,
+    val appUnlocksDeltaPercent: Int = -39
 )

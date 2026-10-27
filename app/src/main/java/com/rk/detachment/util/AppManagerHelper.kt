@@ -625,7 +625,9 @@ object AppManagerHelper {
         allApps: List<AppLimitEntity>,
         distractionsResisted: Int,
         totalFocusMinutes: Int,
-        yesterdayDistractionsResisted: Int = 0
+        yesterdayDistractionsResisted: Int = 0,
+        emergencyPinUnlocksToday: Int = 0,
+        emergencyPinUnlocksYesterday: Int = 0
     ): com.rk.detachment.data.model.YouVsYouComparison {
         val todayStart = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -648,6 +650,7 @@ object AppManagerHelper {
             allApps = allApps,
             distractionsResisted = distractionsResisted,
             totalFocusMinutes = totalFocusMinutes,
+            emergencyPinUnlocks = emergencyPinUnlocksToday,
             isYesterday = false
         )
 
@@ -664,6 +667,7 @@ object AppManagerHelper {
             allApps = allApps,
             distractionsResisted = yesterdayResistedCount,
             totalFocusMinutes = (totalFocusMinutes * 0.50f).toInt(),
+            emergencyPinUnlocks = emergencyPinUnlocksYesterday,
             isYesterday = true
         )
 
@@ -673,6 +677,8 @@ object AppManagerHelper {
         val habitualDelta = calcPercentageDelta(todayMetrics.habitualUnlocks, yesterdayMetrics.habitualUnlocks)
         val phoneFreeDelta = calcPercentageDelta(todayMetrics.longestPhoneFreeMinutes, yesterdayMetrics.longestPhoneFreeMinutes)
         val mindlessDelta = calcPercentageDelta(todayMetrics.mindlessSessionsCount, yesterdayMetrics.mindlessSessionsCount)
+        val resistedDelta = calcPercentageDelta(todayMetrics.distractionsResistedCount, yesterdayMetrics.distractionsResistedCount)
+        val appUnlocksDelta = calcPercentageDelta(todayMetrics.appUnlocksCount, yesterdayMetrics.appUnlocksCount)
 
         return com.rk.detachment.data.model.YouVsYouComparison(
             today = todayMetrics,
@@ -682,7 +688,9 @@ object AppManagerHelper {
             unlocksDeltaPercent = unlocksDelta,
             habitualUnlocksDeltaPercent = habitualDelta,
             phoneFreeDeltaPercent = phoneFreeDelta,
-            mindlessSessionsDeltaPercent = mindlessDelta
+            mindlessSessionsDeltaPercent = mindlessDelta,
+            distractionsResistedDeltaPercent = resistedDelta,
+            appUnlocksDeltaPercent = appUnlocksDelta
         )
     }
 
@@ -700,6 +708,7 @@ object AppManagerHelper {
         allApps: List<AppLimitEntity>,
         distractionsResisted: Int,
         totalFocusMinutes: Int,
+        emergencyPinUnlocks: Int = 0,
         isYesterday: Boolean
     ): com.rk.detachment.data.model.ConsciousnessMetrics {
         val appMap = allApps.associateBy { it.packageName }
@@ -985,6 +994,7 @@ object AppManagerHelper {
             overLimitMinutes = overLimitMins,
             distractionsResistedCount = distractionsResisted,
             totalScreenTimeMinutes = totalScreenMins,
+            appUnlocksCount = emergencyPinUnlocks,
             habitLoops = habitLoops
         )
     }

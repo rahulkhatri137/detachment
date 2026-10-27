@@ -417,6 +417,8 @@ class BlockOverlayActivity : ComponentActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(applicationContext, this)
             db.appLimitDao().setTemporaryUnlock(packageName, expiry)
+            val currentUnlocks = db.appSettingsDao().getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
+            db.appSettingsDao().setSetting(AppSettingsEntity("emergency_pin_unlocks", (currentUnlocks + 1).toString()))
             withContext(Dispatchers.Main) {
                 AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
                 finishAndRemoveTask()

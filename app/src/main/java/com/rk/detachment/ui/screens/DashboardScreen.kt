@@ -46,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -224,13 +225,32 @@ fun DashboardScreen(
             }
 
             item(key = "screen_time_meter") {
+                val purpleCardBackground = remember {
+                    Brush.verticalGradient(
+                        listOf(
+                            PurplePrimary.copy(alpha = 0.38f),
+                            PurplePrimary.copy(alpha = 0.16f),
+                            Color(0x331E0836)
+                        )
+                    )
+                }
+                val purpleCardBorder = remember {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.55f),
+                            PurpleLight.copy(alpha = 0.35f),
+                            PurplePrimary.copy(alpha = 0.20f)
+                        )
+                    )
+                }
+
                 FrostedGlassCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("screen_time_meter_card"),
                     cornerRadius = 24.dp,
-                    backgroundColor = GlassSurfaceHigh,
-                    borderColor = GlassBorderHigh,
+                    backgroundBrush = purpleCardBackground,
+                    borderBrush = purpleCardBorder,
                     onClick = onNavigateToConsciousness
                 ) {
                     Column(

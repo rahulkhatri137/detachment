@@ -20,6 +20,8 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 - Limit Discipline (adherence to daily app limits)
 - Pomodoro Focus (completed blackout focus minutes)
 - Unlock Mindfulness (intentional unlocks vs habitual checks)
+- Distractions Resisted (resisted to open apps)
+- App Unlocks (used Emergency unlocks)
 
 ### In-Depth Mindful Telemetry:
 - Unlocks Distribution: Breakdown separating intentional vs. habitual unlocks.
@@ -32,7 +34,7 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 
 ### You vs You Comparative Engine:
 - Real-time comparison comparing Today vs Yesterday with percentage changes and trend indicators.
-- Compares consciousness score, screen time, total unlocks, habitual pickups, phone-free blocks and mindless sessions.
+- Compares consciousness score, screen time, total unlocks, habitual pickups, phone-free blocks, distractions resisted, app unlocks and mindless sessions.
 
 ---
 ## 🌟 Key Features

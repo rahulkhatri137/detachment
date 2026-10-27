@@ -1110,14 +1110,14 @@ fun YouVsYouSection(
         modifier = modifier
             .fillMaxWidth()
             .testTag("you_vs_you_card"),
-        cornerRadius = 28.dp,
+        cornerRadius = 22.dp,
         backgroundColor = GlassSurfaceHigh,
         borderColor = PurplePrimary.copy(alpha = 0.35f)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp)
+                .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1186,7 +1186,7 @@ fun YouVsYouSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             ComparisonMetricRow(
                 title = "Consciousness Score",
@@ -1197,7 +1197,7 @@ fun YouVsYouSection(
                 unit = "pts"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.5.dp))
 
             ComparisonMetricRow(
                 title = "Total Screen Time",
@@ -1208,7 +1208,29 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.5.dp))
+
+            ComparisonMetricRow(
+                title = "Distractions Resisted",
+                todayVal = "${today.distractionsResistedCount}",
+                yesterdayVal = "${yesterday.distractionsResistedCount}",
+                deltaPercent = comparison.distractionsResistedDeltaPercent,
+                isPositiveImprovement = comparison.distractionsResistedDeltaPercent >= 0,
+                unit = "%"
+            )
+
+            Spacer(modifier = Modifier.height(2.5.dp))
+
+            ComparisonMetricRow(
+                title = "App Unlocks",
+                todayVal = "${today.appUnlocksCount}",
+                yesterdayVal = "${yesterday.appUnlocksCount}",
+                deltaPercent = comparison.appUnlocksDeltaPercent,
+                isPositiveImprovement = comparison.appUnlocksDeltaPercent <= 0,
+                unit = "%"
+            )
+
+            Spacer(modifier = Modifier.height(2.5.dp))
 
             ComparisonMetricRow(
                 title = "Total Pickups",
@@ -1219,7 +1241,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.5.dp))
 
             ComparisonMetricRow(
                 title = "Habitual Unlocks",
@@ -1230,7 +1252,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.5.dp))
 
             ComparisonMetricRow(
                 title = "Longest Phone-Free Block",
@@ -1241,7 +1263,7 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.5.dp))
 
             ComparisonMetricRow(
                 title = "Mindless Bounce Sessions",
@@ -1252,14 +1274,14 @@ fun YouVsYouSection(
                 unit = "%"
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(GlassSurfaceLow)
-                    .padding(12.dp)
+                    .padding(horizontal = 10.dp, vertical = 7.dp)
             ) {
                 Text(
                     text = if (comparison.scoreDelta >= 0) {
@@ -1268,8 +1290,8 @@ fun YouVsYouSection(
                         "💡 Screen usage is slightly higher today. Set mindful delays on distracting apps to reclaim focus."
                     },
                     color = TextSecondary,
-                    fontSize = 11.5.sp,
-                    lineHeight = 16.sp
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp
                 )
             }
         }
@@ -1290,9 +1312,9 @@ fun ComparisonMetricRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(GlassSurfaceLow)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 3.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1303,7 +1325,7 @@ fun ComparisonMetricRow(
             Text(
                 text = title,
                 color = TextPrimary,
-                fontSize = 12.5.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 softWrap = false,
@@ -1312,12 +1334,12 @@ fun ComparisonMetricRow(
             Text(
                 text = "Yesterday: $yesterdayVal",
                 color = TextMuted,
-                fontSize = 10.5.sp,
+                fontSize = 9.5.sp,
                 maxLines = 1
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically
@@ -1325,21 +1347,21 @@ fun ComparisonMetricRow(
             Text(
                 text = todayVal,
                 color = TextPrimary,
-                fontSize = 13.5.sp,
+                fontSize = 12.5.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(5.dp))
             Surface(
-                shape = RoundedCornerShape(6.dp),
+                shape = RoundedCornerShape(4.dp),
                 color = deltaColor.copy(alpha = 0.15f),
                 border = androidx.compose.foundation.BorderStroke(0.5.dp, deltaColor.copy(alpha = 0.35f))
             ) {
                 Text(
                     text = if (deltaPercent > 0) "+$deltaPercent$unit" else "$deltaPercent$unit",
                     color = deltaColor,
-                    fontSize = 10.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                 )
             }
         }

@@ -308,7 +308,17 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             val resisted = _uiState.value.distractionsResistedCount
             val focusMins = _uiState.value.combinedFocusMinutes
             val yesterdayResisted = repository.getYesterdayDistractionsResisted()
-            val result = AppManagerHelper.calculateConsciousnessData(app, currentApps, resisted, focusMins, yesterdayResisted)
+            val pinUnlocksToday = repository.getEmergencyPinUnlocksToday()
+            val pinUnlocksYesterday = repository.getEmergencyPinUnlocksYesterday()
+            val result = AppManagerHelper.calculateConsciousnessData(
+                context = app,
+                allApps = currentApps,
+                distractionsResisted = resisted,
+                totalFocusMinutes = focusMins,
+                yesterdayDistractionsResisted = yesterdayResisted,
+                emergencyPinUnlocksToday = pinUnlocksToday,
+                emergencyPinUnlocksYesterday = pinUnlocksYesterday
+            )
             _uiState.value = _uiState.value.copy(consciousnessComparison = result)
         }
     }

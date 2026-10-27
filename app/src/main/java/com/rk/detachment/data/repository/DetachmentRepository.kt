@@ -110,6 +110,8 @@ class DetachmentRepository(
         val expiryTime = System.currentTimeMillis() + durationMillis
         TemporaryUnlockManager.setUnlock(packageName, expiryTime)
         appLimitDao.setTemporaryUnlock(packageName, expiryTime)
+        val currentUnlocks = appSettingsDao.getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
+        appSettingsDao.setSetting(AppSettingsEntity("emergency_pin_unlocks", (currentUnlocks + 1).toString()))
         return expiryTime
     }
 
@@ -208,12 +210,23 @@ class DetachmentRepository(
             val currentResisted = appSettingsDao.getValue("distractions_resisted")?.toIntOrNull() ?: 0
             appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted_yesterday", currentResisted.toString()))
             appSettingsDao.setSetting(AppSettingsEntity("distractions_resisted", "0"))
+            val currentUnlocks = appSettingsDao.getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
+            appSettingsDao.setSetting(AppSettingsEntity("emergency_pin_unlocks_yesterday", currentUnlocks.toString()))
+            appSettingsDao.setSetting(AppSettingsEntity("emergency_pin_unlocks", "0"))
             appSettingsDao.setSetting(AppSettingsEntity("key_last_usage_reset_date", todayDateString))
             return true
         }
         return false
     }
 
+    suspend fun getEmergencyPinUnlocksToday(): Int {
+        return appSettingsDao.getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
+    }
+
+    suspend fun getEmergencyPinUnlocksYesterday(): Int {
+        return appSettingsDao.getValue("emergency_pin_unlocks_yesterday")?.toIntOrNull() ?: 0
+    }
+    
     suspend fun exportBackupData(): String {
         val currentApps = appLimitDao.getAllApps().first()
         val currentSchedules = scheduleRuleDao.getAllRules().first()
