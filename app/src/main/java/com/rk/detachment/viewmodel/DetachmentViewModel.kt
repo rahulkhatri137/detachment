@@ -1,6 +1,8 @@
 package com.rk.detachment.viewmodel
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rk.detachment.data.local.AppDatabase
@@ -52,7 +54,14 @@ data class DetachmentUiState(
     val selfRestraintTotalSeconds: Int = 0,
     val selfRestraintTarget: String = "DISTRACTING",
     val statusMessage: String? = null,
-    val consciousnessComparison: YouVsYouComparison = YouVsYouComparison()
+    val consciousnessComparison: YouVsYouComparison = YouVsYouComparison(),
+    val isParentalManaged: Boolean = false,
+    val parentalPairingCode: String = "",
+    val parentalServerUrl: String = "https://detachment-parental.workers.dev",
+    val parentalLastSyncTime: Long = 0L,
+    val parentalSyncStatus: String? = null,
+    val isDeviceAdminActive: Boolean = false,
+    val isUninstallProtectionEnabled: Boolean = true
 ) {
     val totalScreenTimeTodayMinutes: Int
         get() = allApps.sumOf { it.usedTodayMinutes }
@@ -108,12 +117,17 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         database.pomodoroDao(),
         database.appSettingsDao()
     )
+    val parentalRepository = com.rk.detachment.data.repository.ParentalControlRepository(
+        database.appSettingsDao(),
+        repository
+    )
 
     private val _uiState = MutableStateFlow(
         DetachmentUiState(
             hasUsagePermission = AppManagerHelper.hasUsageStatsPermission(application),
             isAccessibilityActive = AppManagerHelper.isAccessibilityServiceEnabled(application),
-            hasOverlayPermission = AppManagerHelper.hasOverlayPermission(application)
+            hasOverlayPermission = AppManagerHelper.hasOverlayPermission(application),
+            isDeviceAdminActive = com.rk.detachment.util.UninstallProtectionManager.isDeviceAdminActive(application)
         )
     )
     val uiState: StateFlow<DetachmentUiState> = _uiState.asStateFlow()
@@ -172,6 +186,12 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.isAppAuthEnabled.collect { enabled ->
                 _uiState.value = _uiState.value.copy(isAppAuthEnabled = enabled)
+            }
+        }
+
+        viewModelScope.launch {
+            repository.isUninstallProtectionEnabled.collect { enabled ->
+                _uiState.value = _uiState.value.copy(isUninstallProtectionEnabled = enabled)
             }
         }
 
@@ -257,6 +277,48 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
 
+        viewModelScope.launch {
+            parentalRepository.isManaged.collect { isManaged ->
+                _uiState.value = _uiState.value.copy(isParentalManaged = isManaged)
+                if (isManaged) {
+                    com.rk.detachment.service.ParentalSyncWorker.schedulePeriodicSync(application)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            parentalRepository.pairingCode.collect { code ->
+                _uiState.value = _uiState.value.copy(parentalPairingCode = code ?: "")
+            }
+        }
+
+        viewModelScope.launch {
+            parentalRepository.serverUrl.collect { url ->
+                if (!url.isNullOrBlank()) {
+                    _uiState.value = _uiState.value.copy(parentalServerUrl = url)
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            parentalRepository.lastSyncTime.collect { time ->
+                _uiState.value = _uiState.value.copy(parentalLastSyncTime = time)
+            }
+        }
+
+        viewModelScope.launch {
+            parentalRepository.lastSyncStatus.collect { status ->
+                _uiState.value = _uiState.value.copy(parentalSyncStatus = status)
+            }
+        }
+
+        viewModelScope.launch {
+            if (parentalRepository.getIsManaged()) {
+                com.rk.detachment.service.ParentalSyncWorker.triggerImmediateSync(application)
+                parentalRepository.pullAndApplyConfig()
+            }
+        }
+
         checkDailyResetAndRefreshUsage()
         scanAndSyncRealApps()
 
@@ -302,16 +364,19 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         val hasUsage = AppManagerHelper.hasUsageStatsPermission(app)
         val hasAccess = AppManagerHelper.isAccessibilityServiceEnabled(app)
         val hasOverlay = AppManagerHelper.hasOverlayPermission(app)
+        val hasAdmin = com.rk.detachment.util.UninstallProtectionManager.isDeviceAdminActive(app)
 
         val changed = _uiState.value.hasUsagePermission != hasUsage ||
                 _uiState.value.isAccessibilityActive != hasAccess ||
-                _uiState.value.hasOverlayPermission != hasOverlay
+                _uiState.value.hasOverlayPermission != hasOverlay ||
+                _uiState.value.isDeviceAdminActive != hasAdmin
 
         if (changed) {
             _uiState.value = _uiState.value.copy(
                 hasUsagePermission = hasUsage,
                 isAccessibilityActive = hasAccess,
-                hasOverlayPermission = hasOverlay
+                hasOverlayPermission = hasOverlay,
+                isDeviceAdminActive = hasAdmin
             )
             if (hasUsage) {
                 scanAndSyncRealApps()
@@ -512,6 +577,10 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun setAppAuthEnabled(enabled: Boolean) {
+        if (uiState.value.isParentalManaged) {
+            showMessage("App authentication is managed remotely by Parental Control.")
+            return
+        }
         viewModelScope.launch {
             repository.setAppAuthEnabled(enabled)
             if (enabled) {
@@ -522,10 +591,54 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    fun setUninstallProtectionEnabled(enabled: Boolean) {
+        if (uiState.value.isParentalManaged) {
+            showMessage("Uninstall protection is managed remotely by Parental Control.")
+            return
+        }
+        viewModelScope.launch {
+            repository.setUninstallProtectionEnabled(enabled)
+            if (enabled) {
+                showMessage("Uninstall & Tamper Protection enabled.")
+            } else {
+                showMessage("Uninstall & Tamper Protection disabled.")
+            }
+        }
+    }
+
     fun updateMasterPin(newPin: String) {
+        if (uiState.value.isParentalManaged) {
+            showMessage("PIN change is locked by Parental Control. Must be changed via parent dashboard.")
+            return
+        }
         viewModelScope.launch {
             repository.setMasterPin(newPin)
             showMessage("Master Passcode updated successfully!")
+        }
+    }
+
+    fun triggerDestructionMode(context: Context) {
+        viewModelScope.launch {
+            repository.setUninstallProtectionEnabled(false)
+            repository.setAppAuthEnabled(false)
+            parentalRepository.unpair()
+            com.rk.detachment.util.UninstallProtectionManager.deactivateDeviceAdmin(context)
+            com.rk.detachment.util.TemporaryUnlockManager.clearAll()
+            _uiState.value = _uiState.value.copy(
+                isUninstallProtectionEnabled = false,
+                isParentalManaged = false,
+                isAppAuthEnabled = false
+            )
+            checkPermissionsAndRefresh()
+            showMessage("Destruction Mode activated! All protections disabled.")
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:${context.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
+            } catch (e: Exception) {
+            }
         }
     }
 
@@ -718,6 +831,60 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
             } catch (e: Exception) {
                 onResult(Result.failure(e))
             }
+        }
+    }
+
+    fun registerParentalDevice(serverUrl: String, onComplete: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            val result = parentalRepository.registerDevice(serverUrl, null, uiState.value.allApps)
+            result.onSuccess { code ->
+                com.rk.detachment.service.ParentalSyncWorker.schedulePeriodicSync(getApplication())
+                showMessage("Device paired! Remote code: $code")
+            }.onFailure { err ->
+                showMessage("Registration failed: ${err.message}")
+            }
+            onComplete(result)
+        }
+    }
+
+    fun pairParentalWithCode(serverUrl: String, code: String, onComplete: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val result = parentalRepository.pairExistingCode(serverUrl, code)
+            result.onSuccess {
+                com.rk.detachment.service.ParentalSyncWorker.schedulePeriodicSync(getApplication())
+                showMessage("Paired with parental code $code")
+            }.onFailure { err ->
+                showMessage("Pairing failed: ${err.message}")
+            }
+            onComplete(result)
+        }
+    }
+
+    fun syncParentalNow(onComplete: (Result<ImportSummary>) -> Unit) {
+        viewModelScope.launch {
+            val apps = uiState.value.allApps
+            val screenTime = apps.sumOf { it.usedTodayMinutes }
+            parentalRepository.pushDeviceTelemetry(screenTime, apps)
+            val result = parentalRepository.pullAndApplyConfig()
+            result.onSuccess { summary ->
+                showMessage("Synced! ${summary.appsUpdated} apps, ${summary.schedulesRestored} schedules.")
+            }.onFailure { err ->
+                showMessage("Sync error: ${err.message}")
+            }
+            onComplete(result)
+        }
+    }
+
+    fun unpairParental(onComplete: (Result<Unit>) -> Unit) {
+        viewModelScope.launch {
+            val result = parentalRepository.unpair()
+            result.onSuccess {
+                com.rk.detachment.service.ParentalSyncWorker.cancelPeriodicSync(getApplication())
+                showMessage("Device unpaired. Local controls restored.")
+            }.onFailure { err ->
+                showMessage("Unpair error: ${err.message}")
+            }
+            onComplete(result)
         }
     }
 

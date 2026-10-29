@@ -126,7 +126,7 @@ fun SchedulesScreen(
                                 lineHeight = 16.sp
                             )
                         }
-                        if (onResetDefaults != null) {
+                        if (onResetDefaults != null && !uiState.isParentalManaged) {
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
                                 color = GlassSurfaceLow,
@@ -152,6 +152,47 @@ fun SchedulesScreen(
                                         color = PurpleLight,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (uiState.isParentalManaged) {
+                    item(key = "parental_schedules_banner") {
+                        FrostedGlassCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            backgroundColor = EmeraldAccent.copy(alpha = 0.08f),
+                            borderColor = EmeraldAccent.copy(alpha = 0.35f),
+                            cornerRadius = 16.dp
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Managed by Parental Control",
+                                        color = EmeraldAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        text = "Focus schedules are locked and enforced remotely from the parent dashboard.",
+                                        color = TextSecondary,
+                                        fontSize = 11.sp
                                     )
                                 }
                             }
@@ -316,6 +357,7 @@ fun SchedulesScreen(
                                         onToggleRule(rule.id, checked)
                                     },
                                     activeColor = if (rule.type == "SLEEP") PurplePrimary else AmberAccent,
+                                    enabled = !uiState.isParentalManaged,
                                     testTag = "toggle_rule_${rule.id}"
                                 )
                             }
@@ -362,24 +404,26 @@ fun SchedulesScreen(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
+                            if (!uiState.isParentalManaged) {
+                                Spacer(modifier = Modifier.height(10.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                IconButton(
-                                    onClick = { editingRule = rule },
-                                    modifier = Modifier.size(32.dp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Start,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(18.dp))
-                                }
-                                IconButton(
-                                    onClick = { onDeleteRule(rule) },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RoseAccent.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                                    IconButton(
+                                        onClick = { editingRule = rule },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                    }
+                                    IconButton(
+                                        onClick = { onDeleteRule(rule) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = RoseAccent.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                                    }
                                 }
                             }
                         }
@@ -387,18 +431,20 @@ fun SchedulesScreen(
                 }
             }
 
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(
-                        end = 24.dp,
-                        bottom = 80.dp)
-                    .testTag("add_schedule_fab"),
-                containerColor = PurplePrimary,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Schedule")
+            if (!uiState.isParentalManaged) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(
+                            end = 24.dp,
+                            bottom = 80.dp)
+                        .testTag("add_schedule_fab"),
+                    containerColor = PurplePrimary,
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add Schedule")
+                }
             }
         }
 

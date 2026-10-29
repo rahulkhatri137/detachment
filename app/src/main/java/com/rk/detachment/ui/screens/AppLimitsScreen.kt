@@ -112,6 +112,7 @@ fun AppLimitsScreen(
     onVerifyPin: (String) -> Boolean,
     onUpdateMasterPin: (String) -> Unit,
     onSetAppAuthEnabled: (Boolean) -> Unit = {},
+    onTriggerDestructionMode: () -> Unit = {},
     onLaunchApp: (AppLimitEntity) -> Unit,
     onRefreshApps: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
@@ -195,30 +196,73 @@ fun AppLimitsScreen(
                             }
                         }
 
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = PurplePrimary.copy(alpha = 0.2f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.5f)),
-                            modifier = Modifier
-                                .clickable { showChangePinDialog = true }
-                                .testTag("change_pin_btn")
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                        if (!uiState.isParentalManaged) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = PurplePrimary.copy(alpha = 0.2f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, PurplePrimary.copy(alpha = 0.5f)),
+                                modifier = Modifier
+                                    .clickable { showChangePinDialog = true }
+                                    .testTag("change_pin_btn")
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Lock,
-                                    contentDescription = "Security PIN",
-                                    tint = PurpleLight,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Lock,
+                                        contentDescription = "Security PIN",
+                                        tint = PurpleLight,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(5.dp))
+                                    Text(
+                                        text = "PIN",
+                                        color = PurpleLight,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (uiState.isParentalManaged) {
+                item(key = "parental_limits_locked_banner") {
+                    FrostedGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        backgroundColor = EmeraldAccent.copy(alpha = 0.08f),
+                        borderColor = EmeraldAccent.copy(alpha = 0.35f),
+                        cornerRadius = 16.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = EmeraldAccent,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
                                 Text(
-                                    text = "PIN",
-                                    color = PurpleLight,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
+                                    text = "Managed by Parental Control",
+                                    color = EmeraldAccent,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "App limits are locked and enforced remotely from the parent dashboard.",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp
                                 )
                             }
                         }
@@ -700,22 +744,22 @@ fun AppLimitsScreen(
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = Color(0x18FFFFFF),
-                                modifier = Modifier.clickable(enabled = !isEssential) { editingApp = app }
+                                modifier = Modifier.clickable(enabled = !isEssential && !uiState.isParentalManaged) { editingApp = app }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Edit,
+                                        imageVector = if (uiState.isParentalManaged) Icons.Default.Lock else Icons.Default.Edit,
                                         contentDescription = "Time Limit",
-                                        tint = if (isEssential) EmeraldAccent else TextSecondary,
+                                        tint = if (uiState.isParentalManaged || isEssential) EmeraldAccent else TextSecondary,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = if (isEssential) "Exempted" else "Time Limit",
-                                        color = if (isEssential) EmeraldAccent else TextSecondary,
+                                        text = if (uiState.isParentalManaged) "Managed" else if (isEssential) "Exempted" else "Time Limit",
+                                        color = if (uiState.isParentalManaged || isEssential) EmeraldAccent else TextSecondary,
                                         fontSize = 11.sp
                                     )
                                 }
@@ -1011,7 +1055,7 @@ fun AppLimitsScreen(
             )
         }
 
-        if (showChangePinDialog) {
+        if (showChangePinDialog && !uiState.isParentalManaged) {
             var selectedPinLength by remember { mutableIntStateOf(if (uiState.masterPin.length == 6) 6 else 4) }
             var currentPinInput by remember { mutableStateOf("") }
             var newPinInput by remember { mutableStateOf("") }
@@ -1222,7 +1266,7 @@ fun AppLimitsScreen(
                                 singleLine = true,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .testTag("confirm_pin_input"),
+                                     .testTag("confirm_pin_input"),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = PurpleLight,
                                     unfocusedBorderColor = GlassBorderMedium,
@@ -1230,6 +1274,104 @@ fun AppLimitsScreen(
                                     unfocusedTextColor = TextPrimary
                                 )
                             )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            var showConfirmDestruction by remember { mutableStateOf(false) }
+
+                            if (!showConfirmDestruction) {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = RoseAccent.copy(alpha = 0.12f),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, RoseAccent.copy(alpha = 0.4f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "Destruction Mode (Disable Protections)",
+                                            color = RoseAccent,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Deactivates Device Admin, disables all anti-tamper shields, and opens Settings so you can remove the app.",
+                                            color = TextSecondary,
+                                            fontSize = 11.sp,
+                                            lineHeight = 15.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Button(
+                                            onClick = { showConfirmDestruction = true },
+                                            colors = ButtonDefaults.buttonColors(containerColor = RoseAccent),
+                                            shape = RoundedCornerShape(10.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(38.dp)
+                                                .testTag("activate_destruction_mode_btn")
+                                        ) {
+                                            Text("Deactivate & Remove Protections", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                    }
+                                }
+                            } else {
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = RoseAccent.copy(alpha = 0.2f),
+                                    border = androidx.compose.foundation.BorderStroke(1.5.dp, RoseAccent),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "⚠️ Are you sure?",
+                                            color = RoseAccent,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = "This will immediately deactivate Device Administrator and remove all app protections.",
+                                            color = TextPrimary,
+                                            fontSize = 11.sp,
+                                            lineHeight = 15.sp
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Button(
+                                                onClick = { showConfirmDestruction = false },
+                                                colors = ButtonDefaults.buttonColors(containerColor = GlassSurfaceMedium),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.weight(1f)
+                                            ) {
+                                                Text("Cancel", fontSize = 12.sp, color = TextPrimary)
+                                            }
+                                            Button(
+                                                onClick = {
+                                                    showChangePinDialog = false
+                                                    onTriggerDestructionMode()
+                                                },
+                                                colors = ButtonDefaults.buttonColors(containerColor = RoseAccent),
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .testTag("confirm_destruction_mode_btn")
+                                            ) {
+                                                Text("Confirm", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         if (errorMessage != null) {

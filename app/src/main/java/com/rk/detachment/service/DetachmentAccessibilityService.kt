@@ -10,6 +10,7 @@ import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityNodeInfo
 import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
@@ -47,6 +48,10 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private var cachedSelfRestraintEndTime: Long = 0L
     @Volatile
     private var cachedSelfRestraintTarget: String = "DISTRACTING"
+    @Volatile
+    private var cachedIsParentalManaged: Boolean = false
+    @Volatile
+    private var cachedUninstallProtectionEnabled: Boolean = true
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var database: AppDatabase? = null
@@ -139,6 +144,18 @@ class DetachmentAccessibilityService : AccessibilityService() {
             }
         }
 
+        serviceScope.launch {
+            db.appSettingsDao().observeValue(com.rk.detachment.data.repository.ParentalControlRepository.KEY_PARENTAL_IS_MANAGED).collect { value ->
+                cachedIsParentalManaged = (value == "true")
+            }
+        }
+
+        serviceScope.launch {
+            db.appSettingsDao().observeValue("uninstall_protection_enabled").collect { value ->
+                cachedUninstallProtectionEnabled = (value != "false")
+            }
+        }
+
         if (!isReceiverRegistered) {
             try {
                 val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
@@ -192,13 +209,37 @@ class DetachmentAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
+        val packageName = event.packageName?.toString() ?: return
+        if (packageName.isBlank()) return
+
+        if (checkSettingsTamperAttempt(event, packageName)) {
+            val now = System.currentTimeMillis()
+            if (now - lastInterceptTime > 600L) {
+                lastInterceptTime = now
+                lastInterceptedPackage = packageName
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                try {
+                    val am = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                    am?.killBackgroundProcesses(packageName)
+                } catch (e: Exception) {}
+                val targetPkg = applicationContext.packageName
+                val intent = Intent(applicationContext, BlockOverlayActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, targetPkg)
+                    putExtra(BlockOverlayActivity.EXTRA_APP_NAME, "Detachment Protection")
+                    putExtra(BlockOverlayActivity.EXTRA_CATEGORY, "Uninstall Protection")
+                    putExtra(BlockOverlayActivity.EXTRA_REASON, "Tamper & Uninstall Protection is active. Accessing App Info, deactivating Device Admin, or removing Detachment requires Master PIN.")
+                    putExtra(BlockOverlayActivity.EXTRA_IS_HARD_MODE, false)
+                }
+                startActivity(intent)
+            }
+            return
+        }
+
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             return
         }
-
-        val packageName = event.packageName?.toString() ?: return
-        if (packageName.isBlank()) return
 
         val isBlackoutActive = cachedIsBlackout || PomodoroManager.state.value.isBlackoutActive
 
@@ -830,6 +871,152 @@ class DetachmentAccessibilityService : AccessibilityService() {
             startActivity(intent, options.toBundle())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch BlockOverlayActivity", e)
+        }
+    }
+
+    private fun checkSettingsTamperAttempt(event: AccessibilityEvent, packageName: String): Boolean {
+        if (!cachedIsParentalManaged && !cachedUninstallProtectionEnabled) return false
+        if (!com.rk.detachment.util.UninstallProtectionManager.isDeviceAdminActive(applicationContext)) return false
+        val pkgLower = packageName.lowercase()
+        val isSettingsOrInstaller = pkgLower == "com.android.settings" ||
+                pkgLower == "com.google.android.settings" ||
+                pkgLower == "com.google.android.packageinstaller" ||
+                pkgLower == "com.android.packageinstaller" ||
+                pkgLower == "com.samsung.android.packageinstaller" ||
+                pkgLower == "com.android.vending" ||
+                pkgLower.contains(".settings") ||
+                pkgLower.contains("packageinstaller") ||
+                pkgLower.contains("safecenter") ||
+                pkgLower.contains("permissioncontroller")
+        if (!isSettingsOrInstaller) return false
+
+        val myPkg = applicationContext.packageName.lowercase()
+        val now = System.currentTimeMillis()
+        if (TemporaryUnlockManager.isUnlocked(myPkg, now) ||
+            TemporaryUnlockManager.isUnlocked("com.rk.detachment", now) ||
+            TemporaryUnlockManager.isUnlocked("com.rk.detachment.parental", now) ||
+            TemporaryUnlockManager.isUnlocked("com.android.settings", now) ||
+            TemporaryUnlockManager.isUnlocked(packageName, now)) {
+            return false
+        }
+
+        val eventTexts = event.text.joinToString(" ").lowercase()
+        val contentDesc = event.contentDescription?.toString()?.lowercase() ?: ""
+        val className = event.className?.toString()?.lowercase() ?: ""
+        val immediateText = "$eventTexts $contentDesc"
+
+        val targetKeywords = listOf("detachment", myPkg, "com.rk.detachment", "com.rk.detachment.parental")
+        val matchesOurAppImmediate = targetKeywords.any { immediateText.contains(it) }
+
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+            if (matchesOurAppImmediate) return true
+            val sourceNode = try { event.source } catch (e: Exception) { null }
+            if (scanNodeForTamper(sourceNode, targetKeywords)) return true
+        }
+
+        val rootNode = try { rootInActiveWindow } catch (e: Exception) { null }
+        val eventNode = try { event.source } catch (e: Exception) { null }
+        val allTokens = mutableListOf<String>()
+        extractTextsFromNode(rootNode, allTokens)
+        if (allTokens.isEmpty() && eventNode != null) {
+            extractTextsFromNode(eventNode, allTokens)
+        }
+        val fullScreenText = (allTokens.joinToString(" ") + " " + immediateText).lowercase()
+
+        val matchesOurApp = targetKeywords.any { fullScreenText.contains(it) }
+
+        if (pkgLower.contains("packageinstaller")) {
+            if (matchesOurApp || fullScreenText.contains("uninstall") || fullScreenText.contains("remove") || fullScreenText.contains("delete")) {
+                if (matchesOurApp) return true
+            }
+        }
+
+        if (pkgLower == "com.android.vending") {
+            if (matchesOurApp && (fullScreenText.contains("uninstall") || fullScreenText.contains("remove"))) {
+                return true
+            }
+        }
+
+        val isDeviceAdminScreen = className.contains("deviceadmin") ||
+                fullScreenText.contains("device admin") ||
+                fullScreenText.contains("device administrator") ||
+                fullScreenText.contains("special app access")
+        if (isDeviceAdminScreen && (matchesOurApp || fullScreenText.contains("deactivate"))) {
+            if (matchesOurApp) return true
+        }
+
+        val isAppInfoScreen = className.contains("installedappdetails") ||
+                className.contains("appinfo") ||
+                className.contains("applicationdetail") ||
+                className.contains("appbuttonspreferencecontroller") ||
+                fullScreenText.contains("app info") ||
+                fullScreenText.contains("force stop") ||
+                fullScreenText.contains("storage & cache") ||
+                fullScreenText.contains("storage and cache") ||
+                fullScreenText.contains("clear storage") ||
+                fullScreenText.contains("clear data") ||
+                fullScreenText.contains("uninstall")
+        if (isAppInfoScreen && matchesOurApp) {
+            return true
+        }
+
+        val isAccessibilityScreen = className.contains("accessibility") ||
+                fullScreenText.contains("accessibility")
+        if (isAccessibilityScreen && matchesOurApp) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun scanNodeForTamper(node: AccessibilityNodeInfo?, targetKeywords: List<String>): Boolean {
+        if (node == null) return false
+        val text = node.text?.toString()?.lowercase() ?: ""
+        val desc = node.contentDescription?.toString()?.lowercase() ?: ""
+        val viewId = node.viewIdResourceName?.toString()?.lowercase() ?: ""
+        val combined = "$text $desc $viewId"
+        if (targetKeywords.any { combined.contains(it) }) {
+            return true
+        }
+        val count = node.childCount
+        for (i in 0 until count) {
+            val child = try { node.getChild(i) } catch (e: Exception) { null }
+            if (child != null) {
+                val matched = scanNodeForTamper(child, targetKeywords)
+                try { child.recycle() } catch (e: Exception) {}
+                if (matched) return true
+            }
+        }
+        return false
+    }
+
+    private fun extractTextsFromNode(
+        node: AccessibilityNodeInfo?,
+        out: MutableList<String>,
+        depth: Int = 0,
+        maxDepth: Int = 8,
+        maxCount: Int = 80
+    ) {
+        if (node == null || depth > maxDepth || out.size >= maxCount) return
+        try {
+            val text = node.text?.toString()?.trim()
+            if (!text.isNullOrEmpty()) {
+                out.add(text)
+            }
+            val desc = node.contentDescription?.toString()?.trim()
+            if (!desc.isNullOrEmpty()) {
+                out.add(desc)
+            }
+            val count = node.childCount
+            for (i in 0 until count) {
+                if (out.size >= maxCount) break
+                val child = try { node.getChild(i) } catch (e: Exception) { null }
+                if (child != null) {
+                    extractTextsFromNode(child, out, depth + 1, maxDepth, maxCount)
+                    try { child.recycle() } catch (e: Exception) {}
+                }
+            }
+        } catch (e: Exception) {
         }
     }
 

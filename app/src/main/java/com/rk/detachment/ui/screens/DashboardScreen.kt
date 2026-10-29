@@ -61,6 +61,7 @@ import com.rk.detachment.ui.components.FrostedGlassCard
 import com.rk.detachment.ui.components.GlowingProgressRing
 import com.rk.detachment.ui.components.RadialGlassBackground
 import com.rk.detachment.ui.components.SettingsBackupDialog
+import com.rk.detachment.ui.components.ParentalControlDialog
 import com.rk.detachment.ui.theme.AmberAccent
 import com.rk.detachment.ui.theme.CyanAccent
 import com.rk.detachment.ui.theme.EmeraldAccent
@@ -90,11 +91,18 @@ fun DashboardScreen(
     onOpenAccessibilitySettings: () -> Unit = {},
     onOpenUsageSettings: () -> Unit = {},
     onOpenOverlaySettings: () -> Unit = {},
+    onOpenDeviceAdminSettings: () -> Unit = {},
     onExportSettings: (((String) -> Unit, (String) -> Unit) -> Unit)? = null,
     onImportSettings: ((String, (Result<ImportSummary>) -> Unit) -> Unit)? = null,
+    onRegisterParentalDevice: ((String, (Result<String>) -> Unit) -> Unit)? = null,
+    onPairParentalWithCode: ((String, String, (Result<Unit>) -> Unit) -> Unit)? = null,
+    onSyncParentalNow: (((Result<ImportSummary>) -> Unit) -> Unit)? = null,
+    onUnpairParental: (((Result<Unit>) -> Unit) -> Unit)? = null,
+    onVerifyPin: ((String) -> Boolean)? = null,
     modifier: Modifier = Modifier
 ) {
     var showSettingsBackupDialog by remember { mutableStateOf(false) }
+    var showParentalControlDialog by remember { mutableStateOf(false) }
     val totalMins = uiState.totalScreenTimeTodayMinutes
     val totalLimitMins = uiState.totalDailyLimitMinutes.coerceAtLeast(1)
     val progress = (totalMins.toFloat() / totalLimitMins.toFloat()).coerceIn(0f, 1f)
@@ -102,7 +110,7 @@ fun DashboardScreen(
     val hours = totalMins / 60
     val minutes = totalMins % 60
 
-    val allPermissionsGranted = uiState.hasUsagePermission && uiState.isAccessibilityActive && uiState.hasOverlayPermission
+    val allPermissionsGranted = uiState.hasUsagePermission && uiState.isAccessibilityActive && uiState.hasOverlayPermission && (!uiState.isParentalManaged || uiState.isDeviceAdminActive)
 
     RadialGlassBackground(modifier = modifier) {
         LazyColumn(
@@ -139,22 +147,96 @@ fun DashboardScreen(
                         }
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(GlassSurfaceHigh)
-                            .border(1.dp, GlassBorderHigh, CircleShape)
-                            .clickable { showSettingsBackupDialog = true }
-                            .testTag("dashboard_settings_btn"),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings & Backup",
-                            tint = EmeraldAccent,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(if (uiState.isParentalManaged) EmeraldAccent.copy(alpha = 0.2f) else GlassSurfaceHigh)
+                                .border(1.dp, if (uiState.isParentalManaged) EmeraldAccent.copy(alpha = 0.5f) else GlassBorderHigh, CircleShape)
+                                .clickable { showParentalControlDialog = true }
+                                .testTag("dashboard_parental_btn"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = "Parental Control",
+                                tint = if (uiState.isParentalManaged) EmeraldAccent else PurpleLight,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(42.dp)
+                                .clip(CircleShape)
+                                .background(GlassSurfaceHigh)
+                                .border(1.dp, GlassBorderHigh, CircleShape)
+                                .clickable { showSettingsBackupDialog = true }
+                                .testTag("dashboard_settings_btn"),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings & Backup",
+                                tint = EmeraldAccent,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (uiState.isParentalManaged) {
+                item(key = "parental_managed_banner") {
+                    FrostedGlassCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showParentalControlDialog = true }
+                            .testTag("parental_status_card"),
+                        backgroundColor = EmeraldAccent.copy(alpha = 0.08f),
+                        borderColor = EmeraldAccent.copy(alpha = 0.35f),
+                        cornerRadius = 16.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Security,
+                                    contentDescription = null,
+                                    tint = EmeraldAccent,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Parental Control Active",
+                                        color = EmeraldAccent,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Text(
+                                        text = "Code: ${uiState.parentalPairingCode} · Rules enforced remotely",
+                                        color = TextSecondary,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                            FrostedBadge(
+                                text = "LOCKED",
+                                color = EmeraldAccent,
+                                backgroundColor = EmeraldAccent.copy(alpha = 0.2f),
+                                borderColor = EmeraldAccent.copy(alpha = 0.4f)
+                            )
+                        }
                     }
                 }
             }
@@ -219,6 +301,17 @@ fun DashboardScreen(
                                 isGranted = uiState.hasOverlayPermission,
                                 onGrant = onOpenOverlaySettings
                             )
+
+                            if (uiState.isParentalManaged) {
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                PermissionRow(
+                                    title = "Uninstall Protection (Device Admin)",
+                                    description = "Prevents child from uninstalling Detachment",
+                                    isGranted = uiState.isDeviceAdminActive,
+                                    onGrant = onOpenDeviceAdminSettings
+                                )
+                            }
                         }
                     }
                 }
@@ -624,6 +717,22 @@ fun DashboardScreen(
                 onImport = onImportSettings,
                 appLimitsCount = uiState.allApps.size,
                 schedulesCount = uiState.scheduleRules.size
+            )
+        }
+
+        if (showParentalControlDialog && onRegisterParentalDevice != null && onPairParentalWithCode != null && onSyncParentalNow != null && onUnpairParental != null && onVerifyPin != null) {
+            ParentalControlDialog(
+                onDismiss = { showParentalControlDialog = false },
+                isManaged = uiState.isParentalManaged,
+                pairingCode = uiState.parentalPairingCode,
+                serverUrl = uiState.parentalServerUrl,
+                lastSyncTime = uiState.parentalLastSyncTime,
+                syncStatus = uiState.parentalSyncStatus,
+                onRegisterDevice = onRegisterParentalDevice,
+                onPairWithCode = onPairParentalWithCode,
+                onSyncNow = onSyncParentalNow,
+                onUnpair = onUnpairParental,
+                onVerifyPin = onVerifyPin
             )
         }
     }

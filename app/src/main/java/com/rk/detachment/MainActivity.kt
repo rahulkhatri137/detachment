@@ -1,5 +1,6 @@
 package com.rk.detachment
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -179,8 +180,20 @@ class MainActivity : ComponentActivity() {
                                     onOpenAccessibilitySettings = { viewModel.openAccessibilitySettings(this@MainActivity) },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
                                     onOpenOverlaySettings = { viewModel.openOverlaySettings(this@MainActivity) },
+                                    onOpenDeviceAdminSettings = {
+                                        try {
+                                            startActivity(com.rk.detachment.util.UninstallProtectionManager.createDeviceAdminIntent(this@MainActivity))
+                                        } catch (e: Exception) {
+                                            startActivity(Intent(android.provider.Settings.ACTION_SECURITY_SETTINGS))
+                                        }
+                                    },
                                     onExportSettings = { onSuccess, onError -> viewModel.exportSettings(onSuccess, onError) },
-                                    onImportSettings = { json, onResult -> viewModel.importSettings(json, onResult) }
+                                    onImportSettings = { json, onResult -> viewModel.importSettings(json, onResult) },
+                                    onRegisterParentalDevice = { url, cb -> viewModel.registerParentalDevice(url, cb) },
+                                    onPairParentalWithCode = { url, code, cb -> viewModel.pairParentalWithCode(url, code, cb) },
+                                    onSyncParentalNow = { cb -> viewModel.syncParentalNow(cb) },
+                                    onUnpairParental = { cb -> viewModel.unpairParental(cb) },
+                                    onVerifyPin = { pin -> viewModel.verifyPin(pin) }
                                 )
                             }
                             NavigationTab.LIMITS.name -> {
@@ -195,6 +208,7 @@ class MainActivity : ComponentActivity() {
                                     onVerifyPin = { pin -> viewModel.verifyPin(pin) },
                                     onUpdateMasterPin = { pin -> viewModel.updateMasterPin(pin) },
                                     onSetAppAuthEnabled = { enabled -> viewModel.setAppAuthEnabled(enabled) },
+                                    onTriggerDestructionMode = { viewModel.triggerDestructionMode(this@MainActivity) },
                                     onLaunchApp = { app -> viewModel.launchRealAppOrBlock(this@MainActivity, app) },
                                     onRefreshApps = { viewModel.scanInstalledApps() },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },

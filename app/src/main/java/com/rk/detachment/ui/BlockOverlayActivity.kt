@@ -411,16 +411,36 @@ class BlockOverlayActivity : ComponentActivity() {
         isActivityResumed = false
         val expiry = System.currentTimeMillis() + (minutes * 60 * 1000L)
         TemporaryUnlockManager.setUnlock(packageName, expiry)
+        val myPkg = applicationContext.packageName
+        val isOurApp = packageName == myPkg ||
+                packageName == "com.rk.detachment" ||
+                packageName == "com.rk.detachment.parental" ||
+                packageName.startsWith("com.rk.detachment")
+        if (isOurApp) {
+            TemporaryUnlockManager.setUnlock(myPkg, expiry)
+            TemporaryUnlockManager.setUnlock("com.rk.detachment", expiry)
+            TemporaryUnlockManager.setUnlock("com.rk.detachment.parental", expiry)
+            TemporaryUnlockManager.setUnlock("com.android.settings", expiry)
+            TemporaryUnlockManager.setUnlock("com.google.android.settings", expiry)
+            TemporaryUnlockManager.setUnlock("com.google.android.packageinstaller", expiry)
+            TemporaryUnlockManager.setUnlock("com.android.packageinstaller", expiry)
+            TemporaryUnlockManager.setUnlock("com.samsung.android.packageinstaller", expiry)
+            TemporaryUnlockManager.setUnlock("com.android.vending", expiry)
+        }
         activeInstance = null
         currentActivePackage = null
 
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(applicationContext, this)
-            db.appLimitDao().setTemporaryUnlock(packageName, expiry)
+            if (!isOurApp) {
+                db.appLimitDao().setTemporaryUnlock(packageName, expiry)
+            }
             val currentUnlocks = db.appSettingsDao().getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
             db.appSettingsDao().setSetting(AppSettingsEntity("emergency_pin_unlocks", (currentUnlocks + 1).toString()))
             withContext(Dispatchers.Main) {
-                AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
+                if (!isOurApp) {
+                    AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
+                }
                 finishAndRemoveTask()
             }
         }

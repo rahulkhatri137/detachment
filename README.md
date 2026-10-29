@@ -8,6 +8,8 @@
 
 Detachment empowers users to reclaim their focus and attention through intentional friction, intelligent app time limits, Pomodoro blackout sessions, automated focus schedules, and Distraction Shield to delay app launches.
 
+## [Download Parental Control Release](https://github.com/rahulkhatri137/detachment/releases/tag/parental)
+
 ---
 
 ## 🧠 Consciousness Score Experience
@@ -69,11 +71,31 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 
 ---
 
+### 👨‍👩‍👧 Remote Parental Control (Cloudflare Worker Dashboard)
+* **Cloud-Synced Management**: Remotely monitor and control app limits, distraction delays, schedules, and essential app whitelists via a lightweight Cloudflare Worker backend and responsive web dashboard.
+* **Simple Pairing**: Connect a child device in seconds using a unique 6-character pairing code without complex third-party account requirements.
+* **Automated Background Sync**: Pulls remote configuration rules every 15 minutes via Android WorkManager and immediately upon app launch, with manual one-tap instant sync available.
+* **Child-Proof Managed Mode**: Locks down local editing controls on the child device once paired. App limits, blackout modes, and schedule configurations can only be altered by the parent from the dashboard.
+* **Remote Security Controls**: Update the device Master PIN remotely and toggle app launch authentication directly from the dashboard.
+* **Multiple Device Management**: Dashboard supports quick switching between saved device codes and registering new devices. Complete setup instructions are available in [Parental Guide.md](Parental%20Guide.md).
+
+---
+
+### 🛡️ Anti-Tamper & Uninstall Protection
+* **Android Device Administrator**: Prevents uninstallation at the OS level using `DeviceAdminReceiver`. The Android system physically greys out and disables the native "Uninstall" button in Settings and package installers.
+* **Accessibility Guardian**: Continuously guards system settings (`com.android.settings`). Any attempt to access Detachment's App Info, disable its Accessibility Service, or revoke Device Administrator privileges while Device Admin is active immediately redirects to the Home screen and prompts for the Master PIN.
+* **Frictionless Initial Onboarding**: Settings anti-tamper blocking remains inactive during initial app setup until Device Administrator is enabled, ensuring parents can grant all permissions smoothly without screen blocks.
+* **Authorized Parent Bypass & Destruction Mode**: Entering the Master PIN grants a temporary grace period. Parents can also trigger **Destruction Mode** inside App Limits → Security (Change Master PIN dialog) to deactivate Device Administrator, remove all protections, and cleanly uninstall the app when retired.
+* **Remote Uninstall Shield**: Remotely toggle or verify uninstall protection status directly from the Cloudflare Worker dashboard.
+
+---
+
 ### ⚙️ Permissions Required
-For full device-level blocking functionality:
+For full device-level blocking and anti-tamper functionality:
 1. **Usage Access Permission** (`android.permission.PACKAGE_USAGE_STATS`) — To calculate accurate foreground screen time.
-2. **Accessibility Service** (`android.permission.BIND_ACCESSIBILITY_SERVICE`) — To detect launched foreground apps and enforce blocking rules.
-3. **Display Over Other Apps** (`android.permission.SYSTEM_ALERT_WINDOW`) — To display the mindful friction and blackout lock overlays over other applications.
+2. **Accessibility Service** (`android.permission.BIND_ACCESSIBILITY_SERVICE`) — To detect launched foreground apps, enforce blocking rules, and guard against settings tampering.
+3. **Display Over Other Apps** (`android.permission.SYSTEM_ALERT_WINDOW`) — To display the mindful friction, blackout lock overlays, and PIN prompt over other applications.
+4. **Device Administrator** (`android.permission.BIND_DEVICE_ADMIN`) — To protect the app from unauthorized removal and disable the OS uninstall button.
 
 ---
 
@@ -94,10 +116,13 @@ For full device-level blocking functionality:
 <img src="screenshots/13.png" width="30%" />
 <img src="screenshots/14.png" width="30%" />
 <img src="screenshots/15.png" width="30%" />
+<img src="screenshots/16.png" width="30%" />
+<img src="screenshots/17.png" width="30%" />
+<img src="screenshots/18.png" width="30%" />
 </div>
 
 ---
 
 ## 🤖 AI Assistance Disclosure
 
-This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure,Conciousness Score quantification & visualization and app icon.
+This application has been developed with the assistance of advanced Google Artificial Intelligence models for debugging and some initial code structure,Conciousness Score quantification & visualization, cloudflare worker code and app icon.

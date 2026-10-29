@@ -38,6 +38,7 @@ class DetachmentRepository(
     val totalSessionsCount: Flow<Int> = pomodoroDao.getTotalSessionsCount()
     val masterPin: Flow<String?> = appSettingsDao.observeValue("master_pin")
     val isAppAuthEnabled: Flow<Boolean> = appSettingsDao.observeValue("app_auth_enabled").map { it == "true" }
+    val isUninstallProtectionEnabled: Flow<Boolean> = appSettingsDao.observeValue("uninstall_protection_enabled").map { it != "false" }
     val distractionsResisted: Flow<String?> = appSettingsDao.observeValue("distractions_resisted")
     val delaySeconds: Flow<String?> = appSettingsDao.observeValue("key_delay_seconds")
     val unlockMinutes: Flow<String?> = appSettingsDao.observeValue("key_unlock_minutes")
@@ -69,6 +70,10 @@ class DetachmentRepository(
 
     suspend fun setAppAuthEnabled(enabled: Boolean) {
         appSettingsDao.setSetting(AppSettingsEntity("app_auth_enabled", enabled.toString()))
+    }
+
+    suspend fun setUninstallProtectionEnabled(enabled: Boolean) {
+        appSettingsDao.setSetting(AppSettingsEntity("uninstall_protection_enabled", enabled.toString()))
     }
 
     suspend fun setDelaySeconds(seconds: Int) {

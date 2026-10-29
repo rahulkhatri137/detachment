@@ -39,6 +39,7 @@ roborazzi = "1.59.0"
 secretsGradlePlugin = "2.0.1"
 credentials = "1.5.0"
 googleid = "1.1.1"
+workRuntime = "2.10.0"
 
 
 [libraries]
@@ -90,6 +91,7 @@ roborazzi-junit-rule = { group = "io.github.takahirom.roborazzi", name = "robora
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
 androidx-credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntime" }
 
 
 [plugins]
