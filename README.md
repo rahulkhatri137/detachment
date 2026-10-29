@@ -8,6 +8,15 @@
 
 Detachment empowers users to reclaim their focus and attention through intentional friction, intelligent app time limits, Pomodoro blackout sessions, automated focus schedules, and Distraction Shield to delay app launches.
 
+## Feature Specific Branches
+### 1. Parental Control : Manage child device remotely via cloudflare worker.
+- [Code Branch](https://github.com/rahulkhatri137/detachment/tree/parental)
+- [Download Release](https://github.com/rahulkhatri137/detachment/releases/tag/parental)
+ 
+### 2. Website Limit : Block websites just like apps.
+- [Code Branch](https://github.com/rahulkhatri137/detachment/tree/weblimit) 
+- [Download Release](https://github.com/rahulkhatri137/detachment/releases/tag/weblimit)
+
 ---
 
 ## 🧠 Consciousness Score Experience
