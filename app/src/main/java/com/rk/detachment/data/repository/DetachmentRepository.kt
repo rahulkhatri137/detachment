@@ -5,10 +5,12 @@ import com.rk.detachment.data.local.dao.AppLimitDao
 import com.rk.detachment.data.local.dao.AppSettingsDao
 import com.rk.detachment.data.local.dao.PomodoroDao
 import com.rk.detachment.data.local.dao.ScheduleRuleDao
+import com.rk.detachment.data.local.dao.WebsiteLimitDao
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.local.entities.WebsiteLimitEntity
 import com.rk.detachment.data.model.AppLimitBackup
 import com.rk.detachment.data.model.DetachmentBackup
 import com.rk.detachment.data.model.ImportSummary
@@ -26,8 +28,10 @@ class DetachmentRepository(
     private val appLimitDao: AppLimitDao,
     private val scheduleRuleDao: ScheduleRuleDao,
     private val pomodoroDao: PomodoroDao,
-    private val appSettingsDao: AppSettingsDao
+    private val appSettingsDao: AppSettingsDao,
+    private val websiteLimitDao: WebsiteLimitDao
 ) {
+    val allWebsites: Flow<List<WebsiteLimitEntity>> = websiteLimitDao.getAllWebsitesFlow()
     val allApps: Flow<List<AppLimitEntity>> = appLimitDao.getAllApps()
     val distractingApps: Flow<List<AppLimitEntity>> = appLimitDao.getDistractingApps()
     val essentialApps: Flow<List<AppLimitEntity>> = appLimitDao.getEssentialApps()
@@ -362,5 +366,38 @@ class DetachmentRepository(
             settingsRestored = settingEntities.size
         )
     }
+
+    suspend fun updateWebsiteLimit(domain: String, limitMinutes: Int, isHardMode: Boolean = false) {
+        websiteLimitDao.updateLimit(domain, limitMinutes, isHardMode)
+    }
+
+    suspend fun toggleWebsiteLock(domain: String, isLocked: Boolean) {
+        websiteLimitDao.setManualLock(domain, isLocked)
+    }
+
+    suspend fun toggleWebsiteEnabled(domain: String, isEnabled: Boolean) {
+        websiteLimitDao.setEnabled(domain, isEnabled)
+    }
+
+    suspend fun setWebsiteHardMode(domain: String, isHardMode: Boolean) {
+        websiteLimitDao.setHardMode(domain, isHardMode)
+    }
+
+    suspend fun unlockWebsite(domain: String, expiresAt: Long) {
+        websiteLimitDao.setTemporaryUnlock(domain, expiresAt)
+    }
+
+    suspend fun relockWebsite(domain: String) {
+        websiteLimitDao.cancelTemporaryUnlock(domain)
+    }
+
+    suspend fun addCustomWebsite(website: WebsiteLimitEntity) {
+        websiteLimitDao.insertWebsite(website)
+    }
+
+    suspend fun deleteCustomWebsite(domain: String) {
+        websiteLimitDao.deleteWebsite(domain)
+    }
 }
+
 

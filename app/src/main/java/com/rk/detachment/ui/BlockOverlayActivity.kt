@@ -16,6 +16,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -119,7 +120,8 @@ data class OverlayScreenData(
     val delaySeconds: Int,
     val usedMinutes: Int,
     val limitMinutes: Int,
-    val isHardMode: Boolean = false
+    val isHardMode: Boolean = false,
+    val isWebsite: Boolean = false
 )
 
 class BlockOverlayActivity : ComponentActivity() {
@@ -134,6 +136,7 @@ class BlockOverlayActivity : ComponentActivity() {
         const val EXTRA_USED_MINUTES = "extra_used_minutes"
         const val EXTRA_LIMIT_MINUTES = "extra_limit_minutes"
         const val EXTRA_IS_HARD_MODE = "extra_is_hard_mode"
+        const val EXTRA_IS_WEBSITE = "extra_is_website"
 
         @Volatile
         var activeInstance: BlockOverlayActivity? = null
@@ -164,16 +167,22 @@ class BlockOverlayActivity : ComponentActivity() {
     private var isExiting = false
 
     private fun parseOverlayData(srcIntent: Intent): OverlayScreenData {
+        val rawPkg = srcIntent.getStringExtra(EXTRA_PACKAGE_NAME) ?: ""
+        val rawReason = srcIntent.getStringExtra(EXTRA_REASON) ?: "App blocked by Detachment"
+        val isWebExtra = srcIntent.getBooleanExtra(EXTRA_IS_WEBSITE, false)
+        val isWebsiteResolved = isWebExtra || rawReason.contains("website", ignoreCase = true)
+
         return OverlayScreenData(
-            packageName = srcIntent.getStringExtra(EXTRA_PACKAGE_NAME) ?: "",
+            packageName = rawPkg,
             appName = srcIntent.getStringExtra(EXTRA_APP_NAME) ?: "Application",
             category = srcIntent.getStringExtra(EXTRA_CATEGORY) ?: "Apps",
-            reason = srcIntent.getStringExtra(EXTRA_REASON) ?: "App blocked by Detachment",
+            reason = rawReason,
             isFrictionDelay = srcIntent.getBooleanExtra(EXTRA_IS_FRICTION_DELAY, false),
             delaySeconds = srcIntent.getIntExtra(EXTRA_DELAY_SECONDS, 15),
             usedMinutes = srcIntent.getIntExtra(EXTRA_USED_MINUTES, 0),
             limitMinutes = srcIntent.getIntExtra(EXTRA_LIMIT_MINUTES, 0),
-            isHardMode = srcIntent.getBooleanExtra(EXTRA_IS_HARD_MODE, false)
+            isHardMode = srcIntent.getBooleanExtra(EXTRA_IS_HARD_MODE, false),
+            isWebsite = isWebsiteResolved
         )
     }
 
@@ -276,6 +285,10 @@ class BlockOverlayActivity : ComponentActivity() {
                                         appName = data.appName,
                                         category = data.category,
                                         delaySeconds = data.delaySeconds,
+                                        isWebsite = data.isWebsite,
+                                        onCloseTabGrace = {
+                                            grantCloseTabGrace(data.packageName)
+                                        },
                                         onProceed = {
                                             grantDelayProceedAndLaunch(data.packageName)
                                         },
@@ -294,10 +307,14 @@ class BlockOverlayActivity : ComponentActivity() {
                                         limitMinutes = data.limitMinutes,
                                         unlockMinutes = defaultUnlockMinutes,
                                         isHardMode = data.isHardMode,
+                                        isWebsite = data.isWebsite,
                                         onUnlock = { chosenMinutes ->
                                             if (!data.isHardMode) {
                                                 grantTemporaryUnlockAndLaunch(data.packageName, chosenMinutes)
                                             }
+                                        },
+                                        onCloseTabGrace = {
+                                            grantCloseTabGrace(data.packageName)
                                         },
                                         onClose = {
                                             recordDistractionResisted()
@@ -416,14 +433,32 @@ class BlockOverlayActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             val db = AppDatabase.getDatabase(applicationContext, this)
-            db.appLimitDao().setTemporaryUnlock(packageName, expiry)
+            val isWebsite = db.websiteLimitDao().getWebsiteByDomain(packageName) != null
+            if (isWebsite) {
+                db.websiteLimitDao().setTemporaryUnlock(packageName, expiry)
+            } else {
+                db.appLimitDao().setTemporaryUnlock(packageName, expiry)
+            }
             val currentUnlocks = db.appSettingsDao().getValue("emergency_pin_unlocks")?.toIntOrNull() ?: 0
             db.appSettingsDao().setSetting(AppSettingsEntity("emergency_pin_unlocks", (currentUnlocks + 1).toString()))
             withContext(Dispatchers.Main) {
-                AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
+                if (!isWebsite) {
+                    AppManagerHelper.launchRealApp(this@BlockOverlayActivity, packageName)
+                }
                 finishAndRemoveTask()
             }
         }
+    }
+
+    private fun grantCloseTabGrace(domain: String) {
+        isExiting = true
+        isActivityResumed = false
+        activeInstance = null
+        currentActivePackage = null
+        val graceExpiry = System.currentTimeMillis() + 10_000L
+        TemporaryUnlockManager.setUnlock(domain, graceExpiry)
+        TemporaryUnlockManager.setDelayGrace(domain, graceExpiry)
+        finishAndRemoveTask()
     }
 
     private fun recordDistractionResisted() {
@@ -445,6 +480,8 @@ fun RealLockScreenView(
     limitMinutes: Int,
     unlockMinutes: Int = 15,
     isHardMode: Boolean = false,
+    isWebsite: Boolean = false,
+    onCloseTabGrace: () -> Unit = {},
     onUnlock: (Int) -> Unit,
     onClose: () -> Unit
 ) {
@@ -452,6 +489,17 @@ fun RealLockScreenView(
     val scope = rememberCoroutineScope()
     var masterPin by remember { mutableStateOf("1234") }
     val context = androidx.compose.ui.platform.LocalContext.current
+
+    var isDbWebsite by remember(packageName) { mutableStateOf(false) }
+    LaunchedEffect(packageName) {
+        withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context, scope)
+            if (db.websiteLimitDao().getWebsiteByDomain(packageName) != null) {
+                isDbWebsite = true
+            }
+        }
+    }
+    val showCloseTabButton = isWebsite || reason.contains("website", ignoreCase = true) || isDbWebsite
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -622,6 +670,41 @@ fun RealLockScreenView(
             )
         }
 
+        if (showCloseTabButton) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Surface(
+                onClick = onCloseTabGrace,
+                shape = RoundedCornerShape(16.dp),
+                color = AmberAccent.copy(alpha = 0.20f),
+                border = BorderStroke(1.5.dp, AmberAccent.copy(alpha = 0.75f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .testTag("block_close_tab_btn")
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = AmberAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Let me close the tab",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AmberAccent
+                    )
+                }
+            }
+        }
+
         if (!isHardMode) {
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -663,9 +746,24 @@ fun RealFrictionDelayView(
     appName: String,
     category: String,
     delaySeconds: Int = 15,
+    isWebsite: Boolean = false,
+    onCloseTabGrace: () -> Unit = {},
     onProceed: () -> Unit,
     onClose: () -> Unit
 ) {
+    var isDbWebsite by remember(packageName) { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(packageName) {
+        withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context, scope)
+            if (db.websiteLimitDao().getWebsiteByDomain(packageName) != null) {
+                isDbWebsite = true
+            }
+        }
+    }
+    val showCloseTabButton = isWebsite || isDbWebsite
+
     val safeDelaySeconds = delaySeconds.coerceAtLeast(1)
     val progressAnim = remember(safeDelaySeconds) { Animatable(0f) }
     var isDelayFinished by remember(safeDelaySeconds) { mutableStateOf(false) }
@@ -897,6 +995,41 @@ fun RealFrictionDelayView(
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
+        }
+
+        if (showCloseTabButton) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Surface(
+                onClick = onCloseTabGrace,
+                shape = RoundedCornerShape(16.dp),
+                color = AmberAccent.copy(alpha = 0.20f),
+                border = BorderStroke(1.5.dp, AmberAccent.copy(alpha = 0.75f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .testTag("friction_close_tab_btn")
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = AmberAccent,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Let me close the tab",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AmberAccent
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(12.dp))

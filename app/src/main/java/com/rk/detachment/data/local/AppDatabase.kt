@@ -9,10 +9,12 @@ import com.rk.detachment.data.local.dao.AppLimitDao
 import com.rk.detachment.data.local.dao.AppSettingsDao
 import com.rk.detachment.data.local.dao.PomodoroDao
 import com.rk.detachment.data.local.dao.ScheduleRuleDao
+import com.rk.detachment.data.local.dao.WebsiteLimitDao
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.local.entities.WebsiteLimitEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -22,9 +24,10 @@ import kotlinx.coroutines.launch
         AppLimitEntity::class,
         ScheduleRuleEntity::class,
         PomodoroSessionEntity::class,
-        AppSettingsEntity::class
+        AppSettingsEntity::class,
+        WebsiteLimitEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -32,6 +35,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun scheduleRuleDao(): ScheduleRuleDao
     abstract fun pomodoroDao(): PomodoroDao
     abstract fun appSettingsDao(): AppSettingsDao
+    abstract fun websiteLimitDao(): WebsiteLimitDao
 
     companion object {
         @Volatile
@@ -76,6 +80,17 @@ abstract class AppDatabase : RoomDatabase() {
             )
         )
 
+        val DEFAULT_WEBSITES = listOf(
+            WebsiteLimitEntity(domain = "instagram.com", displayName = "Instagram", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "facebook.com", displayName = "Facebook", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "x.com", displayName = "X (Twitter)", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "tiktok.com", displayName = "TikTok", category = "Video", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "threads.net", displayName = "Threads", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "youtube.com", displayName = "YouTube", category = "Video", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "snapchat.com", displayName = "Snapchat", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true),
+            WebsiteLimitEntity(domain = "reddit.com", displayName = "Reddit", category = "Social", dailyLimitMinutes = 0, isDistracting = true, isEnabled = true)
+        )
+
         fun getDatabase(context: Context, scope: CoroutineScope): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -108,6 +123,7 @@ abstract class AppDatabase : RoomDatabase() {
                 INSTANCE?.let { database ->
                     scope.launch(Dispatchers.IO) {
                         syncDefaultSchedulesIfNeeded(database)
+                        syncDefaultWebsitesIfNeeded(database)
                     }
                 }
             }
@@ -125,9 +141,26 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        suspend fun syncDefaultWebsitesIfNeeded(database: AppDatabase) {
+            val websiteDao = database.websiteLimitDao()
+            val settingsDao = database.appSettingsDao()
+            val presetVersion = settingsDao.getValue("key_websites_schema_preset_version")
+            if (presetVersion != "3") {
+                websiteDao.resetAllLimitsToZero()
+                websiteDao.insertDefaultWebsites(DEFAULT_WEBSITES)
+                settingsDao.setSetting(AppSettingsEntity("key_websites_schema_preset_version", "3"))
+            } else {
+                val count = websiteDao.getWebsitesCount()
+                if (count == 0) {
+                    websiteDao.insertDefaultWebsites(DEFAULT_WEBSITES)
+                }
+            }
+        }
+
         suspend fun populateInitialData(database: AppDatabase) {
             val scheduleDao = database.scheduleRuleDao()
             val settingsDao = database.appSettingsDao()
+            val websiteDao = database.websiteLimitDao()
 
             val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
             settingsDao.setSetting(AppSettingsEntity("master_pin", "1234"))
@@ -138,6 +171,7 @@ abstract class AppDatabase : RoomDatabase() {
 
             scheduleDao.deleteAllRules()
             scheduleDao.insertRules(DEFAULT_SCHEDULES)
+            websiteDao.insertDefaultWebsites(DEFAULT_WEBSITES)
         }
     }
 }

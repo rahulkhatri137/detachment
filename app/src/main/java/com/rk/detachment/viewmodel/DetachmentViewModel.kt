@@ -8,11 +8,13 @@ import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.PomodoroSessionEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.local.entities.WebsiteLimitEntity
 import com.rk.detachment.data.model.ImportSummary
 import com.rk.detachment.data.model.YouVsYouComparison
 import com.rk.detachment.data.repository.DetachmentRepository
 import com.rk.detachment.util.AppManagerHelper
 import com.rk.detachment.util.HeadsUpNotchPillManager
+import com.rk.detachment.util.TemporaryUnlockManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,6 +28,7 @@ import kotlinx.coroutines.withContext
 
 data class DetachmentUiState(
     val allApps: List<AppLimitEntity> = emptyList(),
+    val allWebsites: List<WebsiteLimitEntity> = emptyList(),
     val scheduleRules: List<ScheduleRuleEntity> = emptyList(),
     val pomodoroSessions: List<PomodoroSessionEntity> = emptyList(),
     val masterPin: String = "1234",
@@ -106,7 +109,8 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         database.appLimitDao(),
         database.scheduleRuleDao(),
         database.pomodoroDao(),
-        database.appSettingsDao()
+        database.appSettingsDao(),
+        database.websiteLimitDao()
     )
 
     private val _uiState = MutableStateFlow(
@@ -129,6 +133,13 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
 
         viewModelScope.launch {
             AppDatabase.syncDefaultSchedulesIfNeeded(database)
+            AppDatabase.syncDefaultWebsitesIfNeeded(database)
+        }
+
+        viewModelScope.launch {
+            repository.allWebsites.collect { websites ->
+                _uiState.value = _uiState.value.copy(allWebsites = websites)
+            }
         }
 
         viewModelScope.launch {
@@ -526,6 +537,76 @@ class DetachmentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             repository.setMasterPin(newPin)
             showMessage("Master Passcode updated successfully!")
+        }
+    }
+
+    fun updateWebsiteLimit(domain: String, limitMinutes: Int, isHardMode: Boolean) {
+        viewModelScope.launch {
+            repository.updateWebsiteLimit(domain, limitMinutes, isHardMode)
+            showMessage("Updated limit for $domain")
+        }
+    }
+
+    fun toggleWebsiteLock(domain: String, isLocked: Boolean) {
+        viewModelScope.launch {
+            repository.toggleWebsiteLock(domain, isLocked)
+            showMessage(if (isLocked) "Locked $domain" else "Unlocked $domain")
+        }
+    }
+
+    fun toggleWebsiteEnabled(domain: String, isEnabled: Boolean) {
+        viewModelScope.launch {
+            repository.toggleWebsiteEnabled(domain, isEnabled)
+            showMessage(if (isEnabled) "Enabled blocking for $domain" else "Disabled blocking for $domain")
+        }
+    }
+
+    fun unlockWebsite(domain: String, minutes: Int) {
+        viewModelScope.launch {
+            val expiry = System.currentTimeMillis() + minutes * 60 * 1000L
+            TemporaryUnlockManager.setUnlock(domain, expiry)
+            repository.unlockWebsite(domain, expiry)
+            showMessage("Unlocked $domain for $minutes minutes")
+        }
+    }
+
+    fun relockWebsite(domain: String) {
+        viewModelScope.launch {
+            TemporaryUnlockManager.removeUnlock(domain)
+            repository.relockWebsite(domain)
+            showMessage("Relocked $domain")
+        }
+    }
+
+    fun addCustomWebsite(domain: String, displayName: String, category: String, limitMinutes: Int) {
+        viewModelScope.launch {
+            val cleanDomain = domain.trim().lowercase()
+                .removePrefix("https://")
+                .removePrefix("http://")
+                .removePrefix("www.")
+                .substringBefore("/")
+                .trim()
+            if (cleanDomain.isBlank()) {
+                showMessage("Invalid website domain")
+                return@launch
+            }
+            val name = displayName.trim().ifBlank { cleanDomain }
+            val website = WebsiteLimitEntity(
+                domain = cleanDomain,
+                displayName = name,
+                category = category.trim().ifBlank { "Social" },
+                dailyLimitMinutes = limitMinutes,
+                isEnabled = true
+            )
+            repository.addCustomWebsite(website)
+            showMessage("Added $cleanDomain to website limits")
+        }
+    }
+
+    fun deleteCustomWebsite(domain: String) {
+        viewModelScope.launch {
+            repository.deleteCustomWebsite(domain)
+            showMessage("Removed $domain from website limits")
         }
     }
 

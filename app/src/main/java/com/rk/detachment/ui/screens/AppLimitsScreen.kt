@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Category
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockClock
 import androidx.compose.material.icons.filled.NotificationsActive
@@ -117,6 +119,7 @@ fun AppLimitsScreen(
     onOpenUsageSettings: () -> Unit = {},
     onUpdateCategory: (String, String) -> Unit = { _, _ -> },
     onToggleHeadsUpPill: (Boolean) -> Unit = {},
+    onNavigateToWebsiteLimits: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -485,6 +488,81 @@ fun AppLimitsScreen(
                                 testTag = "heads_up_pill_switch"
                             )
                         }
+                    }
+                }
+            }
+
+            item(key = "block_websites_nav_card") {
+                val enabledWebsitesCount = uiState.allWebsites.count { it.isEnabled }
+                val lockedWebsitesCount = uiState.allWebsites.count { it.isEnabled && it.isCurrentlyLocked() }
+
+                FrostedGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToWebsiteLimits() }
+                        .testTag("block_websites_nav_card"),
+                    backgroundColor = GlassSurfaceHigh,
+                    borderColor = PurpleLight.copy(alpha = 0.55f)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(PurplePrimary.copy(alpha = 0.22f))
+                                    .border(1.dp, PurpleLight.copy(alpha = 0.6f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Language,
+                                    contentDescription = null,
+                                    tint = PurpleLight,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Block Websites",
+                                        color = TextPrimary,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (lockedWebsitesCount > 0) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        FrostedBadge(
+                                            text = "$lockedWebsitesCount Locked",
+                                            backgroundColor = RoseAccent.copy(alpha = 0.2f),
+                                            color = RoseAccent
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "$enabledWebsitesCount Active • Reddit, Instagram, X, TikTok & more",
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Open Website Limits",
+                            tint = PurpleLight,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

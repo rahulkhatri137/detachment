@@ -6,7 +6,9 @@
 
 **Detachment** is a digital mindfulness, habit interruption, and screen time management Android application built using modern **Kotlin**, **Jetpack Compose (Material 3)**, and **Room Database**. 
 
-Detachment empowers users to reclaim their focus and attention through intentional friction, intelligent app time limits, Pomodoro blackout sessions, automated focus schedules, and Distraction Shield to delay app launches.
+Detachment empowers users to reclaim their focus and attention through intentional friction, intelligent app and website time limits, Pomodoro blackout sessions, automated focus schedules, and Distraction Shield to delay app launches.
+
+## [Download WebLimit Release](https://github.com/rahulkhatri137/detachment/releases/tag/weblimit)
 
 ---
 
@@ -39,11 +41,12 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 ---
 ## 🌟 Key Features
 
-### ⏳ Per-App Screentime Limits & Emergency Unlock:
-* Configure individual daily usage limits in minutes or hours for any installed app.
-* When an app exceeds its limit (or is manually locked), an App Lock Screen is presented.
-* Master Passcode to unlock the app for breaks. When period expires, the app automatically relocks. Users can also manually relock the app early at any point.
-* Hard mode: For strict discipline. No unlocks allowed for locked apps.
+### ⏳ Per-App & Website Screentime Limits & Emergency Unlock:
+* Configure individual daily usage limits in minutes or hours for any installed app or popular websites (Instagram, Facebook, X, TikTok, Threads, YouTube, Snapchat, Reddit, and custom domains).
+* Accessibility-based browser URL detection across major Android browsers (Chrome, Firefox, Brave, Opera, Edge, Quetta Browser, Samsung Internet, DuckDuckGo, Vivaldi, etc.). **"Let me close the tab"** 10-second grace window for website blocks.
+* When an app or website exceeds its limit (or is manually locked), a Lock Screen overlay is presented.
+* Master Passcode to unlock the app or website for breaks. When period expires, the app or website automatically relocks. Users can also manually relock early at any point.
+* Hard mode: For strict discipline. No unlocks allowed for locked apps or websites.
 * Notch Pill: A compact, top-notch heads-up pill features an illuminated blue capsule contour to aware about app screentime. Reminders every 15 min interval.
 
 ---
@@ -72,7 +75,7 @@ A 260-node golden-angle spiral lattice that radiates outward in intertwined cloc
 ### ⚙️ Permissions Required
 For full device-level blocking functionality:
 1. **Usage Access Permission** (`android.permission.PACKAGE_USAGE_STATS`) — To calculate accurate foreground screen time.
-2. **Accessibility Service** (`android.permission.BIND_ACCESSIBILITY_SERVICE`) — To detect launched foreground apps and enforce blocking rules.
+2. **Accessibility Service** (`android.permission.BIND_ACCESSIBILITY_SERVICE`) — To detect launched foreground apps and active browser website URLs to enforce app and website blocking rules.
 3. **Display Over Other Apps** (`android.permission.SYSTEM_ALERT_WINDOW`) — To display the mindful friction and blackout lock overlays over other applications.
 
 ---
@@ -94,6 +97,9 @@ For full device-level blocking functionality:
 <img src="screenshots/13.png" width="30%" />
 <img src="screenshots/14.png" width="30%" />
 <img src="screenshots/15.png" width="30%" />
+<img src="screenshots/16.png" width="30%" />
+<img src="screenshots/17.png" width="30%" />
+<img src="screenshots/18.png" width="30%" />
 </div>
 
 ---

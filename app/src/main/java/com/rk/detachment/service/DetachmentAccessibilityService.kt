@@ -14,6 +14,7 @@ import com.rk.detachment.data.local.AppDatabase
 import com.rk.detachment.data.local.entities.AppLimitEntity
 import com.rk.detachment.data.local.entities.AppSettingsEntity
 import com.rk.detachment.data.local.entities.ScheduleRuleEntity
+import com.rk.detachment.data.local.entities.WebsiteLimitEntity
 import com.rk.detachment.ui.BlockOverlayActivity
 import com.rk.detachment.util.AppManagerHelper
 import com.rk.detachment.util.HeadsUpNotchPillManager
@@ -36,6 +37,8 @@ class DetachmentAccessibilityService : AccessibilityService() {
     @Volatile
     private var cachedAppsMap: Map<String, AppLimitEntity> = emptyMap()
     @Volatile
+    private var cachedWebsites: List<WebsiteLimitEntity> = emptyList()
+    @Volatile
     private var cachedSchedules: List<ScheduleRuleEntity> = emptyList()
     @Volatile
     private var cachedDelayForDistracting: Boolean = true
@@ -47,6 +50,28 @@ class DetachmentAccessibilityService : AccessibilityService() {
     private var cachedSelfRestraintEndTime: Long = 0L
     @Volatile
     private var cachedSelfRestraintTarget: String = "DISTRACTING"
+
+    private val browserPackages = setOf(
+        "com.android.chrome",
+        "com.chrome.beta",
+        "com.chrome.dev",
+        "com.chrome.canary",
+        "org.mozilla.firefox",
+        "org.mozilla.firefox_beta",
+        "org.mozilla.fenix",
+        "com.sec.android.app.sbrowser",
+        "com.sec.android.app.sbrowser.beta",
+        "com.microsoft.emmx",
+        "com.brave.browser",
+        "com.brave.browser_beta",
+        "com.opera.browser",
+        "com.opera.mini.native",
+        "com.opera.gx",
+        "com.duckduckgo.mobile.android",
+        "com.vivaldi.browser",
+        "com.quetta.browser",
+        "com.quetta.browser.beta"
+    )
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var database: AppDatabase? = null
@@ -139,6 +164,12 @@ class DetachmentAccessibilityService : AccessibilityService() {
             }
         }
 
+        serviceScope.launch {
+            db.websiteLimitDao().getAllWebsitesFlow().collect { websites ->
+                cachedWebsites = websites
+            }
+        }
+
         if (!isReceiverRegistered) {
             try {
                 val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
@@ -192,13 +223,27 @@ class DetachmentAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+        val packageName = event.packageName?.toString() ?: return
+        if (packageName.isBlank()) return
+
+        val isBrowserPackage = browserPackages.contains(packageName)
+        if (!isBrowserPackage &&
+            event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             event.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             return
         }
 
-        val packageName = event.packageName?.toString() ?: return
-        if (packageName.isBlank()) return
+        if (isBrowserPackage) {
+            val rootNode = rootInActiveWindow ?: event.source
+            if (rootNode != null) {
+                if (checkAndInterceptBrowserUrl(rootNode)) {
+                    return
+                }
+            }
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
+                return
+            }
+        }
 
         val isBlackoutActive = cachedIsBlackout || PomodoroManager.state.value.isBlackoutActive
 
@@ -830,6 +875,112 @@ class DetachmentAccessibilityService : AccessibilityService() {
             startActivity(intent, options.toBundle())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to launch BlockOverlayActivity", e)
+        }
+    }
+
+    private fun checkAndInterceptBrowserUrl(node: android.view.accessibility.AccessibilityNodeInfo): Boolean {
+        val enabledWebsites = cachedWebsites.filter { it.isEnabled }
+        if (enabledWebsites.isEmpty()) return false
+        val url = findBrowserUrl(node) ?: return false
+        val lowerUrl = url.lowercase().trim()
+        val now = System.currentTimeMillis()
+
+        for (website in enabledWebsites) {
+            val domain = website.domain.lowercase().trim()
+            val matches = domain.isNotEmpty() && (
+                lowerUrl.contains(domain) ||
+                (domain == "x.com" && (lowerUrl.contains("twitter.com") || lowerUrl.contains("x.com"))) ||
+                (domain == "twitter.com" && (lowerUrl.contains("twitter.com") || lowerUrl.contains("x.com")))
+            )
+            if (matches) {
+                if (TemporaryUnlockManager.isUnlocked(website.domain, now) || website.isTemporaryUnlocked(now)) {
+                    return false
+                }
+                if (website.isCurrentlyLocked(now)) {
+                    val reason = if (website.isLockedManually) {
+                        "Website locked manually by Detachment"
+                    } else {
+                        "Daily website limit exceeded"
+                    }
+                    interceptBlockedWebsite(website, reason)
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private fun findBrowserUrl(node: android.view.accessibility.AccessibilityNodeInfo): String? {
+        val viewId = node.viewIdResourceName?.lowercase() ?: ""
+        if (viewId.contains("url") || viewId.contains("location") || viewId.contains("address") ||
+            viewId.contains("search") || viewId.contains("omnibar") || viewId.contains("toolbar") ||
+            viewId.contains("title")) {
+            val text = node.text?.toString()
+            if (!text.isNullOrBlank() && (text.contains(".") || text.contains("http"))) {
+                return text
+            }
+        }
+        val text = node.text?.toString()
+        if (!text.isNullOrBlank()) {
+            val trimmed = text.trim()
+            if (trimmed.contains(".com") || trimmed.contains(".org") || trimmed.contains(".net") ||
+                trimmed.contains(".io") || trimmed.contains(".app") || trimmed.contains("http://") ||
+                trimmed.contains("https://")) {
+                return trimmed
+            }
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findBrowserUrl(child)
+            if (found != null) {
+                return found
+            }
+        }
+        return null
+    }
+
+    private fun interceptBlockedWebsite(
+        website: WebsiteLimitEntity,
+        reason: String
+    ) {
+        val now = System.currentTimeMillis()
+        val isOverlayActiveOnTarget = BlockOverlayActivity.isActivityResumed &&
+                BlockOverlayActivity.currentActivePackage == website.domain
+
+        if (isOverlayActiveOnTarget) {
+            return
+        }
+
+        if (website.domain == lastInterceptedPackage && (now - lastInterceptTime) < 500L) {
+            return
+        }
+
+        lastInterceptedPackage = website.domain
+        lastInterceptTime = now
+
+        try {
+            val intent = Intent(this, BlockOverlayActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS or
+                        Intent.FLAG_ACTIVITY_NO_ANIMATION
+                putExtra(BlockOverlayActivity.EXTRA_PACKAGE_NAME, website.domain)
+                putExtra(BlockOverlayActivity.EXTRA_APP_NAME, website.displayName)
+                putExtra(BlockOverlayActivity.EXTRA_CATEGORY, website.category)
+                putExtra(BlockOverlayActivity.EXTRA_REASON, reason)
+                putExtra(BlockOverlayActivity.EXTRA_IS_FRICTION_DELAY, false)
+                putExtra(BlockOverlayActivity.EXTRA_DELAY_SECONDS, 15)
+                putExtra(BlockOverlayActivity.EXTRA_USED_MINUTES, website.usedTodayMinutes)
+                putExtra(BlockOverlayActivity.EXTRA_LIMIT_MINUTES, website.dailyLimitMinutes)
+                putExtra(BlockOverlayActivity.EXTRA_IS_HARD_MODE, website.isHardMode)
+                putExtra(BlockOverlayActivity.EXTRA_IS_WEBSITE, true)
+            }
+            val options = ActivityOptions.makeCustomAnimation(this, 0, 0)
+            startActivity(intent, options.toBundle())
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to launch BlockOverlayActivity for website", e)
         }
     }
 

@@ -57,6 +57,7 @@ import com.rk.detachment.ui.screens.ConsciousnessScoreScreen
 import com.rk.detachment.ui.screens.DashboardScreen
 import com.rk.detachment.ui.screens.DistractionShieldScreen
 import com.rk.detachment.ui.screens.SchedulesScreen
+import com.rk.detachment.ui.screens.WebsiteLimitsScreen
 import com.rk.detachment.ui.theme.DetachmentTheme
 import com.rk.detachment.ui.theme.FrostedBackground
 import com.rk.detachment.ui.theme.FrostedBackgroundDarker
@@ -107,6 +108,7 @@ class MainActivity : ComponentActivity() {
                 var isAppUnlocked by remember { isAppUnlockedState }
                 var currentTab by remember { mutableStateOf(NavigationTab.DASHBOARD) }
                 var showConsciousnessScreen by remember { mutableStateOf(false) }
+                var showWebsiteLimitsScreen by remember { mutableStateOf(false) }
                 val snackbarHostState = remember { SnackbarHostState() }
 
                 LaunchedEffect(uiState.statusMessage) {
@@ -146,7 +148,11 @@ class MainActivity : ComponentActivity() {
                                 .padding(top = innerPadding.calculateTopPadding())
                         ) {
                             AnimatedContent(
-                                targetState = if (showConsciousnessScreen) "CONSCIOUSNESS" else currentTab.name,
+                                targetState = when {
+                                    showConsciousnessScreen -> "CONSCIOUSNESS"
+                                    showWebsiteLimitsScreen -> "WEBSITES"
+                                    else -> currentTab.name
+                                },
                                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                                 label = "tab_switch_animation",
                                 modifier = Modifier.fillMaxSize()
@@ -165,6 +171,21 @@ class MainActivity : ComponentActivity() {
                                         currentTab = NavigationTab.LIMITS
                                     },
                                     onRefresh = { viewModel.refreshConsciousnessMetrics() }
+                                )
+                            }
+                            "WEBSITES" -> {
+                                WebsiteLimitsScreen(
+                                    uiState = uiState,
+                                    onNavigateBack = { showWebsiteLimitsScreen = false },
+                                    onUpdateLimit = { domain, limit, isHardMode -> viewModel.updateWebsiteLimit(domain, limit, isHardMode) },
+                                    onToggleLock = { domain, isLocked -> viewModel.toggleWebsiteLock(domain, isLocked) },
+                                    onToggleEnabled = { domain, isEnabled -> viewModel.toggleWebsiteEnabled(domain, isEnabled) },
+                                    onUnlockWebsite = { domain, min -> viewModel.unlockWebsite(domain, min) },
+                                    onRelockWebsite = { domain -> viewModel.relockWebsite(domain) },
+                                    onAddWebsite = { domain, name, cat, limit -> viewModel.addCustomWebsite(domain, name, cat, limit) },
+                                    onDeleteWebsite = { domain -> viewModel.deleteCustomWebsite(domain) },
+                                    onVerifyPin = { pin -> viewModel.verifyPin(pin) },
+                                    onUpdateMasterPin = { pin -> viewModel.updateMasterPin(pin) }
                                 )
                             }
                             NavigationTab.DASHBOARD.name -> {
@@ -199,7 +220,8 @@ class MainActivity : ComponentActivity() {
                                     onRefreshApps = { viewModel.scanInstalledApps() },
                                     onOpenUsageSettings = { viewModel.openUsageAccessSettings(this@MainActivity) },
                                     onUpdateCategory = { pkg, cat -> viewModel.updateAppCategory(pkg, cat) },
-                                    onToggleHeadsUpPill = { enabled -> viewModel.setHeadsUpPillEnabled(enabled) }
+                                    onToggleHeadsUpPill = { enabled -> viewModel.setHeadsUpPillEnabled(enabled) },
+                                    onNavigateToWebsiteLimits = { showWebsiteLimitsScreen = true }
                                 )
                             }
                             NavigationTab.SCHEDULES.name -> {
@@ -244,6 +266,7 @@ class MainActivity : ComponentActivity() {
                             onTabSelected = { tab ->
                                 currentTab = tab
                                 showConsciousnessScreen = false
+                                showWebsiteLimitsScreen = false
                             },
                             modifier = Modifier.align(Alignment.BottomCenter)
                         )
